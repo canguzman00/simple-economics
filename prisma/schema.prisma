@@ -60,6 +60,7 @@ model EconEvent {
   fullExplanation String
   pillar          Pillar
   impact          Impact
+  published       Boolean    @default(false)
   publishedAt     DateTime
   youtubeUrl      String?
   sources         String[]
