@@ -6,6 +6,20 @@ import { Situation, Concern } from "@prisma/client";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+export async function GET() {
+  const session = await getAuthSession();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { situation: true, concern: true, city: true, onboardingComplete: true },
+  });
+
+  return NextResponse.json(user);
+}
+
 export async function PATCH(req: NextRequest) {
   const session = await getAuthSession();
   if (!session?.user?.id) {

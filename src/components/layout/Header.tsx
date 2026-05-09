@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import { Menu } from "lucide-react";
 import { useSession } from "@/lib/auth";
+import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -35,6 +36,55 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
   );
 }
 
+function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen((v) => !v)} aria-label="Account menu">
+        <Avatar>
+          <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
+          <AvatarFallback>
+            {(session.user.name ?? session.user.email ?? "U").charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-10 w-44 bg-[#2C2417] border border-[#4A3D2A] rounded-lg shadow-xl overflow-hidden z-50">
+          <div className="px-3 py-2 border-b border-[#4A3D2A]">
+            <p className="font-sans text-xs text-[#7A6A52] truncate">
+              {session.user.email}
+            </p>
+          </div>
+          <Link
+            href="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center px-3 py-2.5 font-sans text-sm text-[#C8B8A2] hover:bg-[#4A3D2A]/50 hover:text-[#FAF9F6] transition-colors"
+          >
+            Edit Profile
+          </Link>
+          <button
+            onClick={() => signOut()}
+            className="w-full text-left flex items-center px-3 py-2.5 font-sans text-sm text-[#7A6A52] hover:bg-[#4A3D2A]/50 hover:text-[#C8B8A2] transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AuthControl() {
   const { data: session, status } = useSession();
 
@@ -43,19 +93,7 @@ function AuthControl() {
   }
 
   if (session?.user) {
-    return (
-      <button onClick={() => signOut()} className="group relative" title="Sign out">
-        <Avatar>
-          <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
-          <AvatarFallback>
-            {(session.user.name ?? session.user.email ?? "U").charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <span className="absolute -bottom-6 right-0 text-[10px] text-[#4A3D2A] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-sans">
-          Sign out
-        </span>
-      </button>
-    );
+    return <AvatarMenu session={session} />;
   }
 
   return (
