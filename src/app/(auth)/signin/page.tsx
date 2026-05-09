@@ -3,11 +3,11 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
-export default function SignInPage() {
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const [email, setEmail] = useState("");
@@ -91,6 +91,14 @@ export default function SignInPage() {
         © {new Date().getFullYear()} Simple Economics
       </p>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#1A1208]" />}>
+      <SignInContent />
+    </Suspense>
   );
 }
 
