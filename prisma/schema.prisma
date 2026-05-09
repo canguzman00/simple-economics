@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Situation {
+  RENTER
+  OWNER
+  STUDENT
+  SELF_EMPLOYED
+  EMPLOYED
+}
+
+enum Concern {
+  HOUSING
+  JOB_SECURITY
+  SAVINGS
+  DEBT
+  RETIREMENT
+}
+
+enum Pillar {
+  GLOBAL_ECONOMICS
+  GEOPOLITICS_MONEY
+  DEVELOPMENT_POLICY
+  PERSONAL_FINANCE
+}
+
+enum Impact {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model User {
+  id                 String      @id @default(cuid())
+  email              String      @unique
+  name               String?
+  image              String?
+  situation          Situation?
+  concern            Concern?
+  city               String?
+  isPremium          Boolean     @default(false)
+  onboardingComplete Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  questions          UserQuestion[]
+  savedEvents        SavedEvent[]
+}
+
+model EconEvent {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  summary         String
+  fullExplanation String
+  pillar          Pillar
+  impact          Impact
+  publishedAt     DateTime
+  youtubeUrl      String?
+  sources         String[]
+
+  savedBy         SavedEvent[]
+}
+
+model UserQuestion {
+  id        String   @id @default(cuid())
+  userId    String
+  question  String
+  answer    String
+  flagged   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SavedEvent {
+  id      String   @id @default(cuid())
+  userId  String
+  eventId String
+  savedAt DateTime @default(now())
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   EconEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+}
