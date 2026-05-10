@@ -11,7 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const NAV_LINKS = [
   { label: "Feed", href: "/feed" },
-  { label: "Ask Carlos", href: "/ask" },
+  { label: "Ask the Economist", href: "/ask" },
   { label: "My Economy", href: "/my-economy" },
   { label: "Saved", href: "/saved" },
 ];

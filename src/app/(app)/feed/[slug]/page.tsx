@@ -214,13 +214,13 @@ export default async function EventDetailPage({
       {/* ── 4. Carlos's Take ── */}
       <section className="mb-10">
         <h2 className="font-sans text-xs text-[#7A6A52] uppercase tracking-widest mb-4">
-          Carlos&apos;s Take
+          The Economist&apos;s Take
         </h2>
         <blockquote className="border-l-2 border-[#C49A52] bg-[#C49A52]/5 rounded-r-xl px-6 py-5">
           <p className="font-serif text-xl sm:text-2xl text-[#FAF9F6] leading-relaxed italic">
             &ldquo;{event.summary}&rdquo;
           </p>
-          <footer className="mt-3 font-sans text-xs text-[#7A6A52]">— Carlos</footer>
+          <footer className="mt-3 font-sans text-xs text-[#7A6A52]">— The Economist</footer>
         </blockquote>
       </section>
 
