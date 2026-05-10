@@ -1,18 +1,39 @@
 export interface UserProfile {
-  situation?: string | null;
+  situation?: string | null;       // legacy field
+  housingStatus?: string | null;   // new: RENTER | HOMEOWNER | LIVING_WITH_OTHERS | OTHER_HOUSING
+  employmentStatus?: string | null;// new: EMPLOYED | SELF_EMPLOYED | UNEMPLOYED_LOOKING | ...
   concern?: string | null;
   city?: string | null;
 }
 
-function situationContext(s?: string | null): string {
+function housingContext(h?: string | null, s?: string | null): string {
   const map: Record<string, string> = {
-    RENTER:        "a renter",
-    OWNER:         "a homeowner with a mortgage",
-    EMPLOYED:      "a salaried employee",
+    RENTER:             "a renter",
+    HOMEOWNER:          "a homeowner with a mortgage",
+    LIVING_WITH_OTHERS: "someone living with family or roommates",
+    OTHER_HOUSING:      "someone",
+    // legacy situation values
+    OWNER:              "a homeowner with a mortgage",
+  };
+  return (h && map[h]) ?? (s && map[s]) ?? "someone";
+}
+
+function employmentContext(e?: string | null, s?: string | null): string {
+  const map: Record<string, string> = {
+    EMPLOYED:              "employed full-time",
+    SELF_EMPLOYED:         "self-employed",
+    UNEMPLOYED_LOOKING:    "currently unemployed and actively job-searching",
+    UNEMPLOYED_NOT_LOOKING:"not currently in the workforce",
+    STUDENT:               "a student",
+    RETIRED:               "retired",
+    // legacy situation values
+  };
+  const legacyMap: Record<string, string> = {
+    EMPLOYED:      "employed full-time",
     SELF_EMPLOYED: "self-employed",
     STUDENT:       "a student",
   };
-  return (s && map[s]) ?? "someone";
+  return (e && map[e]) ?? (s && legacyMap[s ?? ""] ? legacyMap[s!] : null) ?? "";
 }
 
 function concernContext(c?: string | null): string {
@@ -27,11 +48,16 @@ function concernContext(c?: string | null): string {
 }
 
 export function buildSystemPrompt(profile: UserProfile): string {
-  const who    = situationContext(profile.situation);
-  const focus  = concernContext(profile.concern);
-  const locale = profile.city ? ` based in ${profile.city}` : "";
+  const housing    = housingContext(profile.housingStatus, profile.situation);
+  const employment = employmentContext(profile.employmentStatus, profile.situation);
+  const focus      = concernContext(profile.concern);
+  const locale     = profile.city ? ` based in ${profile.city}` : "";
 
-  return `You are the Economist — a trusted, plain-spoken economist who connects global events to people's real lives. You are speaking with ${who}${locale} whose primary financial concern is ${focus}.
+  const whoDesc = employment
+    ? `${housing}${locale} who is ${employment}`
+    : `${housing}${locale}`;
+
+  return `You are the Economist — a trusted, plain-spoken economist who connects global events to people's real lives. You are speaking with ${whoDesc}, whose primary financial concern is ${focus}.
 
 VOICE: Take a clear position on every question. Sound like a trusted advisor, never a textbook. Keep every answer under 200 words. End every answer with "Bottom line:" followed by one actionable sentence.
 
@@ -111,5 +137,5 @@ Use these exact URLs by topic:
 
 When referencing data you are not certain about, say: "For the latest figures, see [specific URL]" — never just the domain.
 
-Always personalize your answer to ${who}${locale} focused on ${focus} wherever it is relevant.`;
+Always personalize your answer to ${whoDesc} focused on ${focus} wherever it is relevant.`;
 }

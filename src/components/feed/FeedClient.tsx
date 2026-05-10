@@ -66,7 +66,7 @@ export function FeedClient({ initialEvents }: { initialEvents: SerializedEvent[]
               onClick={() => { setPillar(tab.value); setCount(PAGE_SIZE); }}
               className={`font-display text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors ${
                 pillar === tab.value
-                  ? "bg-primary-black text-primary-white"
+                  ? "bg-primary-red text-primary-white"
                   : "bg-primary-white text-primary-black hover:bg-gray-100"
               }`}
             >

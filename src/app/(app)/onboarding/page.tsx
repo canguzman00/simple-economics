@@ -5,34 +5,19 @@ export const runtime = "nodejs";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { HOUSING_OPTIONS, EMPLOYMENT_OPTIONS, CONCERNS } from "@/components/onboarding/data";
+import type { HousingStatus, EmploymentStatus, Concern } from "@/components/onboarding/data";
 
-const SITUATIONS = [
-  { value: "RENTER",        emoji: "🏠", label: "Renter",        sub: "I pay rent every month" },
-  { value: "OWNER",         emoji: "🔑", label: "Homeowner",     sub: "I own or have a mortgage" },
-  { value: "EMPLOYED",      emoji: "💼", label: "Employed",      sub: "I work for a company" },
-  { value: "SELF_EMPLOYED", emoji: "⚡", label: "Self-Employed", sub: "I run my own thing" },
-  { value: "STUDENT",       emoji: "📚", label: "Student",       sub: "I'm in school" },
-] as const;
-
-const CONCERNS = [
-  { value: "HOUSING",      emoji: "📈", label: "Housing Costs",    sub: "Rent, mortgages, buying" },
-  { value: "JOB_SECURITY", emoji: "🛡️", label: "Job Security",    sub: "Layoffs, hiring, my industry" },
-  { value: "SAVINGS",      emoji: "💰", label: "Building Savings", sub: "Growing what I have" },
-  { value: "DEBT",         emoji: "🔗", label: "Debt Burden",      sub: "Loans, credit, interest" },
-  { value: "RETIREMENT",   emoji: "🌅", label: "Retirement",       sub: "Long-term security" },
-] as const;
-
-type Situation = typeof SITUATIONS[number]["value"];
-type Concern   = typeof CONCERNS[number]["value"];
+const TOTAL_STEPS = 4;
 
 function ProgressBar({ step }: { step: number }) {
   return (
     <div className="flex gap-1.5 mb-10">
-      {[1, 2, 3].map((n) => (
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((n) => (
         <div
           key={n}
           className={`h-1 flex-1 transition-colors duration-300 ${
-            n <= step ? "bg-primary-black" : "bg-gray-200"
+            n <= step ? "bg-primary-red" : "bg-gray-200"
           }`}
         />
       ))}
@@ -68,7 +53,7 @@ function OptionCard({
         <p className={`font-display text-sm font-bold uppercase tracking-wide ${selected ? "text-primary-white" : "text-primary-black"}`}>
           {label}
         </p>
-        <p className={`font-sans text-xs mt-0.5 ${selected ? "text-gray-300" : "text-gray-500"}`}>
+        <p className={`font-sans text-xs mt-0.5 ${selected ? "text-gray-300" : "text-gray-700"}`}>
           {sub}
         </p>
       </div>
@@ -86,11 +71,12 @@ function OptionCard({
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep]           = useState(1);
-  const [situation, setSituation] = useState<Situation | null>(null);
-  const [concern, setConcern]     = useState<Concern | null>(null);
-  const [city, setCity]           = useState("");
-  const [saving, setSaving]       = useState(false);
+  const [step, setStep]                   = useState(1);
+  const [housingStatus, setHousing]       = useState<HousingStatus | null>(null);
+  const [employmentStatus, setEmployment] = useState<EmploymentStatus | null>(null);
+  const [concern, setConcern]             = useState<Concern | null>(null);
+  const [city, setCity]                   = useState("");
+  const [saving, setSaving]               = useState(false);
 
   async function finish(finalCity: string) {
     setSaving(true);
@@ -98,7 +84,8 @@ export default function OnboardingPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        situation,
+        housingStatus,
+        employmentStatus,
         concern,
         city: finalCity.trim() || undefined,
         onboardingComplete: true,
@@ -107,60 +94,74 @@ export default function OnboardingPage() {
     router.push("/feed");
   }
 
+  const btnCls = (enabled: boolean) =>
+    `font-display text-xs font-black uppercase tracking-widest transition-colors py-4 ${
+      enabled
+        ? "bg-primary-red text-primary-white hover:bg-primary-black cursor-pointer"
+        : "bg-gray-200 text-gray-300 cursor-not-allowed"
+    }`;
+
+  const backCls = "flex-1 font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-gray-100 transition-colors py-4";
+
   return (
     <div className="min-h-screen bg-primary-white flex flex-col items-center justify-start px-6 pt-14 pb-12">
       <div className="w-full max-w-md">
         <ProgressBar step={step} />
 
-        {/* ── Step 1 ── */}
+        {/* ── Step 1: Housing ── */}
         {step === 1 && (
           <div>
             <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
-              Step 1 of 3
+              Step 1 of {TOTAL_STEPS}
             </p>
             <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
-              What best describes your situation?
+              Do you rent or own your home?
             </h1>
             <div className="flex flex-col gap-2">
-              {SITUATIONS.map((s) => (
-                <OptionCard key={s.value} {...s} selected={situation === s.value} onClick={() => setSituation(s.value)} />
+              {HOUSING_OPTIONS.map((o) => (
+                <OptionCard
+                  key={o.value}
+                  {...o}
+                  selected={housingStatus === o.value}
+                  onClick={() => setHousing(o.value)}
+                />
               ))}
             </div>
             <button
-              disabled={!situation}
+              disabled={!housingStatus}
               onClick={() => setStep(2)}
-              className="mt-8 w-full font-display text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red disabled:opacity-30 disabled:cursor-not-allowed transition-colors py-4"
+              className={`mt-8 w-full ${btnCls(!!housingStatus)}`}
             >
               Continue
             </button>
           </div>
         )}
 
-        {/* ── Step 2 ── */}
+        {/* ── Step 2: Employment ── */}
         {step === 2 && (
           <div>
             <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
-              Step 2 of 3
+              Step 2 of {TOTAL_STEPS}
             </p>
             <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
-              What&apos;s your biggest financial concern?
+              What&apos;s your employment situation?
             </h1>
             <div className="flex flex-col gap-2">
-              {CONCERNS.map((c) => (
-                <OptionCard key={c.value} {...c} selected={concern === c.value} onClick={() => setConcern(c.value)} />
+              {EMPLOYMENT_OPTIONS.map((o) => (
+                <OptionCard
+                  key={o.value}
+                  {...o}
+                  selected={employmentStatus === o.value}
+                  onClick={() => setEmployment(o.value)}
+                />
               ))}
             </div>
             <div className="flex gap-3 mt-8">
+              <button onClick={() => setStep(1)} className={backCls}>Back</button>
               <button
-                onClick={() => setStep(1)}
-                className="flex-1 font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-gray-100 transition-colors py-4"
-              >
-                Back
-              </button>
-              <button
-                disabled={!concern}
+                disabled={!employmentStatus}
                 onClick={() => setStep(3)}
-                className="flex-[2] font-display text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red disabled:opacity-30 disabled:cursor-not-allowed transition-colors py-4"
+                className={`flex-[2] ${btnCls(!!employmentStatus)}`}
               >
                 Continue
               </button>
@@ -168,16 +169,48 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ── Step 3 ── */}
+        {/* ── Step 3: Concern ── */}
         {step === 3 && (
           <div>
             <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
-              Step 3 of 3
+              Step 3 of {TOTAL_STEPS}
+            </p>
+            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
+              What&apos;s your biggest financial concern?
+            </h1>
+            <div className="flex flex-col gap-2">
+              {CONCERNS.map((o) => (
+                <OptionCard
+                  key={o.value}
+                  {...o}
+                  selected={concern === o.value}
+                  onClick={() => setConcern(o.value)}
+                />
+              ))}
+            </div>
+            <div className="flex gap-3 mt-8">
+              <button onClick={() => setStep(2)} className={backCls}>Back</button>
+              <button
+                disabled={!concern}
+                onClick={() => setStep(4)}
+                className={`flex-[2] ${btnCls(!!concern)}`}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 4: City ── */}
+        {step === 4 && (
+          <div>
+            <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+              Step 4 of {TOTAL_STEPS}
             </p>
             <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
               Where are you based?
             </h1>
-            <p className="font-sans text-sm text-gray-500 mb-8">
+            <p className="font-sans text-sm text-gray-700 mb-8">
               We&apos;ll highlight economic events relevant to your area.
             </p>
             <input
@@ -185,20 +218,15 @@ export default function OnboardingPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="e.g. Boston, Chicago, Austin..."
-              className="w-full bg-primary-white border-2 border-primary-black focus:border-primary-blue text-primary-black placeholder-gray-300 font-sans text-sm py-3.5 px-4 outline-none transition-colors"
+              className="w-full bg-primary-white border-2 border-primary-black focus:border-primary-red text-primary-black placeholder-gray-300 font-sans text-sm py-3.5 px-4 outline-none transition-colors"
               onKeyDown={(e) => e.key === "Enter" && finish(city)}
             />
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setStep(2)}
-                className="flex-1 font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-gray-100 transition-colors py-4"
-              >
-                Back
-              </button>
+              <button onClick={() => setStep(3)} className={backCls}>Back</button>
               <button
                 disabled={saving}
                 onClick={() => finish(city)}
-                className="flex-[2] font-display text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red disabled:opacity-50 transition-colors py-4"
+                className={`flex-[2] ${btnCls(!saving)}`}
               >
                 {saving ? "Saving…" : "Finish"}
               </button>

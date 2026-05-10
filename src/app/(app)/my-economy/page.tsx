@@ -87,16 +87,23 @@ const PILLAR_LABEL: Record<Pillar, string> = {
 };
 
 const PILLAR_BG: Record<Pillar, string> = {
-  GLOBAL_ECONOMICS:   "bg-primary-red text-primary-white",
-  GEOPOLITICS_MONEY:  "bg-primary-black text-primary-white",
-  DEVELOPMENT_POLICY: "bg-primary-blue text-primary-white",
-  PERSONAL_FINANCE:   "bg-primary-yellow text-primary-black",
+  GLOBAL_ECONOMICS:   "bg-primary-blue text-primary-white",
+  GEOPOLITICS_MONEY:  "bg-primary-red text-primary-white",
+  DEVELOPMENT_POLICY: "bg-primary-yellow text-primary-black",
+  PERSONAL_FINANCE:   "bg-primary-black text-primary-white",
 };
 
 const IMPACT_BG: Record<Impact, string> = {
   HIGH:   "bg-primary-red text-primary-white",
   MEDIUM: "bg-primary-yellow text-primary-black",
-  LOW:    "bg-gray-200 text-primary-black",
+  LOW:    "bg-primary-blue text-primary-white",
+};
+
+const INDICATOR_BORDER: Record<string, string> = {
+  CPI:          "border-l-4 border-primary-red",
+  FEDFUNDS:     "border-l-4 border-primary-blue",
+  UNRATE:       "border-l-4 border-primary-yellow",
+  MORTGAGE30US: "border-l-4 border-primary-black",
 };
 
 export default async function MyEconomyPage() {
@@ -175,7 +182,8 @@ export default async function MyEconomyPage() {
 
       {/* ── 2. Economic indicators ── */}
       <section>
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500 mb-5">
+        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black mb-5 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 bg-primary-red shrink-0" />
           Economic Indicators
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -187,7 +195,7 @@ export default async function MyEconomyPage() {
             const unavailable = live !== undefined && live.value === null;
 
             return (
-              <div key={meta.key} className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5">
+              <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
                     {meta.name}
@@ -200,7 +208,7 @@ export default async function MyEconomyPage() {
                     </span>
                   )}
                 </div>
-                <p className="font-sans text-xs text-gray-700 leading-relaxed">
+                <p className="font-sans text-xs text-primary-black leading-relaxed">
                   {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
                 </p>
                 <p className="font-sans text-[10px] text-gray-300">
@@ -215,7 +223,8 @@ export default async function MyEconomyPage() {
 
       {/* ── 3. Top HIGH impact events ── */}
       <section>
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500 mb-5">
+        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black mb-5 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 bg-primary-blue shrink-0" />
           What&apos;s affecting you right now
         </h2>
         {topEvents.length === 0 ? (
@@ -247,7 +256,8 @@ export default async function MyEconomyPage() {
       {/* ── 4. Recent questions ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500">
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-primary-yellow shrink-0" />
             Your recent questions
           </h2>
           <Link href="/ask" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
@@ -268,7 +278,7 @@ export default async function MyEconomyPage() {
                 <p className="font-sans text-sm text-primary-black font-semibold leading-snug">
                   {q.question}
                 </p>
-                <p className="mt-1.5 font-sans text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                <p className="mt-1.5 font-sans text-xs text-primary-black line-clamp-2 leading-relaxed">
                   {q.answer.slice(0, 160)}{q.answer.length > 160 ? "…" : ""}
                 </p>
                 <p className="mt-2 font-mono text-[10px] text-gray-300">
@@ -283,7 +293,8 @@ export default async function MyEconomyPage() {
       {/* ── 5. Saved events ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500">
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-primary-black shrink-0 border border-gray-300" />
             Saved events
           </h2>
           <Link href="/saved" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">

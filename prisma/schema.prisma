@@ -16,6 +16,22 @@ enum Situation {
   EMPLOYED
 }
 
+enum HousingStatus {
+  RENTER
+  HOMEOWNER
+  LIVING_WITH_OTHERS
+  OTHER_HOUSING
+}
+
+enum EmploymentStatus {
+  EMPLOYED
+  SELF_EMPLOYED
+  UNEMPLOYED_LOOKING
+  UNEMPLOYED_NOT_LOOKING
+  STUDENT
+  RETIRED
+}
+
 enum Concern {
   HOUSING
   JOB_SECURITY
@@ -44,6 +60,8 @@ model User {
   image              String?
   emailVerified      DateTime?
   situation          Situation?
+  housingStatus      HousingStatus?
+  employmentStatus   EmploymentStatus?
   concern            Concern?
   city               String?
   isPremium          Boolean     @default(false)

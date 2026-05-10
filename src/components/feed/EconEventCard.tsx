@@ -11,16 +11,16 @@ export interface EconEventCardProps {
 }
 
 const PILLAR_CONFIG: Record<Pillar, { label: string; bg: string; text: string }> = {
-  GLOBAL_ECONOMICS:   { label: "Global Economics",     bg: "bg-primary-red",    text: "text-primary-white" },
-  GEOPOLITICS_MONEY:  { label: "Geopolitics & Money",  bg: "bg-primary-black",  text: "text-primary-white" },
-  DEVELOPMENT_POLICY: { label: "Development & Policy", bg: "bg-primary-blue",   text: "text-primary-white" },
-  PERSONAL_FINANCE:   { label: "Personal Finance",     bg: "bg-primary-yellow", text: "text-primary-black" },
+  GLOBAL_ECONOMICS:   { label: "Global Economics",     bg: "bg-primary-blue",   text: "text-primary-white" },
+  GEOPOLITICS_MONEY:  { label: "Geopolitics & Money",  bg: "bg-primary-red",    text: "text-primary-white" },
+  DEVELOPMENT_POLICY: { label: "Development & Policy", bg: "bg-primary-yellow", text: "text-primary-black" },
+  PERSONAL_FINANCE:   { label: "Personal Finance",     bg: "bg-primary-black",  text: "text-primary-white" },
 };
 
 const IMPACT_CONFIG: Record<Impact, { label: string; bg: string; text: string }> = {
   HIGH:   { label: "HIGH",   bg: "bg-primary-red",    text: "text-primary-white" },
   MEDIUM: { label: "MEDIUM", bg: "bg-primary-yellow", text: "text-primary-black" },
-  LOW:    { label: "LOW",    bg: "bg-gray-200",        text: "text-primary-black" },
+  LOW:    { label: "LOW",    bg: "bg-primary-blue",   text: "text-primary-white" },
 };
 
 export function EconEventCard({
@@ -59,7 +59,7 @@ export function EconEventCard({
       </h2>
 
       {/* Summary */}
-      <p className="font-sans text-sm text-gray-700 leading-relaxed">
+      <p className="font-sans text-sm text-primary-black leading-relaxed">
         {summary}
       </p>
 
