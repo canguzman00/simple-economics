@@ -4,14 +4,8 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
-function getAdapter() {
-  return PrismaAdapter(prisma) as NextAuthOptions["adapter"];
-}
-
 export const authOptions: NextAuthOptions = {
-  get adapter() {
-    return getAdapter();
-  },
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -26,12 +20,28 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, user }) {
-      if (user && session.user) {
-        session.user.id = user.id;
+      try {
+        if (user && session.user) {
+          session.user.id = user.id;
+        }
+      } catch (err) {
+        console.error("[auth] session callback error:", err);
       }
       return session;
     },
   },
+  events: {
+    async signIn({ user, account, isNewUser }) {
+      console.log("[auth] signIn", { userId: user.id, provider: account?.provider, isNewUser });
+    },
+    async createUser({ user }) {
+      console.log("[auth] createUser", { userId: user.id, email: user.email });
+    },
+    async session({ session }) {
+      console.log("[auth] session refreshed", { userId: (session.user as { id?: string })?.id });
+    },
+  },
+  debug: process.env.NODE_ENV === "development",
 };
 
 export const getAuthSession = () => getServerSession(authOptions);
