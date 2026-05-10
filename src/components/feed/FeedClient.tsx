@@ -189,17 +189,18 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
     return () => abortCtrl.abort();
   }, [tier, userState]);
 
-  // Combine admin events + news, filter, paginate
-  const allItems: SerializedEvent[] = tier === "ALL"
-    ? initialEvents
-    : [
-        ...newsItems,
-        ...initialEvents.filter((e) =>
-          tier === "LOCAL" ? e.tier === "REGIONAL" : e.tier === tier
-        ),
-      ];
+  // Combine admin events + fetched news, then apply all filters independently
+  const allItems: SerializedEvent[] = [
+    ...initialEvents,
+    ...newsItems,
+  ];
 
   const filtered = allItems
+    .filter((e) => {
+      if (tier === "ALL") return true;
+      if (tier === "LOCAL") return e.tier === "REGIONAL";
+      return e.tier === tier;
+    })
     .filter((e) => pillar === "ALL" || e.pillar === pillar)
     .filter((e) => impact === "ALL" || e.impact === impact);
 
