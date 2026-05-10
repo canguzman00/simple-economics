@@ -17,7 +17,8 @@ const FRED_SERIES: Record<string, { seriesId: string; label: string }> = {
   UNRATE:        { seriesId: "UNRATE",       label: "Unemployment Rate" },
   MORTGAGE30US:  { seriesId: "MORTGAGE30US", label: "30-Year Mortgage Rate" },
   PRIMERATE:     { seriesId: "DPRIME",       label: "Prime Rate" },
-  REALWAGES:     { seriesId: "AHETPI",       label: "Average Hourly Earnings (YoY)" },
+  REALWAGES:     { seriesId: "AHETPI",       label: "Average Hourly Earnings" },
+  CONSCONF:      { seriesId: "UMCSENT",      label: "Consumer Confidence" },
 };
 
 // ─── Date formatter ───────────────────────────────────────────────────────────
@@ -74,10 +75,11 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const numericValue = parseFloat(latest.value);
   if (isNaN(numericValue)) return null;
 
-  // REALWAGES (AHETPI) is a dollar value, not a rate
-  const formatted = key === "REALWAGES"
-    ? `$${numericValue.toFixed(2)}`
-    : `${numericValue.toFixed(2)}%`;
+  // Format by type: dollar for REALWAGES, plain index for CONSCONF, percent for everything else
+  const formatted =
+    key === "REALWAGES" ? `$${numericValue.toFixed(2)}` :
+    key === "CONSCONF"  ? `${numericValue.toFixed(1)}`  :
+    `${numericValue.toFixed(2)}%`;
 
   return {
     value: formatted,

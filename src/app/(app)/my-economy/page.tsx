@@ -78,6 +78,20 @@ const INDICATOR_META: IndicatorMeta[] = [
     },
   },
   {
+    key: "CONSCONF",
+    name: "Consumer Confidence",
+    source: "University of Michigan via FRED",
+    fallbackValue: "68.0",
+    fallbackDate: "March 2025",
+    meaning: (s) => {
+      if (s === "RENTER")        return "When consumers feel pessimistic, landlords face pressure to hold rents steady or offer concessions. Falling confidence often precedes job market softening by 6–12 months.";
+      if (s === "OWNER")         return "Low consumer confidence typically precedes lower home sales volume — fewer buyers means longer days on market and more negotiating room for buyers.";
+      if (s === "STUDENT")       return "Consumer sentiment predicts hiring. When confidence falls, businesses cut hiring budgets first. A reading below 70 historically signals tighter job markets within a year.";
+      if (s === "SELF_EMPLOYED") return "Consumer confidence is a direct leading indicator for small business revenue. When people feel financially insecure, discretionary spending drops first — which hits small businesses hardest.";
+      return "The University of Michigan Consumer Sentiment Index measures how optimistic Americans feel about their finances. Readings above 80 signal expansion; below 70 often precede recessions. It leads actual spending by 6–12 months, making it one of the most watched leading indicators in economics.";
+    },
+  },
+  {
     key: "PRIMERATE",
     name: "Prime Rate",
     source: "Federal Reserve via FRED",
@@ -131,12 +145,13 @@ const INDICATOR_BORDER: Record<string, string> = {
   CPI:          "border-l-4 border-primary-red",
   FEDFUNDS:     "border-l-4 border-primary-blue",
   UNRATE:       "border-l-4 border-primary-yellow",
+  CONSCONF:     "border-l-4 border-primary-black",
   PRIMERATE:    "border-l-4 border-primary-red",
   REALWAGES:    "border-l-4 border-primary-blue",
   MORTGAGE30US: "border-l-4 border-primary-black",
 };
 
-const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "PRIMERATE", "REALWAGES", "MORTGAGE30US"];
+const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "CONSCONF", "PRIMERATE", "REALWAGES"];
 
 // ─── City → state lookup for BLS regional links ──────────────────────────────
 
