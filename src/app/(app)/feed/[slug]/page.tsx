@@ -28,7 +28,7 @@ const IMPACT_CONFIG: Record<Impact, { label: string; dot: string; text: string }
 export async function generateStaticParams() {
   try {
     const events = await prisma.econEvent.findMany({ where: { published: true }, select: { slug: true } });
-    return events.map((e) => ({ slug: e.slug }));
+    return events.map((e: { slug: string }) => ({ slug: e.slug }));
   } catch {
     return [];
   }
