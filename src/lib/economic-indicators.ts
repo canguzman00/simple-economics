@@ -34,13 +34,16 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const series = FRED_SERIES[key];
   if (!series) return null;
 
+  const isCPI = key === "CPI";
+  const limit = isCPI ? 13 : 1;
+
   const url =
     `https://api.stlouisfed.org/fred/series/observations` +
     `?series_id=${series.seriesId}` +
     `&api_key=${apiKey}` +
     `&file_type=json` +
     `&sort_order=desc` +
-    `&limit=1`;
+    `&limit=${limit}`;
 
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
@@ -48,15 +51,29 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const json = await res.json() as {
     observations?: Array<{ value: string; date: string }>;
   };
-  const obs = json.observations?.[0];
-  if (!obs || obs.value === ".") return null;
+  const obs = json.observations;
+  if (!obs?.length) return null;
 
-  const numericValue = parseFloat(obs.value);
+  if (isCPI) {
+    // obs is sorted desc: obs[0] = most recent, obs[12] = 12 months ago
+    const current  = parseFloat(obs[0].value);
+    const yearAgo  = parseFloat(obs[12]?.value ?? ".");
+    if (isNaN(current) || isNaN(yearAgo) || yearAgo === 0) return null;
+    const yoy = ((current - yearAgo) / yearAgo) * 100;
+    return {
+      value: `${yoy.toFixed(1)}%`,
+      date: formatFredDate(obs[0].date),
+    };
+  }
+
+  const latest = obs[0];
+  if (!latest || latest.value === ".") return null;
+  const numericValue = parseFloat(latest.value);
   if (isNaN(numericValue)) return null;
 
   return {
     value: `${numericValue.toFixed(2)}%`,
-    date: formatFredDate(obs.date),
+    date: formatFredDate(latest.date),
   };
 }
 
