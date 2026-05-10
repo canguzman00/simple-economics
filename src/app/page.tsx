@@ -116,7 +116,7 @@ export default async function HomePage() {
                 The Translation Gap
               </h3>
               <p className="font-sans text-sm text-[#7A6A52] leading-relaxed">
-                Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question "what does this mean for me?" is never answered.
+                Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question &ldquo;what does this mean for me?&rdquo; is never answered.
               </p>
               <p className="font-sans text-sm text-[#C49A52] leading-relaxed">
                 We translate it.
