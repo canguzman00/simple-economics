@@ -131,3 +131,11 @@ model SavedEvent {
 
   @@unique([userId, eventId])
 }
+
+model EconomicIndicator {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  date      String
+  fetchedAt DateTime @default(now())
+}
