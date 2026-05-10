@@ -50,7 +50,7 @@ export function EconEventCard({
         <span className={`inline-flex items-center font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${impactCfg.bg} ${impactCfg.text}`}>
           {impactCfg.label} IMPACT
         </span>
-        <span className="ml-auto font-sans text-[11px] text-gray-500">{formattedDate}</span>
+        <span className="ml-auto font-sans text-[11px] text-primary-black">{formattedDate}</span>
       </div>
 
       {/* Title */}

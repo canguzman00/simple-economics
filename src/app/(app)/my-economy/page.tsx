@@ -281,7 +281,7 @@ export default async function MyEconomyPage() {
             return (
               <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     {meta.name}
                   </p>
                   {unavailable ? (
@@ -295,7 +295,7 @@ export default async function MyEconomyPage() {
                 <p className="font-sans text-xs text-primary-black leading-relaxed">
                   {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
                 </p>
-                <p className="font-sans text-[10px] text-gray-300">
+                <p className="font-sans text-[10px] text-primary-black">
                   {meta.source} · {date}
                   {cached && <span className="ml-1">(cached)</span>}
                 </p>
@@ -329,7 +329,7 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black border-l-4 border-l-primary-black px-5 py-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     Local Housing Market
                   </p>
                   <span className={`font-mono text-2xl leading-none shrink-0 ${cached ? "text-gray-500" : "text-primary-black"}`}>
@@ -341,7 +341,7 @@ export default async function MyEconomyPage() {
                     ? `In ${city}, this rate means a $400K home costs approximately $${monthlyPayment.toLocaleString()} per month. Local rental markets typically move in the same direction as mortgage rates — when buying gets expensive, rental demand rises.`
                     : `At this rate, a $400K home costs approximately $${monthlyPayment?.toLocaleString() ?? "—"} per month. Add your city to your profile for local housing context.`}
                 </p>
-                <p className="font-sans text-[10px] text-gray-300">
+                <p className="font-sans text-[10px] text-primary-black">
                   30-Year Fixed · Freddie Mac via FRED{cached && " (cached)"}
                 </p>
               </div>
@@ -356,10 +356,10 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black border-l-4 border-l-primary-yellow px-5 py-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     Local Job Market
                   </p>
-                  <span className="font-sans text-xs text-gray-300 leading-none shrink-0 text-right">
+                  <span className="font-sans text-xs text-primary-black leading-none shrink-0 text-right">
                     {state}
                   </span>
                 </div>
@@ -377,7 +377,7 @@ export default async function MyEconomyPage() {
                     {blsUrl}
                   </a>
                 )}
-                <p className="font-sans text-[10px] text-gray-300">
+                <p className="font-sans text-[10px] text-primary-black">
                   Bureau of Labor Statistics · State & Local Data
                 </p>
               </div>
@@ -385,7 +385,7 @@ export default async function MyEconomyPage() {
           })()}
         </div>
 
-        <p className="mt-3 font-sans text-[10px] text-gray-300">
+        <p className="mt-3 font-sans text-[10px] text-primary-black">
           Local data is estimated based on your city. For the most accurate local figures, check your state&apos;s labor department website.
         </p>
       </section>
@@ -415,7 +415,7 @@ export default async function MyEconomyPage() {
                   </span>
                 </div>
                 <p className="font-display font-bold text-base text-primary-black uppercase leading-snug">{ev.title}</p>
-                <p className="font-sans text-xs text-gray-500 line-clamp-2">{ev.summary}</p>
+                <p className="font-sans text-xs text-primary-black line-clamp-2">{ev.summary}</p>
               </Link>
             ))}
           </div>
@@ -448,9 +448,9 @@ export default async function MyEconomyPage() {
                   {q.question}
                 </p>
                 <p className="mt-1.5 font-sans text-xs text-primary-black line-clamp-2 leading-relaxed">
-                  {q.answer.slice(0, 160)}{q.answer.length > 160 ? "…" : ""}
+                  {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "…" : ""); })()}
                 </p>
-                <p className="mt-2 font-mono text-[10px] text-gray-300">
+                <p className="mt-2 font-mono text-[10px] text-primary-black">
                   {new Date(q.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
@@ -491,7 +491,7 @@ export default async function MyEconomyPage() {
                 <p className="font-display font-bold text-sm text-primary-black uppercase leading-snug line-clamp-2">
                   {se.event.title}
                 </p>
-                <p className="font-sans text-[10px] text-gray-300">
+                <p className="font-sans text-[10px] text-primary-black">
                   Saved · {new Date(se.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>
               </Link>
