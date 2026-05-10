@@ -1,7 +1,5 @@
 import type { Pillar, Impact } from "@prisma/client";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface EconEventCardProps {
   title: string;
   summary: string;
@@ -12,36 +10,18 @@ export interface EconEventCardProps {
   slug: string;
 }
 
-// ─── Pillar config ────────────────────────────────────────────────────────────
-
-const PILLAR_CONFIG: Record<Pillar, { label: string; badge: string }> = {
-  GLOBAL_ECONOMICS: {
-    label: "Global Economics",
-    badge: "bg-gold-100/20 text-[#C49A52] border-[#C49A52]/30",
-  },
-  GEOPOLITICS_MONEY: {
-    label: "Geopolitics & Money",
-    badge: "bg-signal-700/10 text-[#D4613C] border-[#D4613C]/30",
-  },
-  DEVELOPMENT_POLICY: {
-    label: "Development & Policy",
-    badge: "bg-growth-700/10 text-[#3D8A55] border-[#3D8A55]/30",
-  },
-  PERSONAL_FINANCE: {
-    label: "Personal Finance",
-    badge: "bg-blue-900/20 text-blue-300 border-blue-400/30",
-  },
+const PILLAR_CONFIG: Record<Pillar, { label: string; bg: string; text: string }> = {
+  GLOBAL_ECONOMICS:   { label: "Global Economics",     bg: "bg-primary-red",    text: "text-primary-white" },
+  GEOPOLITICS_MONEY:  { label: "Geopolitics & Money",  bg: "bg-primary-black",  text: "text-primary-white" },
+  DEVELOPMENT_POLICY: { label: "Development & Policy", bg: "bg-primary-blue",   text: "text-primary-white" },
+  PERSONAL_FINANCE:   { label: "Personal Finance",     bg: "bg-primary-yellow", text: "text-primary-black" },
 };
 
-// ─── Impact config ────────────────────────────────────────────────────────────
-
-const IMPACT_CONFIG: Record<Impact, { label: string; dot: string; text: string }> = {
-  HIGH:   { label: "HIGH",   dot: "bg-[#B84A2A]", text: "text-[#D4613C]" },
-  MEDIUM: { label: "MEDIUM", dot: "bg-[#C49A52]", text: "text-[#C49A52]" },
-  LOW:    { label: "LOW",    dot: "bg-[#3D8A55]", text: "text-[#3D8A55]" },
+const IMPACT_CONFIG: Record<Impact, { label: string; bg: string; text: string }> = {
+  HIGH:   { label: "HIGH",   bg: "bg-primary-red",    text: "text-primary-white" },
+  MEDIUM: { label: "MEDIUM", bg: "bg-primary-yellow", text: "text-primary-black" },
+  LOW:    { label: "LOW",    bg: "bg-gray-200",        text: "text-primary-black" },
 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function EconEventCard({
   title,
@@ -61,37 +41,34 @@ export function EconEventCard({
   });
 
   return (
-    <article className="flex flex-col gap-5 bg-[#2C2417]/40 border border-[#2C2417] rounded-xl px-6 py-6 hover:border-[#4A3D2A] transition-colors">
+    <article className="flex flex-col gap-5 bg-primary-white border-2 border-primary-black px-6 py-6 transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A]">
       {/* Badges row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-flex items-center font-sans text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${pillarCfg.badge}`}>
+        <span className={`inline-flex items-center font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${pillarCfg.bg} ${pillarCfg.text}`}>
           {pillarCfg.label}
         </span>
-
-        <span className={`inline-flex items-center gap-1.5 font-mono text-[11px] font-medium ${impactCfg.text}`}>
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${impactCfg.dot}`} />
+        <span className={`inline-flex items-center font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${impactCfg.bg} ${impactCfg.text}`}>
           {impactCfg.label} IMPACT
         </span>
-
-        <span className="ml-auto font-sans text-[11px] text-[#4A3D2A]">{formattedDate}</span>
+        <span className="ml-auto font-sans text-[11px] text-gray-500">{formattedDate}</span>
       </div>
 
       {/* Title */}
-      <h2 className="font-serif text-2xl sm:text-3xl text-[#FAF9F6] leading-snug">
+      <h2 className="font-display font-bold text-xl sm:text-2xl text-primary-black leading-tight uppercase">
         {title}
       </h2>
 
       {/* Summary */}
-      <p className="font-sans text-sm text-[#C8B8A2] leading-relaxed">
+      <p className="font-sans text-sm text-gray-700 leading-relaxed">
         {summary}
       </p>
 
       {/* "What this means for you" callout */}
-      <div className="border-l-2 border-[#C49A52] bg-[#C49A52]/5 rounded-r-lg px-4 py-4">
-        <p className="font-sans text-xs text-[#C49A52] uppercase tracking-widest mb-2">
+      <div className="border-l-4 border-primary-black bg-primary-yellow px-4 py-4">
+        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-primary-black mb-2">
           What this means for you
         </p>
-        <p className="font-sans text-sm text-[#C8B8A2] leading-relaxed">
+        <p className="font-sans text-sm text-primary-black leading-relaxed">
           {fullExplanation}
         </p>
       </div>

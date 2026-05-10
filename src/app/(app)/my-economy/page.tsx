@@ -11,8 +11,6 @@ import type { Situation } from "@/components/onboarding/data";
 import { fetchAllIndicators } from "@/lib/economic-indicators";
 import type { IndicatorResult } from "@/lib/economic-indicators";
 
-// ─── Indicator display config (static metadata + meaning per situation) ───────
-
 interface IndicatorMeta {
   key: string;
   name: string;
@@ -81,8 +79,6 @@ const INDICATOR_META: IndicatorMeta[] = [
   },
 ];
 
-// ─── Pillar badge config ──────────────────────────────────────────────────────
-
 const PILLAR_LABEL: Record<Pillar, string> = {
   GLOBAL_ECONOMICS:   "Global Economics",
   GEOPOLITICS_MONEY:  "Geopolitics & Money",
@@ -90,20 +86,18 @@ const PILLAR_LABEL: Record<Pillar, string> = {
   PERSONAL_FINANCE:   "Personal Finance",
 };
 
-const PILLAR_BADGE: Record<Pillar, string> = {
-  GLOBAL_ECONOMICS:   "text-[#C49A52] border-[#C49A52]/30",
-  GEOPOLITICS_MONEY:  "text-[#D4613C] border-[#D4613C]/30",
-  DEVELOPMENT_POLICY: "text-[#3D8A55] border-[#3D8A55]/30",
-  PERSONAL_FINANCE:   "text-blue-300 border-blue-400/30",
+const PILLAR_BG: Record<Pillar, string> = {
+  GLOBAL_ECONOMICS:   "bg-primary-red text-primary-white",
+  GEOPOLITICS_MONEY:  "bg-primary-black text-primary-white",
+  DEVELOPMENT_POLICY: "bg-primary-blue text-primary-white",
+  PERSONAL_FINANCE:   "bg-primary-yellow text-primary-black",
 };
 
-const IMPACT_DOT: Record<Impact, string> = {
-  HIGH:   "bg-[#B84A2A]",
-  MEDIUM: "bg-[#C49A52]",
-  LOW:    "bg-[#3D8A55]",
+const IMPACT_BG: Record<Impact, string> = {
+  HIGH:   "bg-primary-red text-primary-white",
+  MEDIUM: "bg-primary-yellow text-primary-black",
+  LOW:    "bg-gray-200 text-primary-black",
 };
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function MyEconomyPage() {
   const session = await getAuthSession();
@@ -150,28 +144,28 @@ export default async function MyEconomyPage() {
 
       {/* ── 1. Header ── */}
       <section>
-        <h1 className="font-serif text-4xl sm:text-5xl text-[#FAF9F6] leading-tight">
+        <h1 className="font-display font-black text-4xl sm:text-5xl text-primary-black uppercase leading-tight">
           Your Economic Snapshot
         </h1>
         {user?.onboardingComplete && (situationStr || city) ? (
-          <p className="mt-3 font-sans text-base text-[#7A6A52]">
-            Here&apos;s what&apos;s moving the economy
-            {situationStr && <> for <span className="text-[#C8B8A2]">{situationStr}</span></>}
-            {city && <> in <span className="text-[#C8B8A2]">{city}</span></>}.
+          <p className="mt-3 font-sans text-base text-gray-700 flex items-center gap-2">
+            <span className="w-2 h-2 bg-primary-red shrink-0" />
+            Personalized for{situationStr && <strong className="text-primary-black"> {situationStr}</strong>}
+            {city && <span> in <strong className="text-primary-black">{city}</strong></span>}
           </p>
         ) : (
-          <div className="mt-6 border border-[#C49A52]/30 bg-[#C49A52]/5 rounded-xl px-6 py-5 flex items-center justify-between gap-4">
+          <div className="mt-6 border-2 border-primary-black bg-primary-yellow px-6 py-5 flex items-center justify-between gap-4">
             <div>
-              <p className="font-sans text-sm font-medium text-[#C8B8A2]">
+              <p className="font-display text-sm font-bold uppercase tracking-wide text-primary-black">
                 Personalize your dashboard
               </p>
-              <p className="mt-1 font-sans text-xs text-[#7A6A52]">
+              <p className="mt-1 font-sans text-xs text-gray-700">
                 Tell us about your situation and we&apos;ll tailor every indicator to you.
               </p>
             </div>
             <Link
               href="/onboarding"
-              className="shrink-0 bg-[#C49A52] hover:bg-[#E2C27A] transition-colors text-[#1A1208] font-sans font-medium text-sm px-4 py-2 rounded-lg"
+              className="shrink-0 font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
             >
               Complete profile
             </Link>
@@ -181,40 +175,37 @@ export default async function MyEconomyPage() {
 
       {/* ── 2. Economic indicators ── */}
       <section>
-        <h2 className="font-sans text-xs text-[#7A6A52] uppercase tracking-widest mb-5">
+        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500 mb-5">
           Economic Indicators
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {INDICATOR_META.map((meta) => {
             const live: IndicatorResult | undefined = liveIndicators[meta.key];
-            const value = live?.value ?? meta.fallbackValue;
-            const date  = live?.date  ?? meta.fallbackDate;
-            const cached = live?.isCached ?? false;
+            const value      = live?.value ?? meta.fallbackValue;
+            const date       = live?.date  ?? meta.fallbackDate;
+            const cached     = live?.isCached ?? false;
             const unavailable = live !== undefined && live.value === null;
 
             return (
-              <div
-                key={meta.key}
-                className="flex flex-col gap-3 bg-[#2C2417]/40 border border-[#2C2417] rounded-xl px-5 py-5"
-              >
+              <div key={meta.key} className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-sans text-xs text-[#7A6A52] leading-snug">{meta.name}</p>
+                  <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                    {meta.name}
+                  </p>
                   {unavailable ? (
-                    <span className="font-sans text-xs text-[#4A3D2A] leading-none shrink-0">
-                      unavailable
-                    </span>
+                    <span className="font-sans text-xs text-gray-300 leading-none shrink-0">unavailable</span>
                   ) : (
-                    <span className={`font-mono text-xl leading-none shrink-0 ${cached ? "text-[#7A6A52]" : "text-[#C49A52]"}`}>
+                    <span className={`font-mono text-2xl leading-none shrink-0 ${cached ? "text-gray-500" : "text-primary-black"}`}>
                       {value}
                     </span>
                   )}
                 </div>
-                <p className="font-sans text-xs text-[#C8B8A2] leading-relaxed">
+                <p className="font-sans text-xs text-gray-700 leading-relaxed">
                   {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
                 </p>
-                <p className="font-sans text-[10px] text-[#4A3D2A]">
+                <p className="font-sans text-[10px] text-gray-300">
                   {meta.source} · {date}
-                  {cached && <span className="ml-1 text-[#4A3D2A]">(cached)</span>}
+                  {cached && <span className="ml-1">(cached)</span>}
                 </p>
               </div>
             );
@@ -224,30 +215,29 @@ export default async function MyEconomyPage() {
 
       {/* ── 3. Top HIGH impact events ── */}
       <section>
-        <h2 className="font-sans text-xs text-[#7A6A52] uppercase tracking-widest mb-5">
+        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500 mb-5">
           What&apos;s affecting you right now
         </h2>
         {topEvents.length === 0 ? (
-          <p className="font-sans text-sm text-[#4A3D2A]">No high-impact events published yet.</p>
+          <p className="font-sans text-sm text-gray-500">No high-impact events published yet.</p>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {topEvents.map((ev) => (
               <Link
                 key={ev.id}
                 href={`/feed/${ev.slug}`}
-                className="flex flex-col gap-2 bg-[#2C2417]/40 border border-[#2C2417] hover:border-[#4A3D2A] rounded-xl px-5 py-4 transition-colors"
+                className="flex flex-col gap-2 bg-primary-white border-2 border-primary-black px-5 py-4 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A] transition-all"
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`inline-flex items-center font-sans text-[10px] font-medium px-2 py-0.5 rounded-full border ${PILLAR_BADGE[ev.pillar]}`}>
+                  <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[ev.pillar]}`}>
                     {PILLAR_LABEL[ev.pillar]}
                   </span>
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#D4613C]">
-                    <span className={`w-1.5 h-1.5 rounded-full ${IMPACT_DOT[ev.impact]}`} />
+                  <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[ev.impact]}`}>
                     HIGH IMPACT
                   </span>
                 </div>
-                <p className="font-serif text-lg text-[#FAF9F6] leading-snug">{ev.title}</p>
-                <p className="font-sans text-xs text-[#7A6A52] line-clamp-2">{ev.summary}</p>
+                <p className="font-display font-bold text-base text-primary-black uppercase leading-snug">{ev.title}</p>
+                <p className="font-sans text-xs text-gray-500 line-clamp-2">{ev.summary}</p>
               </Link>
             ))}
           </div>
@@ -257,31 +247,31 @@ export default async function MyEconomyPage() {
       {/* ── 4. Recent questions ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-sans text-xs text-[#7A6A52] uppercase tracking-widest">
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500">
             Your recent questions
           </h2>
-          <Link href="/ask" className="font-sans text-xs text-[#C49A52] hover:text-[#E2C27A] transition-colors">
-            Ask a new question →
+          <Link href="/ask" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
+            Ask new →
           </Link>
         </div>
         {recentQuestions.length === 0 ? (
-          <div className="border border-[#2C2417] rounded-xl px-5 py-8 text-center">
-            <p className="font-sans text-sm text-[#4A3D2A]">You haven&apos;t asked anything yet.</p>
-            <Link href="/ask" className="mt-3 inline-block font-sans text-sm text-[#C49A52] hover:text-[#E2C27A] transition-colors">
+          <div className="border-2 border-primary-black px-5 py-8 text-center">
+            <p className="font-sans text-sm text-gray-500">You haven&apos;t asked anything yet.</p>
+            <Link href="/ask" className="mt-3 inline-block font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
               Ask the Economist →
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-[#2C2417] border border-[#2C2417] rounded-xl overflow-hidden">
+          <div className="flex flex-col divide-y-2 divide-primary-black border-2 border-primary-black">
             {recentQuestions.map((q) => (
-              <div key={q.id} className="px-5 py-4 hover:bg-[#2C2417]/20 transition-colors">
-                <p className="font-sans text-sm text-[#C8B8A2] font-medium leading-snug">
+              <div key={q.id} className="px-5 py-4 hover:bg-gray-100 transition-colors">
+                <p className="font-sans text-sm text-primary-black font-semibold leading-snug">
                   {q.question}
                 </p>
-                <p className="mt-1.5 font-sans text-xs text-[#7A6A52] line-clamp-2 leading-relaxed">
+                <p className="mt-1.5 font-sans text-xs text-gray-500 line-clamp-2 leading-relaxed">
                   {q.answer.slice(0, 160)}{q.answer.length > 160 ? "…" : ""}
                 </p>
-                <p className="mt-2 font-mono text-[10px] text-[#4A3D2A]">
+                <p className="mt-2 font-mono text-[10px] text-gray-300">
                   {new Date(q.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
@@ -293,35 +283,35 @@ export default async function MyEconomyPage() {
       {/* ── 5. Saved events ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-sans text-xs text-[#7A6A52] uppercase tracking-widest">
+          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-gray-500">
             Saved events
           </h2>
-          <Link href="/saved" className="font-sans text-xs text-[#C49A52] hover:text-[#E2C27A] transition-colors">
+          <Link href="/saved" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
             See all →
           </Link>
         </div>
         {savedEvents.length === 0 ? (
-          <div className="border border-[#2C2417] rounded-xl px-5 py-8 text-center">
-            <p className="font-sans text-sm text-[#4A3D2A]">No saved events yet.</p>
-            <Link href="/feed" className="mt-3 inline-block font-sans text-sm text-[#C49A52] hover:text-[#E2C27A] transition-colors">
+          <div className="border-2 border-primary-black px-5 py-8 text-center">
+            <p className="font-sans text-sm text-gray-500">No saved events yet.</p>
+            <Link href="/feed" className="mt-3 inline-block font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
               Browse the feed →
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {savedEvents.map((se) => (
               <Link
                 key={se.id}
                 href={`/feed/${se.event.slug}`}
-                className="flex flex-col gap-2 bg-[#2C2417]/40 border border-[#2C2417] hover:border-[#4A3D2A] rounded-xl px-4 py-4 transition-colors"
+                className="flex flex-col gap-2 bg-primary-white border-2 border-primary-black px-4 py-4 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A] transition-all"
               >
-                <span className={`self-start inline-flex items-center font-sans text-[10px] font-medium px-2 py-0.5 rounded-full border ${PILLAR_BADGE[se.event.pillar]}`}>
+                <span className={`self-start font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[se.event.pillar]}`}>
                   {PILLAR_LABEL[se.event.pillar]}
                 </span>
-                <p className="font-serif text-base text-[#FAF9F6] leading-snug line-clamp-2">
+                <p className="font-display font-bold text-sm text-primary-black uppercase leading-snug line-clamp-2">
                   {se.event.title}
                 </p>
-                <p className="font-sans text-[10px] text-[#4A3D2A]">
+                <p className="font-sans text-[10px] text-gray-300">
                   Saved · {new Date(se.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>
               </Link>
