@@ -9,193 +9,245 @@ export default async function HomePage() {
   const isAuthed = !!session?.user;
 
   return (
-    <div className="min-h-screen bg-[#1A1208] text-[#FAF9F6]">
+    <div className="min-h-screen bg-primary-white text-primary-black">
 
       {/* ── Top nav ── */}
-      <nav className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
-        <span className="font-serif text-xl text-[#C49A52] tracking-tight">
-          Simple Economics
-        </span>
-        <div className="flex items-center gap-5">
-          <Link href="/feed" className="font-sans text-sm text-[#7A6A52] hover:text-[#C8B8A2] transition-colors hidden sm:block">
-            Feed
-          </Link>
-          {isAuthed ? (
+      <nav className="bg-primary-white border-b-2 border-primary-black sticky top-0 z-40">
+        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
+            <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+              Simple Economics
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
             <Link
               href="/feed"
-              className="font-sans text-sm text-[#C49A52] hover:text-[#E2C27A] border border-[#4A3D2A] hover:border-[#C49A52] transition-colors px-4 py-1.5 rounded-lg"
+              className="hidden sm:block font-sans text-xs uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors"
             >
-              Go to Feed
+              Feed
             </Link>
-          ) : (
-            <Link
-              href="/signin"
-              className="font-sans text-sm text-[#C49A52] hover:text-[#E2C27A] border border-[#4A3D2A] hover:border-[#C49A52] transition-colors px-4 py-1.5 rounded-lg"
-            >
-              Sign in
-            </Link>
-          )}
+            {isAuthed ? (
+              <Link
+                href="/feed"
+                className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
+              >
+                Go to Feed
+              </Link>
+            ) : (
+              <Link
+                href="/signin"
+                className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section className="mx-auto max-w-4xl px-6 pt-20 pb-28 text-center">
-        <p className="font-sans text-xs text-[#C49A52] uppercase tracking-[0.2em] mb-6">
-          Economic education for real life
-        </p>
-        <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl text-[#FAF9F6] leading-[1.08] tracking-tight">
-          The economy,<br />translated for<br />your life.
-        </h1>
-        <p className="mt-8 font-sans text-lg sm:text-xl text-[#7A6A52] leading-relaxed max-w-2xl mx-auto">
-          Simple Economics explains what&apos;s happening in the economy and what it means specifically for you — based on how you actually live.
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/onboarding"
-            className="w-full sm:w-auto bg-[#C49A52] hover:bg-[#E2C27A] transition-colors text-[#1A1208] font-sans font-semibold text-sm px-8 py-3.5 rounded-lg"
-          >
-            Get Started Free
-          </Link>
-          <a
-            href="#how-it-works"
-            className="w-full sm:w-auto border border-[#2C2417] hover:border-[#4A3D2A] text-[#7A6A52] hover:text-[#C8B8A2] font-sans text-sm px-8 py-3.5 rounded-lg transition-colors text-center"
-          >
-            See How It Works
-          </a>
-        </div>
+      <section className="bg-primary-white border-b-2 border-primary-black overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 items-center min-h-[calc(100vh-3.5rem)]">
 
-        {/* Thin divider */}
-        <div className="mt-20 mx-auto w-px h-16 bg-gradient-to-b from-[#2C2417] to-transparent" />
-      </section>
-
-      {/* ── How It Works ── */}
-      <section id="how-it-works" className="mx-auto max-w-4xl px-6 py-20">
-        <p className="font-sans text-xs text-[#4A3D2A] uppercase tracking-widest text-center mb-14">
-          How it works
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6">
-          {[
-            {
-              step: "01",
-              title: "Tell us your situation",
-              body: "Renter, homeowner, employed, student. One quick question set. 60 seconds.",
-            },
-            {
-              step: "02",
-              title: "Get your personalized feed",
-              body: "Economic events translated into what they mean for your life — not for a hedge fund manager.",
-            },
-            {
-              step: "03",
-              title: "Ask anything",
-              body: "Ask the Economist answers your questions with real data, named sources, and a clear bottom line.",
-            },
-          ].map(({ step, title, body }) => (
-            <div key={step} className="flex flex-col gap-4">
-              <span className="font-mono text-3xl text-[#2C2417] leading-none">{step}</span>
-              <div className="w-10 h-px bg-[#C49A52]" />
-              <h3 className="font-serif text-xl text-[#FAF9F6] leading-snug">{title}</h3>
-              <p className="font-sans text-sm text-[#7A6A52] leading-relaxed">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── The two problems ── */}
-      <section className="bg-[#2C2417]/30 border-y border-[#2C2417]">
-        <div className="mx-auto max-w-4xl px-6 py-20">
-          <p className="font-sans text-xs text-[#4A3D2A] uppercase tracking-widest text-center mb-14">
-            Two problems, one solution
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="border border-[#2C2417] bg-[#1A1208] rounded-xl px-7 py-8 flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-[#D4613C]">PROBLEM 1</span>
+            {/* Left: headline + CTA */}
+            <div className="py-20 lg:py-0 lg:pr-12">
+              <p className="font-sans text-xs uppercase tracking-[0.25em] text-gray-500 mb-6">
+                Economic education for real life
+              </p>
+              <h1 className="font-display font-black text-5xl sm:text-6xl lg:text-7xl text-primary-black leading-[0.95] tracking-tight uppercase">
+                Big ideas.<br />
+                Simple<br />
+                terms.<br />
+                <span className="text-primary-red">Smarter</span><br />
+                you.
+              </h1>
+              <p className="mt-8 font-sans text-base text-gray-700 leading-relaxed max-w-sm">
+                Simple Economics explains what&apos;s happening in the economy and what it means specifically for you — based on how you actually live.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/onboarding"
+                  className="font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-7 py-4 text-center"
+                >
+                  Get Started Free →
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-7 py-4 text-center"
+                >
+                  See How It Works
+                </a>
               </div>
-              <h3 className="font-serif text-2xl text-[#FAF9F6] leading-snug">
-                The Translation Gap
-              </h3>
-              <p className="font-sans text-sm text-[#7A6A52] leading-relaxed">
-                Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question &ldquo;what does this mean for me?&rdquo; is never answered.
-              </p>
-              <p className="font-sans text-sm text-[#C49A52] leading-relaxed">
-                We translate it.
-              </p>
             </div>
-            <div className="border border-[#2C2417] bg-[#1A1208] rounded-xl px-7 py-8 flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-[#D4613C]">PROBLEM 2</span>
-              </div>
-              <h3 className="font-serif text-2xl text-[#FAF9F6] leading-snug">
-                One Size Fits Nobody
-              </h3>
-              <p className="font-sans text-sm text-[#7A6A52] leading-relaxed">
-                Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people don&apos;t. The same interest rate hike means something completely different to a renter than it does to a homeowner.
-              </p>
-              <p className="font-sans text-sm text-[#C49A52] leading-relaxed">
-                Every answer is filtered through your real situation.
-              </p>
+
+            {/* Right: Mondrian geometric art */}
+            <div className="hidden lg:block h-full min-h-[calc(100vh-3.5rem)] relative border-l-2 border-primary-black">
+              <MondriangGrid />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Social proof / evidence ── */}
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <p className="font-sans text-xs text-[#4A3D2A] uppercase tracking-widest mb-10">
-          Built on evidence
-        </p>
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-12">
-          {[
-            "Federal Reserve",
-            "Bureau of Labor Statistics",
-            "International Monetary Fund",
-            "World Bank",
-            "NBER Working Papers",
-            "Brookings Institution",
-            "Congressional Budget Office",
-            "Peer-reviewed journals",
-          ].map((source) => (
-            <span key={source} className="font-sans text-xs text-[#4A3D2A]">
-              {source}
-            </span>
-          ))}
-        </div>
-        <div className="mx-auto max-w-md border border-[#2C2417] rounded-xl px-6 py-5 bg-[#2C2417]/20">
-          <p className="font-sans text-xs text-[#7A6A52] leading-relaxed">
-            Simple Economics provides economic education only.{" "}
-            <span className="text-[#4A3D2A]">Not financial or investment advice.</span>{" "}
-            Every answer includes its sources so you can verify what we say.
+      {/* ── How It Works ── */}
+      <section id="how-it-works" className="bg-primary-white border-b-2 border-primary-black">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+            How it works
           </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-t-2 border-primary-black">
+            {[
+              {
+                step: "01",
+                accent: "bg-primary-red",
+                title: "Tell us your situation",
+                body: "Renter, homeowner, employed, student. One quick question set. 60 seconds.",
+              },
+              {
+                step: "02",
+                accent: "bg-primary-blue",
+                title: "Get your personalized feed",
+                body: "Economic events translated into what they mean for your life — not for a hedge fund manager.",
+              },
+              {
+                step: "03",
+                accent: "bg-primary-yellow",
+                title: "Ask anything",
+                body: "Ask the Economist answers your questions with real data, named sources, and a clear bottom line.",
+              },
+            ].map(({ step, accent, title, body }, i) => (
+              <div
+                key={step}
+                className={`p-8 flex flex-col gap-5 border-b-2 border-primary-black sm:border-b-0 ${
+                  i < 2 ? "sm:border-r-2 sm:border-primary-black" : ""
+                }`}
+              >
+                <span className={`w-10 h-10 ${accent} flex items-center justify-center`}>
+                  <span className="font-display text-sm font-black text-primary-black">{step}</span>
+                </span>
+                <h3 className="font-display text-base font-bold uppercase tracking-wide text-primary-black leading-snug">
+                  {title}
+                </h3>
+                <p className="font-sans text-sm text-gray-500 leading-relaxed">
+                  {body}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
+      </section>
 
-        {/* Final CTA */}
-        <div className="mt-16">
-          <Link
-            href="/onboarding"
-            className="inline-block bg-[#C49A52] hover:bg-[#E2C27A] transition-colors text-[#1A1208] font-sans font-semibold text-sm px-10 py-4 rounded-lg"
-          >
-            Get Started Free
-          </Link>
-          <p className="mt-4 font-sans text-xs text-[#4A3D2A]">No credit card. No paywall to start.</p>
+      {/* ── Two problems ── */}
+      <section className="bg-gray-100 border-b-2 border-primary-black">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+            Two problems, one solution
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              {
+                label: "Problem 1",
+                title: "The Translation Gap",
+                body: "Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question “what does this mean for me?” is never answered.",
+                cta: "We translate it.",
+              },
+              {
+                label: "Problem 2",
+                title: "One Size Fits Nobody",
+                body: "Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people don’t. The same interest rate hike means something completely different to a renter than it does to a homeowner.",
+                cta: "Every answer is filtered through your real situation.",
+              },
+            ].map(({ label, title, body, cta }) => (
+              <div key={label} className="bg-primary-white border-2 border-primary-black p-8 flex flex-col gap-4">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-primary-red">
+                  {label}
+                </span>
+                <h3 className="font-display text-xl font-black uppercase text-primary-black leading-tight">
+                  {title}
+                </h3>
+                <p className="font-sans text-sm text-gray-500 leading-relaxed">{body}</p>
+                <p className="font-sans text-sm font-semibold text-primary-black mt-auto pt-2">
+                  {cta}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Built on evidence ── */}
+      <section className="bg-primary-yellow border-b-2 border-primary-black">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <p className="font-display text-xs font-black uppercase tracking-[0.25em] text-primary-black mb-12">
+            Built on evidence
+          </p>
+          <div className="flex flex-wrap gap-3 mb-14">
+            {[
+              "Federal Reserve",
+              "Bureau of Labor Statistics",
+              "International Monetary Fund",
+              "World Bank",
+              "NBER Working Papers",
+              "Brookings Institution",
+              "Congressional Budget Office",
+              "Peer-reviewed journals",
+            ].map((source) => (
+              <span
+                key={source}
+                className="font-display text-xs font-bold uppercase tracking-wide text-primary-black border-2 border-primary-black px-3 py-2"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
+
+          <div className="border-2 border-primary-black bg-primary-white p-6 max-w-lg">
+            <p className="font-sans text-sm text-gray-700 leading-relaxed">
+              Simple Economics provides economic education only.{" "}
+              <strong className="text-primary-black">Not financial or investment advice.</strong>{" "}
+              Every answer includes its sources so you can verify what we say.
+            </p>
+          </div>
+
+          {/* Final CTA */}
+          <div className="mt-14">
+            <Link
+              href="/onboarding"
+              className="inline-block font-display text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-8 py-4"
+            >
+              Get Started Free →
+            </Link>
+            <p className="mt-4 font-sans text-xs text-primary-black">No credit card. No paywall to start.</p>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[#2C2417]">
-        <div className="mx-auto max-w-4xl px-6 py-10">
+      <footer className="bg-primary-black text-primary-white">
+        <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+
             {/* Brand + nav */}
-            <div className="flex flex-col gap-4">
-              <span className="font-serif text-base text-[#C49A52]">Simple Economics</span>
-              <nav className="flex flex-wrap gap-x-5 gap-y-2">
+            <div className="flex flex-col gap-5">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
+                <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-white">
+                  Simple Economics
+                </span>
+              </div>
+              <nav className="flex flex-wrap gap-x-6 gap-y-2">
                 {[
-                  { label: "Feed", href: "/feed" },
+                  { label: "Feed",              href: "/feed" },
                   { label: "Ask the Economist", href: "/ask" },
-                  { label: "My Economy", href: "/my-economy" },
-                  { label: "Sign in", href: "/signin" },
+                  { label: "My Economy",        href: "/my-economy" },
+                  { label: "Sign in",           href: "/signin" },
                 ].map(({ label, href }) => (
-                  <Link key={href} href={href} className="font-sans text-xs text-[#4A3D2A] hover:text-[#7A6A52] transition-colors">
+                  <Link
+                    key={href}
+                    href={href}
+                    className="font-sans text-xs uppercase tracking-wider text-gray-500 hover:text-primary-yellow transition-colors"
+                  >
                     {label}
                   </Link>
                 ))}
@@ -204,18 +256,18 @@ export default async function HomePage() {
 
             {/* Social icons */}
             <div className="flex items-center gap-5">
-              <SocialLink href="https://youtube.com" label="YouTube" icon={<YouTubeIcon />} />
-              <SocialLink href="https://tiktok.com" label="TikTok" icon={<TikTokIcon />} />
-              <SocialLink href="https://instagram.com" label="Instagram" icon={<InstagramIcon />} />
-              <SocialLink href="https://facebook.com" label="Facebook" icon={<FacebookIcon />} />
+              <FooterSocialLink href="https://youtube.com"   label="YouTube"   icon={<YouTubeIcon />} />
+              <FooterSocialLink href="https://tiktok.com"    label="TikTok"    icon={<TikTokIcon />} />
+              <FooterSocialLink href="https://instagram.com" label="Instagram" icon={<InstagramIcon />} />
+              <FooterSocialLink href="https://facebook.com"  label="Facebook"  icon={<FacebookIcon />} />
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-[#2C2417] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="font-sans text-[10px] text-[#2C2417]">
+          <div className="mt-10 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p className="font-sans text-[10px] uppercase tracking-wider text-gray-700">
               © {new Date().getFullYear()} Simple Economics
             </p>
-            <p className="font-sans text-[10px] text-[#2C2417] max-w-xs sm:text-right">
+            <p className="font-sans text-[10px] text-gray-700 sm:text-right">
               Economic education only. Not financial advice.
             </p>
           </div>
@@ -226,12 +278,34 @@ export default async function HomePage() {
   );
 }
 
+// ─── Mondrian geometric grid ──────────────────────────────────────────────────
+
+function MondriangGrid() {
+  return (
+    <div className="absolute inset-0 grid" style={{
+      gridTemplateColumns: "1fr 2fr 1fr",
+      gridTemplateRows: "1.5fr 1fr 1fr 2fr",
+    }}>
+      <div className="bg-primary-red border-b-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-white border-b-2 border-l-2 border-primary-black col-span-1 row-span-2" />
+      <div className="bg-primary-blue border-b-2 border-l-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-white border-b-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-white border-b-2 border-l-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-yellow border-b-2 border-primary-black col-span-2 row-span-1" />
+      <div className="bg-primary-white border-l-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-white border-l-2 border-primary-black col-span-1 row-span-1" />
+      <div className="bg-primary-red col-span-1 row-span-1" />
+    </div>
+  );
+}
+
 // ─── Social icons ─────────────────────────────────────────────────────────────
 
-function SocialLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+function FooterSocialLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-      className="text-[#2C2417] hover:text-[#C49A52] transition-colors">
+      className="text-primary-white hover:text-primary-yellow transition-colors">
       {icon}
     </a>
   );
