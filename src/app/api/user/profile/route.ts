@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Situation, Concern, HousingStatus, EmploymentStatus } from "@prisma/client";
+import { Situation, HousingStatus, EmploymentStatus } from "@prisma/client";
 
 // LifeStage and Industry enums are defined in schema.prisma but the Prisma
 // client won't export them until `prisma migrate dev` is run. Until then
@@ -25,7 +25,7 @@ export async function GET() {
       situation: true,
       housingStatus: true,
       employmentStatus: true,
-      concern: true,
+      concerns: true,
       city: true,
       lifeStage: true,
       debtTypes: true,
@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json();
   const {
-    situation, housingStatus, employmentStatus, concern, city,
+    situation, housingStatus, employmentStatus, concerns, city,
     lifeStage, debtTypes, industry,
     onboardingComplete,
   } = body;
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
   if (situation !== undefined)          data.situation        = situation as Situation;
   if (housingStatus !== undefined)      data.housingStatus    = housingStatus as HousingStatus;
   if (employmentStatus !== undefined)   data.employmentStatus = employmentStatus as EmploymentStatus;
-  if (concern !== undefined)            data.concern          = concern as Concern;
+  if (concerns !== undefined)           data.concerns         = concerns as string[];
   if (city !== undefined)               data.city             = city;
   if (lifeStage !== undefined)          data.lifeStage        = lifeStage as LifeStage;
   if (debtTypes !== undefined)          data.debtTypes        = debtTypes as string[];
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest) {
       situation: true,
       housingStatus: true,
       employmentStatus: true,
-      concern: true,
+      concerns: true,
       city: true,
       lifeStage: true,
       debtTypes: true,
