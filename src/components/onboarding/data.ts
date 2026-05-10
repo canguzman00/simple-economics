@@ -9,11 +9,14 @@ export const SITUATIONS = [
 ] as const;
 
 export const CONCERNS = [
-  { value: "HOUSING",      emoji: "📈", label: "Housing Costs",    sub: "Rent, mortgages, buying" },
-  { value: "JOB_SECURITY", emoji: "🛡️", label: "Job Security",    sub: "Layoffs, hiring, my industry" },
-  { value: "SAVINGS",      emoji: "💰", label: "Building Savings", sub: "Growing what I have" },
-  { value: "DEBT",         emoji: "🔗", label: "Debt Burden",      sub: "Loans, credit, interest" },
-  { value: "RETIREMENT",   emoji: "🌅", label: "Retirement",       sub: "Long-term security" },
+  { value: "EVERYDAY_COSTS", emoji: "🛒", label: "Everyday Costs",    sub: "Groceries, gas, inflation eating my budget" },
+  { value: "HOUSING",        emoji: "📈", label: "Housing Costs",     sub: "Rent, mortgages, buying" },
+  { value: "HEALTHCARE",     emoji: "🏥", label: "Healthcare Costs",  sub: "Medical bills, insurance, prescriptions" },
+  { value: "JOB_SECURITY",   emoji: "🛡️", label: "Job Security",     sub: "Layoffs, hiring, my industry" },
+  { value: "SAVINGS",        emoji: "💰", label: "Building Savings",  sub: "Emergency fund, growing what I have" },
+  { value: "DEBT",           emoji: "🔗", label: "Debt Burden",       sub: "Loans, credit cards, interest" },
+  { value: "ENERGY_BILLS",   emoji: "⚡", label: "Energy Bills",      sub: "Gas, electricity, utilities" },
+  { value: "RETIREMENT",     emoji: "🌅", label: "Retirement",        sub: "Running out of money long-term" },
 ] as const;
 
 export type Situation = typeof SITUATIONS[number]["value"];
