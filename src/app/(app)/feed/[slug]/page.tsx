@@ -5,6 +5,14 @@ import type { Pillar, Impact } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { YouTubeEmbed } from "@/components/feed/YouTubeEmbed";
 
+type RelatedEvent = {
+  id: string;
+  slug: string;
+  title: string;
+  pillar: Pillar;
+  publishedAt: Date;
+};
+
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
@@ -107,7 +115,7 @@ export default async function EventDetailPage({
       orderBy: { publishedAt: "desc" },
       take: 3,
       select: { id: true, slug: true, title: true, pillar: true, publishedAt: true },
-    }).then(async (candidates) => {
+    }).then(async (candidates: RelatedEvent[]) => {
       // prefer same pillar; fall back to candidates already fetched
       const event = await prisma.econEvent.findUnique({
         where: { slug: params.slug },
@@ -181,13 +189,13 @@ export default async function EventDetailPage({
           Why it happened
         </h2>
         <div className="font-sans text-base text-[#C8B8A2] leading-relaxed space-y-4">
-          {event.fullExplanation.split("\n\n").map((para, i) => (
+          {event.fullExplanation.split("\n\n").map((para: string, i: number) => (
             <p key={i}>{para}</p>
           ))}
         </div>
         {event.sources.length > 0 && (
           <p className="mt-4 font-sans text-xs text-[#4A3D2A]">
-            Sources: {event.sources.map((s, i) => (
+            Sources: {event.sources.map((s: string, i: number) => (
               <span key={i}>
                 {isUrl(s) ? (
                   <a href={s} target="_blank" rel="noopener noreferrer" className="text-[#7A6A52] hover:text-[#C49A52] underline underline-offset-2 transition-colors">
@@ -223,7 +231,7 @@ export default async function EventDetailPage({
             Sources
           </h2>
           <ol className="flex flex-col gap-2">
-            {event.sources.map((source, i) => (
+            {event.sources.map((source: string, i: number) => (
               <li key={i} className="flex gap-3 items-baseline">
                 <span className="font-mono text-[11px] text-[#4A3D2A] shrink-0">{i + 1}.</span>
                 {isUrl(source) ? (
@@ -261,7 +269,7 @@ export default async function EventDetailPage({
             Related events
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {related.map((r) => (
+            {related.map((r: RelatedEvent) => (
               <RelatedCard key={r.id} {...r} />
             ))}
           </div>
