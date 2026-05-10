@@ -119,7 +119,7 @@ export default function OnboardingPage() {
   const [step, setStep]                   = useState(1);
   const [housingStatus, setHousing]       = useState<HousingStatus | null>(null);
   const [employmentStatus, setEmployment] = useState<EmploymentStatus | null>(null);
-  const [concern, setConcern]             = useState<Concern | null>(null);
+  const [concerns, setConcerns]           = useState<Concern[]>([]);
   const [city, setCity]                   = useState("");
   const [lifeStage, setLifeStage]         = useState<LifeStage | null>(null);
   const [debtTypes, setDebtTypes]         = useState<DebtType[]>([]);
@@ -139,6 +139,12 @@ export default function OnboardingPage() {
     }
   }
 
+  function toggleConcern(value: Concern) {
+    setConcerns((prev) =>
+      prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value]
+    );
+  }
+
   async function finish() {
     setSaving(true);
     await fetch("/api/user/profile", {
@@ -147,7 +153,7 @@ export default function OnboardingPage() {
       body: JSON.stringify({
         housingStatus,
         employmentStatus,
-        concern,
+        concerns,
         city: city.trim() || undefined,
         lifeStage,
         debtTypes,
@@ -218,16 +224,17 @@ export default function OnboardingPage() {
           <div>
             {stepLabel(3)}
             <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
-              What&apos;s your biggest financial concern?
+              What are your biggest financial concerns?
             </h1>
+            <p className="font-sans text-sm text-gray-700 mb-8">Select all that apply — you can have more than one.</p>
             <div className="flex flex-col gap-2">
               {CONCERNS.map((o) => (
-                <OptionCard key={o.value} {...o} selected={concern === o.value} onClick={() => setConcern(o.value)} />
+                <CheckboxCard key={o.value} {...o} checked={concerns.includes(o.value)} onChange={() => toggleConcern(o.value)} />
               ))}
             </div>
             <div className="flex gap-3 mt-8">
               <button onClick={() => setStep(2)} className={backCls}>Back</button>
-              <button disabled={!concern} onClick={() => setStep(4)} className={`flex-[2] ${btnCls(!!concern)}`}>Continue</button>
+              <button disabled={concerns.length === 0} onClick={() => setStep(4)} className={`flex-[2] ${btnCls(concerns.length > 0)}`}>Continue</button>
             </div>
           </div>
         )}
