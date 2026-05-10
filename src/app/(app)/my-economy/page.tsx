@@ -10,6 +10,7 @@ import { situationLabel } from "@/components/onboarding/data";
 import type { Situation } from "@/components/onboarding/data";
 import { fetchAllIndicators } from "@/lib/economic-indicators";
 import type { IndicatorResult } from "@/lib/economic-indicators";
+import { cityToState } from "@/lib/city-state";
 
 interface IndicatorMeta {
   key: string;
@@ -153,37 +154,6 @@ const INDICATOR_BORDER: Record<string, string> = {
 
 const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "CONSCONF", "PRIMERATE", "REALWAGES"];
 
-// ─── City → state lookup for BLS regional links ──────────────────────────────
-
-const CITY_STATE: Record<string, { state: string; blsUrl: string }> = {
-  providence:   { state: "Rhode Island",   blsUrl: "https://www.bls.gov/regions/new-england/rhode_island.htm" },
-  boston:       { state: "Massachusetts",  blsUrl: "https://www.bls.gov/regions/new-england/massachusetts.htm" },
-  "new york":   { state: "New York",       blsUrl: "https://www.bls.gov/regions/new-york-new-jersey/new_york.htm" },
-  "new york city": { state: "New York",    blsUrl: "https://www.bls.gov/regions/new-york-new-jersey/new_york.htm" },
-  chicago:      { state: "Illinois",       blsUrl: "https://www.bls.gov/regions/midwest/illinois.htm" },
-  austin:       { state: "Texas",          blsUrl: "https://www.bls.gov/regions/southwest/texas.htm" },
-  dallas:       { state: "Texas",          blsUrl: "https://www.bls.gov/regions/southwest/texas.htm" },
-  houston:      { state: "Texas",          blsUrl: "https://www.bls.gov/regions/southwest/texas.htm" },
-  "los angeles":{ state: "California",     blsUrl: "https://www.bls.gov/regions/west/california.htm" },
-  "san francisco":{ state: "California",   blsUrl: "https://www.bls.gov/regions/west/california.htm" },
-  seattle:      { state: "Washington",     blsUrl: "https://www.bls.gov/regions/west/washington.htm" },
-  miami:        { state: "Florida",        blsUrl: "https://www.bls.gov/regions/southeast/florida.htm" },
-  atlanta:      { state: "Georgia",        blsUrl: "https://www.bls.gov/regions/southeast/georgia.htm" },
-  denver:       { state: "Colorado",       blsUrl: "https://www.bls.gov/regions/mountain-plains/colorado.htm" },
-  phoenix:      { state: "Arizona",        blsUrl: "https://www.bls.gov/regions/west/arizona.htm" },
-  philadelphia: { state: "Pennsylvania",   blsUrl: "https://www.bls.gov/regions/mid-atlantic/pennsylvania.htm" },
-  minneapolis:  { state: "Minnesota",      blsUrl: "https://www.bls.gov/regions/midwest/minnesota.htm" },
-  portland:     { state: "Oregon",         blsUrl: "https://www.bls.gov/regions/west/oregon.htm" },
-  nashville:    { state: "Tennessee",      blsUrl: "https://www.bls.gov/regions/southeast/tennessee.htm" },
-  charlotte:    { state: "North Carolina", blsUrl: "https://www.bls.gov/regions/southeast/north_carolina.htm" },
-};
-
-function cityToState(city: string | null): { state: string; blsUrl: string | null } {
-  if (!city) return { state: "your state", blsUrl: null };
-  const key = city.toLowerCase().trim();
-  return CITY_STATE[key] ?? { state: city, blsUrl: null };
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function MyEconomyPage() {
@@ -277,6 +247,98 @@ export default async function MyEconomyPage() {
             const date        = live?.date  ?? meta.fallbackDate;
             const cached      = live?.isCached ?? false;
             const unavailable = live !== undefined && live.value === null;
+
+            if (meta.key === "CONSCONF") {
+              const raw = parseFloat(value);
+              const validRaw = !isNaN(raw);
+              const sentiment =
+                !validRaw    ? null :
+                raw >= 90    ? { label: "HIGH",     color: "text-[#2A5C3A]",      bg: "bg-[#3D8A55]" } :
+                raw >= 70    ? { label: "MODERATE",  color: "text-primary-black",  bg: "bg-primary-yellow" } :
+                               { label: "LOW",      color: "text-primary-red",     bg: "bg-primary-red" };
+              const HIST_AVG = 86;
+              const diff = validRaw ? Math.abs(Math.round(raw - HIST_AVG)) : 0;
+              const direction = validRaw && raw >= HIST_AVG ? "above" : "below";
+              const spending =
+                !validRaw  ? "spending patterns are unclear." :
+                raw >= 90  ? "suggests strong spending ahead." :
+                raw >= 70  ? "suggests stable but cautious spending." :
+                             "means consumers are cutting back spending.";
+              const sentiment_word =
+                !validRaw  ? "uncertain" :
+                raw >= 90  ? "optimistic" :
+                raw >= 70  ? "cautious"   :
+                             "pessimistic";
+              const markerPct = validRaw ? Math.min(100, Math.max(0, (raw / 140) * 100)) : 0;
+              const avgPct    = (HIST_AVG / 140) * 100;
+
+              return (
+                <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
+                  {/* Name + contextual value */}
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
+                      {meta.name}
+                    </p>
+                    {unavailable ? (
+                      <span className="font-sans text-xs text-gray-300 leading-none shrink-0">unavailable</span>
+                    ) : sentiment ? (
+                      <span className={`font-mono text-sm font-bold leading-none shrink-0 whitespace-nowrap ${cached ? "text-gray-500" : sentiment.color}`}>
+                        {sentiment.label} ({value})
+                      </span>
+                    ) : (
+                      <span className="font-mono text-2xl leading-none shrink-0 text-primary-black">{value}</span>
+                    )}
+                  </div>
+
+                  {/* Scale bar */}
+                  {validRaw && !unavailable && (
+                    <div>
+                      <div className="relative h-3 flex rounded-none overflow-hidden border border-primary-black">
+                        {/* Red zone 0–60 = 42.8% */}
+                        <div className="bg-primary-red" style={{ width: "42.8%" }} />
+                        {/* Yellow zone 60–90 = 21.4% */}
+                        <div className="bg-primary-yellow border-x border-primary-black" style={{ width: "21.4%" }} />
+                        {/* Green zone 90–140 = 35.7% */}
+                        <div className="bg-[#3D8A55] flex-1" />
+                        {/* Historical average reference line */}
+                        <div
+                          className="absolute top-0 bottom-0 w-px bg-primary-black opacity-60"
+                          style={{ left: `${avgPct}%` }}
+                        />
+                        {/* Current value marker */}
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-primary-black"
+                          style={{ left: `${markerPct}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="font-sans text-[9px] text-primary-black">0 (pessimistic)</span>
+                        <span className="font-sans text-[9px] text-primary-black">avg: 86</span>
+                        <span className="font-sans text-[9px] text-primary-black">140 (optimistic)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contextual description */}
+                  <p className="font-sans text-xs text-primary-black leading-relaxed">
+                    {unavailable
+                      ? "Data temporarily unavailable."
+                      : validRaw
+                        ? `Americans are feeling ${sentiment_word} about the economy right now. The index runs from 0 to 140 — the long-run average is 86. At ${raw.toFixed(1)}, consumers are ${diff} points ${direction} the historical average, which ${spending}`
+                        : meta.meaning(situation)}
+                  </p>
+
+                  {/* Source + historical note */}
+                  <div>
+                    <p className="font-sans text-[10px] text-primary-black">
+                      {meta.source} · {date}
+                      {cached && <span className="ml-1">(cached)</span>}
+                    </p>
+                    <p className="font-sans text-[10px] text-primary-black">Historical average: ~86</p>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>

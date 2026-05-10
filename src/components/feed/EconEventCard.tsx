@@ -7,7 +7,7 @@ export interface EconEventCardProps {
   pillar: Pillar;
   impact: Impact;
   publishedAt: Date | string;
-  slug: string;
+  slug?: string | null;
 }
 
 const PILLAR_CONFIG: Record<Pillar, { label: string; bg: string; text: string }> = {

@@ -53,6 +53,12 @@ enum Impact {
   LOW
 }
 
+enum Tier {
+  GLOBAL
+  NATIONAL
+  REGIONAL
+}
+
 model User {
   id                 String      @id @default(cuid())
   email              String      @unique
@@ -119,12 +125,32 @@ model EconEvent {
   fullExplanation String
   pillar          Pillar
   impact          Impact
+  tier            Tier       @default(NATIONAL)
+  region          String?
+  newsUrl         String?
+  newsSource      String?
+  isNews          Boolean    @default(false)
   published       Boolean    @default(false)
   publishedAt     DateTime
   youtubeUrl      String?
   sources         String[]
 
   savedBy         SavedEvent[]
+}
+
+model NewsCache {
+  id              String   @id @default(cuid())
+  title           String
+  summary         String
+  fullExplanation String
+  url             String   @unique
+  source          String
+  publishedAt     DateTime
+  pillar          Pillar
+  impact          Impact   @default(MEDIUM)
+  tier            Tier
+  region          String?
+  createdAt       DateTime @default(now())
 }
 
 model UserQuestion {

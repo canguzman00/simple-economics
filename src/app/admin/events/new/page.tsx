@@ -19,6 +19,12 @@ const IMPACTS = [
   { value: "LOW",    label: "Low" },
 ];
 
+const TIERS = [
+  { value: "NATIONAL", label: "National" },
+  { value: "GLOBAL",   label: "Global" },
+  { value: "REGIONAL", label: "Regional" },
+];
+
 // ─── Shared input styles ──────────────────────────────────────────────────────
 
 const inputCls =
@@ -53,6 +59,8 @@ export default function NewEventPage() {
   const [fullExplanation, setFullExp]   = useState("");
   const [pillar, setPillar]             = useState("GLOBAL_ECONOMICS");
   const [impact, setImpact]             = useState("HIGH");
+  const [tier, setTier]                 = useState("NATIONAL");
+  const [region, setRegion]             = useState("");
   const [youtubeUrl, setYoutubeUrl]     = useState("");
   const [sources, setSources]           = useState<string[]>([""]);
   const [published, setPublished]       = useState(false);
@@ -104,6 +112,8 @@ export default function NewEventPage() {
         impact,
         youtubeUrl: youtubeUrl.trim() || null,
         sources: sources.filter(Boolean),
+        tier,
+        region: region.trim() || null,
         published,
         publishedAt,
       }),
@@ -210,6 +220,32 @@ export default function NewEventPage() {
                 <option key={i.value} value={i.value}>{i.label}</option>
               ))}
             </select>
+          </Field>
+        </div>
+
+        {/* ── Tier + Region ── */}
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Tier">
+            <select
+              required
+              value={tier}
+              onChange={(e) => setTier(e.target.value)}
+              className={inputCls}
+            >
+              {TIERS.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Region (optional)" hint="e.g. Rhode Island, New England, Providence">
+            <input
+              type="text"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              placeholder="e.g. Rhode Island"
+              className={inputCls}
+              disabled={tier !== "REGIONAL"}
+            />
           </Field>
         </div>
 
