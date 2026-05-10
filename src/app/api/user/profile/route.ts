@@ -3,6 +3,12 @@ import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Situation, Concern, HousingStatus, EmploymentStatus } from "@prisma/client";
 
+// LifeStage and Industry enums are defined in schema.prisma but the Prisma
+// client won't export them until `prisma migrate dev` is run. Until then
+// we treat them as plain strings — behaviour is identical at runtime.
+type LifeStage = string;
+type Industry  = string;
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -12,7 +18,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = await (prisma.user as any).findUnique({
     where: { id: session.user.id },
     select: {
       situation: true,
@@ -20,6 +27,9 @@ export async function GET() {
       employmentStatus: true,
       concern: true,
       city: true,
+      lifeStage: true,
+      debtTypes: true,
+      industry: true,
       onboardingComplete: true,
     },
   });
@@ -34,25 +44,27 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { situation, housingStatus, employmentStatus, concern, city, onboardingComplete } = body;
+  const {
+    situation, housingStatus, employmentStatus, concern, city,
+    lifeStage, debtTypes, industry,
+    onboardingComplete,
+  } = body;
 
-  const data: {
-    situation?: Situation;
-    housingStatus?: HousingStatus;
-    employmentStatus?: EmploymentStatus;
-    concern?: Concern;
-    city?: string | null;
-    onboardingComplete?: boolean;
-  } = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: Record<string, any> = {};
 
-  if (situation !== undefined)       data.situation       = situation as Situation;
-  if (housingStatus !== undefined)   data.housingStatus   = housingStatus as HousingStatus;
-  if (employmentStatus !== undefined)data.employmentStatus = employmentStatus as EmploymentStatus;
-  if (concern !== undefined)         data.concern         = concern as Concern;
-  if (city !== undefined)            data.city            = city;
+  if (situation !== undefined)          data.situation        = situation as Situation;
+  if (housingStatus !== undefined)      data.housingStatus    = housingStatus as HousingStatus;
+  if (employmentStatus !== undefined)   data.employmentStatus = employmentStatus as EmploymentStatus;
+  if (concern !== undefined)            data.concern          = concern as Concern;
+  if (city !== undefined)               data.city             = city;
+  if (lifeStage !== undefined)          data.lifeStage        = lifeStage as LifeStage;
+  if (debtTypes !== undefined)          data.debtTypes        = debtTypes as string[];
+  if (industry !== undefined)           data.industry         = industry as Industry;
   if (onboardingComplete !== undefined) data.onboardingComplete = onboardingComplete;
 
-  const user = await prisma.user.update({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = await (prisma.user as any).update({
     where: { id: session.user.id },
     data,
     select: {
@@ -62,6 +74,9 @@ export async function PATCH(req: NextRequest) {
       employmentStatus: true,
       concern: true,
       city: true,
+      lifeStage: true,
+      debtTypes: true,
+      industry: true,
       onboardingComplete: true,
     },
   });

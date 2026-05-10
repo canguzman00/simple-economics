@@ -40,6 +40,30 @@ enum Concern {
   RETIREMENT
 }
 
+enum LifeStage {
+  EARLY_CAREER
+  MID_CAREER
+  PRE_RETIREMENT
+  RETIRED
+}
+
+enum Industry {
+  HEALTHCARE
+  TECHNOLOGY
+  GOVERNMENT
+  EDUCATION
+  RETAIL_SERVICE
+  CONSTRUCTION_TRADES
+  FINANCE_BANKING
+  LOGISTICS_TRANSPORTATION
+  ENERGY
+  AGRICULTURE
+  CREATIVE_MEDIA
+  RESEARCH_NONPROFIT
+  OTHER
+  NOT_APPLICABLE
+}
+
 enum Pillar {
   GLOBAL_ECONOMICS
   GEOPOLITICS_MONEY
@@ -70,6 +94,9 @@ model User {
   employmentStatus   EmploymentStatus?
   concern            Concern?
   city               String?
+  lifeStage          LifeStage?
+  debtTypes          String[]
+  industry           Industry?
   isPremium          Boolean     @default(false)
   onboardingComplete Boolean     @default(false)
   createdAt          DateTime    @default(now())

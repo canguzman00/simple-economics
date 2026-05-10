@@ -1,9 +1,12 @@
 export interface UserProfile {
-  situation?: string | null;       // legacy field
-  housingStatus?: string | null;   // new: RENTER | HOMEOWNER | LIVING_WITH_OTHERS | OTHER_HOUSING
-  employmentStatus?: string | null;// new: EMPLOYED | SELF_EMPLOYED | UNEMPLOYED_LOOKING | ...
+  situation?: string | null;        // legacy field
+  housingStatus?: string | null;
+  employmentStatus?: string | null;
   concern?: string | null;
   city?: string | null;
+  lifeStage?: string | null;
+  debtTypes?: string[] | null;
+  industry?: string | null;
 }
 
 function housingContext(h?: string | null, s?: string | null): string {
@@ -36,6 +39,46 @@ function employmentContext(e?: string | null, s?: string | null): string {
   return (e && map[e]) ?? (s && legacyMap[s ?? ""] ? legacyMap[s!] : null) ?? "";
 }
 
+function lifeStageContext(l?: string | null): string | null {
+  const map: Record<string, string> = {
+    EARLY_CAREER:   "They are early in their career, focused on building savings, paying down debt, and establishing financial stability. Entry-level wages, student loans, and housing affordability are top concerns.",
+    MID_CAREER:     "They are in peak earning years, balancing mortgage, family expenses, retirement contributions, and career advancement. Wealth-building and job security are central concerns.",
+    PRE_RETIREMENT: "They are approaching retirement, focused on protecting accumulated wealth, maximizing retirement contributions, and planning the transition from earning to spending. Market volatility and inflation are especially threatening.",
+    RETIRED:        "They are retired, living on fixed income from Social Security, pensions, or savings. Inflation directly erodes their purchasing power. Healthcare costs and asset preservation are primary concerns.",
+  };
+  return (l && map[l]) ?? null;
+}
+
+function debtContext(debts?: string[] | null): string | null {
+  if (!debts?.length) return null;
+  const lines: string[] = [];
+  if (debts.includes("STUDENT_LOANS"))      lines.push("They carry student loan debt — federal student loan interest rates, forgiveness policy, and income-driven repayment changes directly affect their monthly budget.");
+  if (debts.includes("CREDIT_CARD"))        lines.push("They carry credit card debt — credit card rates are directly tied to the prime rate. Every Fed rate hold or hike keeps their interest charges high.");
+  if (debts.includes("CAR_LOAN"))           lines.push("They have a car loan — auto loan rates affect their payment if refinancing, and vehicle prices remain elevated.");
+  if (debts.includes("MEDICAL_DEBT"))       lines.push("They carry medical debt — this affects their credit score, financial flexibility, and is particularly sensitive to income disruptions.");
+  if (debts.includes("MORTGAGE"))           lines.push("They have a mortgage — refinancing opportunities, home equity, and property values are directly relevant.");
+  if (debts.includes("NO_SIGNIFICANT_DEBT"))lines.push("They carry no significant debt — they are in a relatively strong position to weather rate changes and economic uncertainty.");
+  return lines.length ? lines.join(" ") : null;
+}
+
+function industryContext(i?: string | null): string | null {
+  const map: Record<string, string> = {
+    HEALTHCARE:              "They work in healthcare — sensitive to Medicaid/Medicare policy, hospital system consolidation, pharmaceutical pricing, and healthcare labor shortages.",
+    TECHNOLOGY:              "They work in tech — exposed to AI-driven layoffs, startup funding cycles, antitrust regulation, and rapid automation of software roles.",
+    GOVERNMENT:              "They work in government — sensitive to budget cuts, potential furloughs, pension sustainability, and political cycles affecting agency funding.",
+    EDUCATION:               "They work in education — facing enrollment declines, student debt policy changes, state budget cuts, and AI disruption of teaching.",
+    RETAIL_SERVICE:          "They work in retail or service — exposed to consumer spending fluctuations, minimum wage debates, automation, and tip/wage policy changes.",
+    CONSTRUCTION_TRADES:     "They work in construction or trades — directly tied to interest rates. High mortgage rates slow homebuilding and reduce demand for construction work.",
+    FINANCE_BANKING:         "They work in finance — exposed to market volatility, interest rate cycles, regulatory changes, and fintech disruption of traditional banking.",
+    LOGISTICS_TRANSPORTATION:"They work in logistics or transportation — sensitive to fuel prices, tariff impacts on trade volumes, and automation of trucking and warehousing.",
+    ENERGY:                  "They work in energy — navigating the fossil fuel transition, renewable energy subsidies, geopolitical oil price swings, and carbon regulation.",
+    AGRICULTURE:             "They work in agriculture — facing trade war tariff impacts on exports, climate variability, commodity price swings, and input cost inflation.",
+    CREATIVE_MEDIA:          "They work in creative or media — facing AI disruption of content creation, advertising market cycles, streaming consolidation, and platform algorithm changes.",
+    RESEARCH_NONPROFIT:      "They work in research or nonprofits — dependent on grant funding that shrinks during recessions, government contract uncertainty, and donor sentiment.",
+  };
+  return (i && map[i]) ?? null;
+}
+
 function concernContext(c?: string | null): string {
   const map: Record<string, string> = {
     HOUSING:      "housing costs and the real estate market",
@@ -52,12 +95,19 @@ export function buildSystemPrompt(profile: UserProfile): string {
   const employment = employmentContext(profile.employmentStatus, profile.situation);
   const focus      = concernContext(profile.concern);
   const locale     = profile.city ? ` based in ${profile.city}` : "";
+  const lifeStageLine = lifeStageContext(profile.lifeStage);
+  const debtLine      = debtContext(profile.debtTypes);
+  const industryLine  = industryContext(profile.industry);
 
   const whoDesc = employment
     ? `${housing}${locale} who is ${employment}`
     : `${housing}${locale}`;
 
-  return `You are the Economist — a trusted, plain-spoken economist who connects global events to people's real lives. You are speaking with ${whoDesc}, whose primary financial concern is ${focus}.
+  const additionalContext = [lifeStageLine, debtLine, industryLine]
+    .filter(Boolean)
+    .join(" ");
+
+  return `You are the Economist — a trusted, plain-spoken economist who connects global events to people's real lives. You are speaking with ${whoDesc}, whose primary financial concern is ${focus}.${additionalContext ? `\n\nUSER CONTEXT: ${additionalContext}` : ""}
 
 VOICE: Take a clear position on every question. Sound like a trusted advisor, never a textbook. Keep every answer under 200 words. End every answer with "Bottom line:" followed by one actionable sentence.
 
