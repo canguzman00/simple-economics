@@ -4,6 +4,46 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 
+const URL_REGEX = /https?:\/\/[^\s]+/g;
+
+function renderWithLinks(text: string): React.ReactNode {
+  return text.split("\n").map((line, lineIdx) => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    URL_REGEX.lastIndex = 0;
+
+    while ((match = URL_REGEX.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+      const url = match[0].replace(/[.,;:!?)]+$/, ""); // strip trailing punctuation
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gold-500 underline underline-offset-2 hover:text-gold-300 transition-colors"
+        >
+          {url}
+        </a>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
+    }
+
+    return (
+      <p key={lineIdx} className={lineIdx > 0 ? "mt-3" : ""}>
+        {parts.length > 0 ? parts : line}
+      </p>
+    );
+  });
+}
+
 const SUGGESTED = [
   "Why did the Fed raise (or cut) rates, and what does it mean for my finances?",
   "Is now a good time to buy a house, or should I keep renting?",
@@ -174,12 +214,12 @@ export function AskClient({ profile, isAuthenticated }: Props) {
 
           {/* Pull quote block */}
           <div className="border-l-2 border-[#C49A52] bg-[#C49A52]/5 rounded-r-xl px-6 py-5">
-            <p className="font-sans text-base text-[#C8B8A2] leading-relaxed whitespace-pre-wrap">
-              {answer}
+            <div className="font-sans text-base text-[#C8B8A2] leading-relaxed">
+              {renderWithLinks(answer)}
               {streaming && (
                 <span className="inline-block w-0.5 h-4 bg-[#C49A52] ml-0.5 animate-pulse align-middle" />
               )}
-            </p>
+            </div>
           </div>
 
           {/* Ask another */}
