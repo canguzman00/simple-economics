@@ -17,63 +17,46 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        serif: ["var(--font-dm-serif-display)", "serif"],
-        sans: ["var(--font-dm-sans)", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "monospace"],
+        display: ["var(--font-unbounded)", "sans-serif"],
+        sans:    ["var(--font-inter)", "sans-serif"],
+        mono:    ["var(--font-jetbrains-mono)", "monospace"],
       },
       colors: {
-        ink: {
-          900: "#1A1208",
-          700: "#2C2417",
-          500: "#4A3D2A",
-          300: "#7A6A52",
-          100: "#C8B8A2",
+        primary: {
+          red:    "#E63329",
+          blue:   "#1B4FD8",
+          yellow: "#F5C800",
+          black:  "#0A0A0A",
+          white:  "#FAFAFA",
         },
-        gold: {
-          700: "#A67C3D",
-          500: "#C49A52",
-          300: "#E2C27A",
-          100: "#F5EDD4",
+        gray: {
+          100: "#F5F5F5",
+          200: "#E8E8E8",
+          300: "#D0D0D0",
+          500: "#888888",
+          700: "#444444",
+          900: "#1A1A1A",
         },
-        signal: {
-          700: "#B84A2A",
-          500: "#D4613C",
-        },
-        growth: {
-          700: "#2A5C3A",
-          500: "#3D8A55",
-        },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        // Keep shadcn CSS-variable tokens so UI primitives (Sheet, Avatar, etc.) still work
+        border:     "hsl(var(--border))",
+        input:      "hsl(var(--input))",
+        ring:       "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
+          DEFAULT:    "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
+          DEFAULT:    "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
+          DEFAULT:    "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT:    "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
       },
@@ -85,16 +68,16 @@ const config: Config = {
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          to:   { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          to:   { height: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-up":   "accordion-up 0.2s ease-out",
       },
     },
   },

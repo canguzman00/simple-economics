@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Unbounded, Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const dmSerifDisplay = DM_Serif_Display({
-  weight: "400",
+const unbounded = Unbounded({
   subsets: ["latin"],
-  variable: "--font-dm-serif-display",
+  variable: "--font-unbounded",
 });
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-inter",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -28,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body
-        className={`${dmSerifDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${unbounded.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

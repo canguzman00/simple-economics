@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useSession } from "@/lib/auth";
 import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const NAV_LINKS = [
-  { label: "Feed", href: "/feed" },
+  { label: "Feed",             href: "/feed" },
   { label: "Ask the Economist", href: "/ask" },
-  { label: "My Economy", href: "/my-economy" },
-  { label: "Saved", href: "/saved" },
+  { label: "My Economy",       href: "/my-economy" },
+  { label: "Saved",            href: "/saved" },
 ];
 
 function NavLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {
@@ -24,13 +24,13 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
     <Link
       href={href}
       onClick={onClick}
-      className={`relative font-sans text-sm transition-colors pb-0.5 ${
-        isActive ? "text-[#C49A52]" : "text-[#C8B8A2] hover:text-[#E2C27A]"
+      className={`relative font-sans text-xs uppercase tracking-widest transition-colors ${
+        isActive ? "text-primary-red" : "text-primary-black hover:text-primary-red"
       }`}
     >
       {label}
       {isActive && (
-        <span className="absolute -bottom-0.5 left-0 right-0 h-px bg-[#C49A52]" />
+        <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary-red" />
       )}
     </Link>
   );
@@ -51,31 +51,31 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((v) => !v)} aria-label="Account menu">
-        <Avatar>
+        <Avatar className="rounded-none w-8 h-8">
           <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
-          <AvatarFallback>
+          <AvatarFallback className="rounded-none bg-primary-black text-primary-white font-display text-xs">
             {(session.user.name ?? session.user.email ?? "U").charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 w-44 bg-[#2C2417] border border-[#4A3D2A] rounded-lg shadow-xl overflow-hidden z-50">
-          <div className="px-3 py-2 border-b border-[#4A3D2A]">
-            <p className="font-sans text-xs text-[#7A6A52] truncate">
+        <div className="absolute right-0 top-10 w-48 bg-primary-white border-2 border-primary-black shadow-[4px_4px_0px_#0A0A0A] z-50">
+          <div className="px-3 py-2 border-b-2 border-primary-black">
+            <p className="font-sans text-xs text-gray-500 truncate">
               {session.user.email}
             </p>
           </div>
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="flex items-center px-3 py-2.5 font-sans text-sm text-[#C8B8A2] hover:bg-[#4A3D2A]/50 hover:text-[#FAF9F6] transition-colors"
+            className="flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-primary-black hover:bg-primary-red hover:text-primary-white transition-colors"
           >
             Edit Profile
           </Link>
           <button
             onClick={() => signOut()}
-            className="w-full text-left flex items-center px-3 py-2.5 font-sans text-sm text-[#7A6A52] hover:bg-[#4A3D2A]/50 hover:text-[#C8B8A2] transition-colors"
+            className="w-full text-left flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-gray-500 hover:bg-gray-100 hover:text-primary-black transition-colors"
           >
             Sign out
           </button>
@@ -89,7 +89,7 @@ function AuthControl() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <div className="h-8 w-8 rounded-full bg-[#2C2417] animate-pulse" />;
+    return <div className="h-8 w-16 bg-gray-200 animate-pulse" />;
   }
 
   if (session?.user) {
@@ -99,7 +99,7 @@ function AuthControl() {
   return (
     <button
       onClick={() => signIn()}
-      className="font-sans text-sm text-[#C49A52] hover:text-[#E2C27A] transition-colors border border-[#4A3D2A] hover:border-[#C49A52] px-3 py-1.5 rounded"
+      className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
     >
       Sign in
     </button>
@@ -108,15 +108,19 @@ function AuthControl() {
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 bg-[#1A1208]/95 backdrop-blur-sm border-b border-[#2C2417]">
-      <div className="mx-auto max-w-4xl px-6 h-14 flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-primary-white border-b-2 border-primary-black">
+      <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
+
         {/* Logo */}
-        <Link href="/" className="font-serif text-xl text-[#C49A52] tracking-tight leading-none shrink-0">
-          Simple Economics
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
+          <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+            Simple Economics
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-7">
+        <nav className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
             <NavLink key={link.href} {...link} />
           ))}
@@ -132,22 +136,29 @@ export function Header() {
           <Sheet>
             <SheetTrigger asChild>
               <button
-                className="md:hidden text-[#7A6A52] hover:text-[#C8B8A2] transition-colors"
+                className="md:hidden text-primary-black hover:text-primary-red transition-colors"
                 aria-label="Open menu"
               >
                 <Menu size={22} />
               </button>
             </SheetTrigger>
-            <SheetContent>
-              <div className="flex flex-col h-full pt-12 px-6 pb-8">
-                <span className="font-serif text-lg text-[#C49A52] mb-8">
-                  Simple Economics
-                </span>
-                <nav className="flex flex-col gap-5">
+            <SheetContent className="bg-primary-white border-l-2 border-primary-black p-0">
+              <div className="flex flex-col h-full pt-14 px-6 pb-8">
+                {/* Mobile logo */}
+                <div className="flex items-center gap-2.5 mb-10">
+                  <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
+                  <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black">
+                    Simple Economics
+                  </span>
+                </div>
+
+                {/* Mobile nav */}
+                <nav className="flex flex-col gap-6">
                   {NAV_LINKS.map((link) => (
                     <NavLink key={link.href} {...link} />
                   ))}
                 </nav>
+
                 <div className="mt-auto">
                   <AuthControl />
                 </div>
