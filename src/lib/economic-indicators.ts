@@ -36,8 +36,8 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const series = FRED_SERIES[key];
   if (!series) return null;
 
-  // CPI and REALWAGES require year-over-year % change (13 months of data)
-  const needsYoY = key === "CPI" || key === "REALWAGES";
+  // CPI requires year-over-year % change (13 months); REALWAGES returns raw dollar value
+  const needsYoY = key === "CPI";
   const limit = needsYoY ? 13 : 1;
 
   const url =
@@ -74,8 +74,13 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const numericValue = parseFloat(latest.value);
   if (isNaN(numericValue)) return null;
 
+  // REALWAGES (AHETPI) is a dollar value, not a rate
+  const formatted = key === "REALWAGES"
+    ? `$${numericValue.toFixed(2)}`
+    : `${numericValue.toFixed(2)}%`;
+
   return {
-    value: `${numericValue.toFixed(2)}%`,
+    value: formatted,
     date: formatFredDate(latest.date),
   };
 }
