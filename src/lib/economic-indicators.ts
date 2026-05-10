@@ -14,8 +14,10 @@ export interface IndicatorResult {
 const FRED_SERIES: Record<string, { seriesId: string; label: string }> = {
   CPI:           { seriesId: "CPIAUCSL",     label: "CPI" },
   FEDFUNDS:      { seriesId: "FEDFUNDS",     label: "Federal Funds Rate" },
-  UNRATE:        { seriesId: "UNRATE",        label: "Unemployment Rate" },
+  UNRATE:        { seriesId: "UNRATE",       label: "Unemployment Rate" },
   MORTGAGE30US:  { seriesId: "MORTGAGE30US", label: "30-Year Mortgage Rate" },
+  PRIMERATE:     { seriesId: "DPRIME",       label: "Prime Rate" },
+  REALWAGES:     { seriesId: "AHETPI",       label: "Average Hourly Earnings (YoY)" },
 };
 
 // ─── Date formatter ───────────────────────────────────────────────────────────
@@ -34,8 +36,9 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const series = FRED_SERIES[key];
   if (!series) return null;
 
-  const isCPI = key === "CPI";
-  const limit = isCPI ? 13 : 1;
+  // CPI and REALWAGES require year-over-year % change (13 months of data)
+  const needsYoY = key === "CPI" || key === "REALWAGES";
+  const limit = needsYoY ? 13 : 1;
 
   const url =
     `https://api.stlouisfed.org/fred/series/observations` +
@@ -54,10 +57,10 @@ async function fetchFromFred(key: string): Promise<{ value: string; date: string
   const obs = json.observations;
   if (!obs?.length) return null;
 
-  if (isCPI) {
-    // obs is sorted desc: obs[0] = most recent, obs[12] = 12 months ago
-    const current  = parseFloat(obs[0].value);
-    const yearAgo  = parseFloat(obs[12]?.value ?? ".");
+  if (needsYoY) {
+    // obs sorted desc: obs[0] = most recent, obs[12] = 12 months ago
+    const current = parseFloat(obs[0].value);
+    const yearAgo = parseFloat(obs[12]?.value ?? ".");
     if (isNaN(current) || isNaN(yearAgo) || yearAgo === 0) return null;
     const yoy = ((current - yearAgo) / yearAgo) * 100;
     return {
@@ -110,7 +113,7 @@ export async function fetchIndicator(key: string): Promise<IndicatorResult> {
   return { key, value: null, date: null, isCached: false };
 }
 
-// ─── Fetch all four in parallel ───────────────────────────────────────────────
+// ─── Fetch all six in parallel ───────────────────────────────────────────────
 
 export async function fetchAllIndicators(): Promise<Record<string, IndicatorResult>> {
   const keys = Object.keys(FRED_SERIES);

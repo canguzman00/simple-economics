@@ -173,5 +173,5 @@ Every answer must:
 4. Acknowledge genuine uncertainty where it exists, but still take a clear position on what the evidence suggests
 5. Be substantive — aim for 180-200 words, using the full space to add real information, not filler phrases like "this is a complex topic" or "there are many factors"
 
-Always personalize your answer to ${whoDesc} focused on ${focus} wherever it is relevant.\`;
+Always personalize your answer to ${whoDesc} focused on ${focus} wherever it is relevant.`;
 }

@@ -77,6 +77,34 @@ const INDICATOR_META: IndicatorMeta[] = [
       return "Still more than double the pandemic-era lows. The monthly payment on a $400K loan at this rate is roughly $2,530 — about $900 more than at 3%.";
     },
   },
+  {
+    key: "PRIMERATE",
+    name: "Prime Rate",
+    source: "Federal Reserve via FRED",
+    fallbackValue: "7.50%",
+    fallbackDate: "April 2025",
+    meaning: (s) => {
+      if (s === "RENTER")        return "Credit card rates and personal loans are directly tied to this rate. Every point up means more interest on any variable-rate debt you carry.";
+      if (s === "OWNER")         return "Home equity lines of credit (HELOCs) float with the prime rate. If you have one, your monthly payments move when this does.";
+      if (s === "STUDENT")       return "Private student loans and most credit cards are priced off the prime rate. High prime means borrowing for school costs more.";
+      if (s === "SELF_EMPLOYED") return "Business lines of credit are typically priced as prime plus a spread. When prime is high, short-term business borrowing gets expensive.";
+      return "The prime rate is what banks charge their best customers — it sets the floor for consumer credit cards, car loans, and personal loans. Currently elevated alongside the federal funds rate.";
+    },
+  },
+  {
+    key: "REALWAGES",
+    name: "Wage Growth (YoY)",
+    source: "Bureau of Labor Statistics via FRED",
+    fallbackValue: "3.8%",
+    fallbackDate: "March 2025",
+    meaning: (s) => {
+      if (s === "RENTER")        return "If wage growth is above inflation, your real purchasing power is rising. Compare this number to the CPI above — the gap is your real raise (or real cut).";
+      if (s === "OWNER")         return "Wage growth above inflation supports home values by keeping buyer purchasing power stable, even at high mortgage rates.";
+      if (s === "STUDENT")       return "This is the wage growth you're entering into. Whether it keeps up with inflation determines whether your first paycheck feels like a real wage or a step backward.";
+      if (s === "SELF_EMPLOYED") return "When wage growth for employees runs hot, customers have more to spend — which supports demand for services and small businesses.";
+      return "Year-over-year change in average hourly earnings for production workers. Compare this to the CPI inflation rate above — if wages are growing faster than prices, workers are gaining real purchasing power.";
+    },
+  },
 ];
 
 const PILLAR_LABEL: Record<Pillar, string> = {
@@ -103,8 +131,13 @@ const INDICATOR_BORDER: Record<string, string> = {
   CPI:          "border-l-4 border-primary-red",
   FEDFUNDS:     "border-l-4 border-primary-blue",
   UNRATE:       "border-l-4 border-primary-yellow",
+  PRIMERATE:    "border-l-4 border-primary-red",
+  REALWAGES:    "border-l-4 border-primary-blue",
   MORTGAGE30US: "border-l-4 border-primary-black",
 };
+
+const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "PRIMERATE", "REALWAGES"];
+const LOCAL_KEYS    = ["MORTGAGE30US"];
 
 export default async function MyEconomyPage() {
   const session = await getAuthSession();
@@ -180,18 +213,22 @@ export default async function MyEconomyPage() {
         )}
       </section>
 
-      {/* ── 2. Economic indicators ── */}
+      {/* ── 2a. National indicators ── */}
       <section>
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black mb-5 flex items-center gap-2">
-          <span className="w-2.5 h-2.5 bg-primary-red shrink-0" />
-          Economic Indicators
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {INDICATOR_META.map((meta) => {
+        {/* Section banner */}
+        <div className="border-2 border-primary-black bg-primary-yellow px-5 py-3 mb-4 flex items-center gap-3">
+          <span className="w-2.5 h-2.5 bg-primary-black shrink-0" />
+          <span className="font-display text-xs font-black uppercase tracking-widest text-primary-black">
+            National Economy
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {INDICATOR_META.filter((m) => NATIONAL_KEYS.includes(m.key)).map((meta) => {
             const live: IndicatorResult | undefined = liveIndicators[meta.key];
-            const value      = live?.value ?? meta.fallbackValue;
-            const date       = live?.date  ?? meta.fallbackDate;
-            const cached     = live?.isCached ?? false;
+            const value       = live?.value ?? meta.fallbackValue;
+            const date        = live?.date  ?? meta.fallbackDate;
+            const cached      = live?.isCached ?? false;
             const unavailable = live !== undefined && live.value === null;
 
             return (
@@ -219,6 +256,78 @@ export default async function MyEconomyPage() {
             );
           })}
         </div>
+      </section>
+
+      {/* ── 2b. Local indicators ── */}
+      <section>
+        {/* Section banner */}
+        <div className="border-2 border-primary-black bg-primary-blue px-5 py-3 mb-4 flex items-center gap-3">
+          <span className="w-2.5 h-2.5 bg-primary-white shrink-0" />
+          <span className="font-display text-xs font-black uppercase tracking-widest text-primary-white">
+            Your Local Economy{city ? ` — ${city}` : ""}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Mortgage rate with local housing context */}
+          {INDICATOR_META.filter((m) => LOCAL_KEYS.includes(m.key)).map((meta) => {
+            const live: IndicatorResult | undefined = liveIndicators[meta.key];
+            const value       = live?.value ?? meta.fallbackValue;
+            const date        = live?.date  ?? meta.fallbackDate;
+            const cached      = live?.isCached ?? false;
+            const unavailable = live !== undefined && live.value === null;
+
+            return (
+              <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                    {meta.name}
+                  </p>
+                  {unavailable ? (
+                    <span className="font-sans text-xs text-gray-300 leading-none shrink-0">unavailable</span>
+                  ) : (
+                    <span className={`font-mono text-2xl leading-none shrink-0 ${cached ? "text-gray-500" : "text-primary-black"}`}>
+                      {value}
+                    </span>
+                  )}
+                </div>
+                <p className="font-sans text-xs text-primary-black leading-relaxed">
+                  {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
+                </p>
+                <p className="font-sans text-[10px] text-gray-300">
+                  {meta.source} · {date}
+                  {cached && <span className="ml-1">(cached)</span>}
+                </p>
+              </div>
+            );
+          })}
+
+          {/* Local job market card */}
+          <div className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 border-l-4 border-l-primary-yellow">
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-display text-xs font-bold uppercase tracking-wide text-gray-500 leading-snug">
+                Local Job Market
+              </p>
+              <span className="font-sans text-xs text-gray-300 leading-none shrink-0 text-right">
+                {city ?? "Your area"}
+              </span>
+            </div>
+            <p className="font-sans text-xs text-primary-black leading-relaxed">
+              {city
+                ? `Local unemployment data for ${city} is published by your state's labor department, which tracks conditions more precisely than national averages. National unemployment is ${liveIndicators["UNRATE"]?.value ?? "4.2%"} — your local rate may differ significantly depending on your industry.`
+                : "Add your city in your profile to get a link to your local labor market data."}
+            </p>
+            <p className="font-sans text-[10px] text-gray-300">
+              {city
+                ? `For ${city} figures, check your state's labor department`
+                : "Update your profile to personalize"}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-3 font-sans text-[10px] text-gray-300">
+          Local data is estimated based on your city. For precise local figures, check your state&apos;s labor department website.
+        </p>
       </section>
 
       {/* ── 3. Top HIGH impact events ── */}
