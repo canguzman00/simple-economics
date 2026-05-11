@@ -97,6 +97,7 @@ model User {
   lifeStage          LifeStage?
   debtTypes          String[]
   industry           Industry?
+  language           String      @default("en")
   isPremium          Boolean     @default(false)
   onboardingComplete Boolean     @default(false)
   createdAt          DateTime    @default(now())
