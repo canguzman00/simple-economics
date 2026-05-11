@@ -181,7 +181,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
               <li key={i} className="flex gap-3 items-baseline">
                 <span className="font-mono text-[11px] text-gray-400 shrink-0">{i + 1}.</span>
                 {isUrl(source) ? (
-                  
+                  <a
                     href={source}
                     target="_blank"
                     rel="noopener noreferrer"
