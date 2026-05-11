@@ -8,18 +8,23 @@ import { useSession } from "@/lib/auth";
 import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useLang } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/lib/translations";
 
-const NAV_LINKS = [
-  { label: "Feed",             href: "/feed" },
-  { label: "Ask the Economist", href: "/ask" },
-  { label: "My Economy",       href: "/my-economy" },
-  { label: "Saved",            href: "/saved" },
-];
+function useNavLinks() {
+  const { lang } = useLang();
+  const tr = useTranslations(lang);
+  return [
+    { label: tr.nav.feed,      href: "/feed" },
+    { label: tr.nav.ask,       href: "/ask" },
+    { label: tr.nav.myEconomy, href: "/my-economy" },
+    { label: tr.nav.saved,     href: "/saved" },
+  ];
+}
 
 function NavLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {
   const pathname = usePathname();
   const isActive = pathname === href || pathname.startsWith(href + "/");
-
   return (
     <Link
       href={href}
@@ -36,9 +41,23 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
   );
 }
 
+function LangToggle() {
+  const { lang, toggleLang } = useLang();
+  return (
+    <button
+      onClick={toggleLang}
+      className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors border border-gray-300 px-2 py-1"
+    >
+      {lang === "en" ? "ES" : "EN"}
+    </button>
+  );
+}
+
 function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { lang } = useLang();
+  const tr = useTranslations(lang);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -58,26 +77,23 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
           </AvatarFallback>
         </Avatar>
       </button>
-
       {open && (
         <div className="absolute right-0 top-10 w-48 bg-primary-white border-2 border-primary-black shadow-[4px_4px_0px_#0A0A0A] z-50">
           <div className="px-3 py-2 border-b-2 border-primary-black">
-            <p className="font-sans text-xs text-gray-500 truncate">
-              {session.user.email}
-            </p>
+            <p className="font-sans text-xs text-gray-500 truncate">{session.user.email}</p>
           </div>
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
             className="flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-primary-black hover:bg-primary-red hover:text-primary-white transition-colors"
           >
-            Edit Profile
+            {tr.auth.editProfile}
           </Link>
           <button
             onClick={() => signOut()}
             className="w-full text-left flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-gray-500 hover:bg-gray-100 hover:text-primary-black transition-colors"
           >
-            Sign out
+            {tr.auth.signOut}
           </button>
         </div>
       )}
@@ -87,31 +103,28 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
 
 function AuthControl() {
   const { data: session, status } = useSession();
+  const { lang } = useLang();
+  const tr = useTranslations(lang);
 
-  if (status === "loading") {
-    return <div className="h-8 w-16 bg-gray-200 animate-pulse" />;
-  }
+  if (status === "loading") return <div className="h-8 w-16 bg-gray-200 animate-pulse" />;
 
-  if (session?.user) {
-    return <AvatarMenu session={session} />;
-  }
+  if (session?.user) return <AvatarMenu session={session} />;
 
   return (
     <button
       onClick={() => signIn()}
       className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
     >
-      Sign in
+      {tr.auth.signIn}
     </button>
   );
 }
 
 export function Header() {
+  const NAV_LINKS = useNavLinks();
   return (
     <header className="sticky top-0 z-40 bg-primary-white border-b-2 border-primary-black">
       <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
-
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
           <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
@@ -119,47 +132,38 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
             <NavLink key={link.href} {...link} />
           ))}
         </nav>
 
-        {/* Auth + mobile trigger */}
         <div className="flex items-center gap-4">
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
+            <LangToggle />
             <AuthControl />
           </div>
-
-          {/* Mobile hamburger */}
           <Sheet>
             <SheetTrigger asChild>
-              <button
-                className="md:hidden text-primary-black hover:text-primary-red transition-colors"
-                aria-label="Open menu"
-              >
+              <button className="md:hidden text-primary-black hover:text-primary-red transition-colors" aria-label="Open menu">
                 <Menu size={22} />
               </button>
             </SheetTrigger>
             <SheetContent className="bg-primary-white border-l-2 border-primary-black p-0">
               <div className="flex flex-col h-full pt-14 px-6 pb-8">
-                {/* Mobile logo */}
                 <div className="flex items-center gap-2.5 mb-10">
                   <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
                   <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black">
                     Simple Economics
                   </span>
                 </div>
-
-                {/* Mobile nav */}
                 <nav className="flex flex-col gap-6">
                   {NAV_LINKS.map((link) => (
                     <NavLink key={link.href} {...link} />
                   ))}
                 </nav>
-
-                <div className="mt-auto">
+                <div className="mt-auto flex flex-col gap-4">
+                  <LangToggle />
                   <AuthControl />
                 </div>
               </div>
