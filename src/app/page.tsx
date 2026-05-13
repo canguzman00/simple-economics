@@ -49,10 +49,10 @@ export default async function HomePage() {
       {/* ── Hero ── */}
       <section className="bg-primary-white border-b-2 border-primary-black overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="flex items-center min-h-[calc(100vh-3.5rem)]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 items-center min-h-[calc(100vh-3.5rem)]">
 
-            {/* Headline + CTA */}
-            <div className="py-20 max-w-3xl">
+            {/* Left: headline + CTA */}
+            <div className="py-20 lg:py-0 lg:pr-16">
               <p className="font-sans text-xs uppercase tracking-[0.25em] text-gray-500 mb-6">
                 Economic education for real life
               </p>
@@ -77,6 +77,32 @@ export default async function HomePage() {
                 >
                   See How It Works
                 </a>
+              </div>
+            </div>
+
+            {/* Right: global economics image */}
+            <div className="hidden lg:flex h-full min-h-[calc(100vh-3.5rem)] relative border-l-2 border-primary-black overflow-hidden flex-col">
+              <img
+                src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&q=80&auto=format&fit=crop"
+                alt="Global economic network — Earth at night"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.55)" }} />
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", gap: "12px" }}>
+                <p style={{ fontSize: "9px", fontFamily: "var(--font-unbounded)", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Live Economic Indicators</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  {[
+                    { label: "Global GDP", value: "$109T" },
+                    { label: "US Inflation", value: "3.2%" },
+                    { label: "Fed Rate", value: "4.5%" },
+                    { label: "Unemployment", value: "4.2%" },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background: "rgba(250,250,250,0.08)", border: "1px solid rgba(255,255,255,0.15)", padding: "14px" }}>
+                      <div style={{ fontSize: "8px", fontFamily: "var(--font-unbounded)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>{label}</div>
+                      <div style={{ fontSize: "26px", fontFamily: "var(--font-unbounded)", fontWeight: 900, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
