@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
 import type { Pillar, Impact, Tier } from "@prisma/client";
 
-export const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+export const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,5 +163,7 @@ export async function getCachedNews(
 
 export function isCacheStale(oldestCreatedAt: Date | null): boolean {
   if (!oldestCreatedAt) return true;
-  return Date.now() - oldestCreatedAt.getTime() > CACHE_TTL_MS;
+  // Refresh if last fetch was more than 24 hours ago
+  const ageMs = Date.now() - oldestCreatedAt.getTime();
+  return ageMs > CACHE_TTL_MS;
 }
