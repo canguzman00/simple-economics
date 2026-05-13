@@ -16,7 +16,7 @@ interface NewsAPIArticle {
 
 interface ClassifiedArticle {
   summary: string;
-  fullExplanation: string;
+  bullets: string[];
   pillar: Pillar;
   impact: Impact;
 }
@@ -48,7 +48,12 @@ Article description: ${description.slice(0, 300)}`,
 
     const text = res.content[0].type === "text" ? res.content[0].text.trim() : "";
     const json = JSON.parse(text.replace(/^```json\n?|```$/g, "").trim());
-    return json as ClassifiedArticle;
+    return {
+      summary: json.summary ?? "",
+      bullets: Array.isArray(json.bullets) ? json.bullets : [json.fullExplanation ?? json.summary ?? ""],
+      pillar: json.pillar,
+      impact: json.impact,
+    } as ClassifiedArticle;
   } catch {
     return null;
   }
