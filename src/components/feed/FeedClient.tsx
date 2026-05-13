@@ -51,48 +51,66 @@ const PAGE_SIZE = 10;
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const h = Math.floor(diff / 3_600_000);
-  const m = Math.floor(diff / 60_000);
-  if (h >= 24) return `${Math.floor(h / 24)}d ago`;
-  if (h >= 1)  return `${h}h ago`;
-  if (m >= 1)  return `${m}m ago`;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor(diff / 60000);
+  if (h >= 24) return Math.floor(h / 24) + "d ago";
+  if (h >= 1)  return h + "h ago";
+  if (m >= 1)  return m + "m ago";
   return "just now";
 }
 
-const ACCENT_COLORS = [
-  "bg-primary-red text-primary-white",
-  "bg-primary-blue text-primary-white",
-  "bg-primary-yellow text-primary-black",
-];
-
-function parseBullets(text: string): string[] {
-  try {
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
-  } catch (e) { void e; }
-  const parts = text.split(". ").filter(Boolean).slice(0, 3);
-  return parts.length > 0 ? parts : [text];
-}
-
 function NewsFeedCard({ item }: { item: SerializedEvent }) {
-  const bullets = parseBullets(item.fullExplanation);
+  const pillarBg: Record<Pillar, string> = {
+    GLOBAL_ECONOMICS:   "bg-primary-blue text-primary-white",
+    GEOPOLITICS_MONEY:  "bg-primary-red text-primary-white",
+    DEVELOPMENT_POLICY: "bg-primary-yellow text-primary-black",
+    PERSONAL_FINANCE:   "bg-primary-black text-primary-white",
+  };
+  const pillarLabel: Record<Pillar, string> = {
+    GLOBAL_ECONOMICS:   "Global Economics",
+    GEOPOLITICS_MONEY:  "Geopolitics & Money",
+    DEVELOPMENT_POLICY: "Development & Policy",
+    PERSONAL_FINANCE:   "Personal Finance",
+  };
+  const impactBg: Record<Impact, string> = {
+    HIGH:   "bg-primary-red text-primary-white",
+    MEDIUM: "bg-primary-yellow text-primary-black",
+    LOW:    "bg-primary-blue text-primary-white",
+  };
+  const accentColors = [
+    "bg-primary-red text-primary-white",
+    "bg-primary-blue text-primary-white",
+    "bg-primary-yellow text-primary-black",
+  ];
+
+  let bullets: string[] = [];
+  try {
+    const parsed = JSON.parse(item.fullExplanation);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      bullets = parsed as string[];
+    }
+  } catch (e) { void e; }
+  if (bullets.length === 0) {
+    bullets = item.fullExplanation.split(". ").filter(Boolean).slice(0, 3);
+  }
+  if (bullets.length === 0) {
+    bullets = [item.fullExplanation];
+  }
 
   return (
-    <article className="flex flex-col gap-4 bg-primary-white border-2 border-primary-black px-6 py-6 transition-all duration-150 hover:shadow-[4px_4px_0px_#0A0A0A]">
+    <article className="flex flex-col gap-4 bg-primary-white border-2 border-primary-black px-6 py-6 hover:shadow-[4px_4px_0px_#0A0A0A] transition-shadow">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="font-sans text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-primary-red text-primary-white">
           NEWS
         </span>
-        <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[item.pillar]}`}>
-          {PILLAR_LABEL[item.pillar]}
+        <span className={"font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 " + pillarBg[item.pillar]}>
+          {pillarLabel[item.pillar]}
         </span>
-        <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[item.impact]}`}>
+        <span className={"font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 " + impactBg[item.impact]}>
           {item.impact} IMPACT
         </span>
         <span className="ml-auto font-sans text-[10px] text-gray-500">
-          {item.newsSource && <strong className="text-primary-black">{item.newsSource}</strong>}
-          {item.newsSource && " · "}
-          {timeAgo(item.publishedAt)}
+          {item.newsSource ? item.newsSource + " · " : ""}{timeAgo(item.publishedAt)}
         </span>
       </div>
 
@@ -108,10 +126,10 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
 
       <p className="font-sans text-sm text-gray-600 leading-relaxed">{item.summary}</p>
 
-      <div className="flex flex-col gap-2 pt-1">
+      <div className="flex flex-col gap-2">
         {bullets.map((bullet, i) => (
           <div key={i} className="flex gap-3 items-start">
-            <span className={`w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 ${accentColors[i % 3]}`}>
+            <span className={"w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 " + accentColors[i % 3]}>
               {i + 1}
             </span>
             <p className="font-sans text-sm text-primary-black leading-relaxed">{bullet}</p>
@@ -120,13 +138,9 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
       </div>
 
       {item.newsUrl && (
-        
-          href={item.newsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="self-start font-sans text-xs font-bold uppercase tracking-widest text-primary-red hover:text-primary-black transition-colors mt-1"
-        >
-          Read full article{item.newsSource ? ` at ${item.newsSource}` : ""} →
+        <a href={item.newsUrl} target="_blank" rel="noopener noreferrer"
+          className="self-start font-sans text-xs font-bold uppercase tracking-widest text-primary-red hover:text-primary-black transition-colors">
+          Read full article{item.newsSource ? " at " + item.newsSource : ""} →
         </a>
       )}
     </article>
@@ -157,36 +171,29 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
   const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
-    const abortCtrl = new AbortController();
+    const ctrl = new AbortController();
     setNewsLoading(true);
-
-    const fetches = [
-      fetch("/api/news?tier=GLOBAL",   { signal: abortCtrl.signal }).then((r) => r.json()).catch(() => []),
-      fetch("/api/news?tier=NATIONAL", { signal: abortCtrl.signal }).then((r) => r.json()).catch(() => []),
-      userState
-        ? fetch(`/api/news?tier=REGIONAL&region=${encodeURIComponent(userState)}`, { signal: abortCtrl.signal }).then((r) => r.json()).catch(() => [])
-        : Promise.resolve([]),
-    ];
-
-    Promise.all(fetches)
-      .then(([global, national, regional]) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const all = [...(global as any[]), ...(national as any[]), ...(regional as any[])];
-        setNewsItems(all.map((a) => ({
-          ...a,
-          isNews: true,
-          newsUrl:    a.newsUrl    ?? a.url    ?? null,
-          newsSource: a.newsSource ?? a.source ?? null,
-        })));
-        setNewsLoading(false);
-      })
-      .catch(() => setNewsLoading(false));
-
-    return () => abortCtrl.abort();
+    const regional = userState
+      ? fetch("/api/news?tier=REGIONAL&region=" + encodeURIComponent(userState), { signal: ctrl.signal }).then((r) => r.json()).catch(() => [])
+      : Promise.resolve([]);
+    Promise.all([
+      fetch("/api/news?tier=GLOBAL",   { signal: ctrl.signal }).then((r) => r.json()).catch(() => []),
+      fetch("/api/news?tier=NATIONAL", { signal: ctrl.signal }).then((r) => r.json()).catch(() => []),
+      regional,
+    ]).then(([g, n, r]) => {
+      const all = [...(g as SerializedEvent[]), ...(n as SerializedEvent[]), ...(r as SerializedEvent[])];
+      setNewsItems(all.map((a) => ({
+        ...a,
+        isNews: true,
+        newsUrl:    (a as unknown as {url?: string}).url    ?? a.newsUrl    ?? null,
+        newsSource: (a as unknown as {source?: string}).source ?? a.newsSource ?? null,
+      })));
+      setNewsLoading(false);
+    }).catch(() => setNewsLoading(false));
+    return () => ctrl.abort();
   }, [userState]);
 
-  const allItems: SerializedEvent[] = [...initialEvents, ...newsItems];
-
+  const allItems = [...initialEvents, ...newsItems];
   const filtered = allItems
     .filter((e) => {
       if (tier === "ALL") return true;
@@ -204,17 +211,9 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
     <div>
       <div className="flex gap-0 mb-6 border-2 border-primary-black overflow-hidden">
         {TIER_TABS.map((tab, i) => (
-          <button
-            key={tab.value}
+          <button key={tab.value}
             onClick={() => { setTier(tab.value); setCount(PAGE_SIZE); }}
-            className={`flex-1 font-sans text-xs font-black uppercase tracking-widest py-3 transition-colors ${
-              i > 0 ? "border-l-2 border-primary-black" : ""
-            } ${
-              tier === tab.value
-                ? "bg-primary-black text-primary-white"
-                : "bg-primary-white text-primary-black hover:bg-gray-100"
-            }`}
-          >
+            className={"flex-1 font-sans text-xs font-black uppercase tracking-widest py-3 transition-colors " + (i > 0 ? "border-l-2 border-primary-black " : "") + (tier === tab.value ? "bg-primary-black text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
             {tab.label}
           </button>
         ))}
@@ -224,7 +223,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
         <div className="border-2 border-primary-black bg-primary-blue px-5 py-3 mb-5 flex items-center gap-3">
           <span className="w-2.5 h-2.5 bg-primary-white shrink-0" />
           <span className="font-sans text-xs font-black uppercase tracking-widest text-primary-white">
-            Local Economy{userCity ? ` — ${userCity}` : ""}{userState ? `, ${userState}` : ""}
+            Local Economy{userCity ? " — " + userCity : ""}{userState ? ", " + userState : ""}
           </span>
         </div>
       )}
@@ -232,15 +231,9 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
       <div className="overflow-x-auto -mx-1 px-1 mb-4">
         <div className="flex gap-1.5 min-w-max">
           {PILLAR_TABS.map((tab) => (
-            <button
-              key={tab.value}
+            <button key={tab.value}
               onClick={() => { setPillar(tab.value); setCount(PAGE_SIZE); }}
-              className={`font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors ${
-                pillar === tab.value
-                  ? "bg-primary-red text-primary-white"
-                  : "bg-primary-white text-primary-black hover:bg-gray-100"
-              }`}
-            >
+              className={"font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors " + (pillar === tab.value ? "bg-primary-red text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
               {tab.label}
             </button>
           ))}
@@ -251,15 +244,9 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
         <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black shrink-0">Impact:</span>
         <div className="flex gap-1.5">
           {IMPACT_TABS.map((tab) => (
-            <button
-              key={tab.value}
+            <button key={tab.value}
               onClick={() => { setImpact(tab.value); setCount(PAGE_SIZE); }}
-              className={`font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black transition-colors ${
-                impact === tab.value
-                  ? "bg-primary-black text-primary-white"
-                  : "bg-primary-white text-primary-black hover:bg-gray-100"
-              }`}
-            >
+              className={"font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black transition-colors " + (impact === tab.value ? "bg-primary-black text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
               {tab.label}
             </button>
           ))}
@@ -285,7 +272,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
             item.isNews ? (
               <NewsFeedCard key={item.id} item={item} />
             ) : (
-              <Link key={item.id} href={`/feed/${item.slug}`}>
+              <Link key={item.id} href={"/feed/" + item.slug}>
                 <EconEventCard {...item} />
               </Link>
             )
@@ -295,10 +282,8 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
 
       {hasMore && (
         <div className="flex justify-center mt-10">
-          <button
-            onClick={() => setCount((c) => c + PAGE_SIZE)}
-            className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-8 py-3"
-          >
+          <button onClick={() => setCount((c) => c + PAGE_SIZE)}
+            className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-8 py-3">
             Load more ({filtered.length - count} remaining)
           </button>
         </div>
