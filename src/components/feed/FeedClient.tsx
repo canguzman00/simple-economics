@@ -79,25 +79,23 @@ function timeAgo(iso: string): string {
   return "just now";
 }
 
-function NewsFeedCard({ item }: { item: SerializedEvent }) {
-  let bullets: string[] = [];
-  try {
-    const parsed = JSON.parse(item.fullExplanation);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      bullets = parsed;
-    } else {
-      bullets = item.fullExplanation.split(/[.!?]+\s+/).filter(Boolean).slice(0, 3);
-    }
-  } catch {
-    bullets = item.fullExplanation.split(/[.!?]+\s+/).filter(Boolean).slice(0, 3);
-  }
-  if (bullets.length === 0) bullets = [item.fullExplanation];
+const ACCENT_COLORS = [
+  "bg-primary-red text-primary-white",
+  "bg-primary-blue text-primary-white",
+  "bg-primary-yellow text-primary-black",
+];
 
-  const ACCENT = [
-    "bg-primary-red text-primary-white",
-    "bg-primary-blue text-primary-white",
-    "bg-primary-yellow text-primary-black",
-  ];
+function parseBullets(text: string): string[] {
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
+  } catch (_) { /* not JSON */ }
+  const parts = text.split(". ").filter(Boolean).slice(0, 3);
+  return parts.length > 0 ? parts : [text];
+}
+
+function NewsFeedCard({ item }: { item: SerializedEvent }) {
+  const bullets = parseBullets(item.fullExplanation);
 
   return (
     <article className="flex flex-col gap-4 bg-primary-white border-2 border-primary-black px-6 py-6 transition-all duration-150 hover:shadow-[4px_4px_0px_#0A0A0A]">
@@ -133,7 +131,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
       <div className="flex flex-col gap-2 pt-1">
         {bullets.map((bullet, i) => (
           <div key={i} className="flex gap-3 items-start">
-            <span className={`w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 ${ACCENT[i % 3]}`}>
+            <span className={`w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 ${ACCENT_COLORS[i % 3]}`}>
               {i + 1}
             </span>
             <p className="font-sans text-sm text-primary-black leading-relaxed">{bullet}</p>
