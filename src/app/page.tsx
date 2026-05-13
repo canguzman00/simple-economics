@@ -49,10 +49,10 @@ export default async function HomePage() {
       {/* ── Hero ── */}
       <section className="bg-primary-white border-b-2 border-primary-black overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 items-center min-h-[calc(100vh-3.5rem)]">
+          <div className="flex items-center min-h-[calc(100vh-3.5rem)]">
 
-            {/* Left: headline + CTA */}
-            <div className="py-20 lg:py-0 lg:pr-12">
+            {/* Headline + CTA */}
+            <div className="py-20 max-w-3xl">
               <p className="font-sans text-xs uppercase tracking-[0.25em] text-gray-500 mb-6">
                 Economic education for real life
               </p>
@@ -82,10 +82,6 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right: Mondrian geometric art */}
-            <div className="hidden lg:block h-full min-h-[calc(100vh-3.5rem)] relative border-l-2 border-primary-black">
-              <MondriangGrid />
-            </div>
           </div>
         </div>
       </section>
@@ -274,42 +270,6 @@ export default async function HomePage() {
         </div>
       </footer>
 
-    </div>
-  );
-}
-
-// ─── Mondrian geometric grid ──────────────────────────────────────────────────
-
-function MondriangGrid() {
-  // 3×4 grid, 4px black gap — the gap IS the Mondrian line
-  return (
-    <div
-      className="absolute inset-0"
-      style={{
-        background: "#0A0A0A",
-        display: "grid",
-        gap: "4px",
-        padding: "4px",
-        gridTemplateColumns: "4fr 2fr 3fr",
-        gridTemplateRows: "3fr 1fr 4fr 2fr",
-      }}
-    >
-      {/* col 1, row 1: white — large top-left */}
-      <div style={{ background: "#FAFAFA", gridColumn: "1", gridRow: "1" }} />
-      {/* col 1, row 2: yellow — accent strip */}
-      <div style={{ background: "#F5C800", gridColumn: "1", gridRow: "2" }} />
-      {/* col 1, rows 3-4: blue — dominant bottom-left */}
-      <div style={{ background: "#1B4FD8", gridColumn: "1", gridRow: "3 / 5" }} />
-      {/* col 2, rows 1-2: red — tall center accent */}
-      <div style={{ background: "#E63329", gridColumn: "2", gridRow: "1 / 3" }} />
-      {/* col 2, rows 3-4: white */}
-      <div style={{ background: "#FAFAFA", gridColumn: "2", gridRow: "3 / 5" }} />
-      {/* col 3, rows 1-2: white — large top-right */}
-      <div style={{ background: "#FAFAFA", gridColumn: "3", gridRow: "1 / 3" }} />
-      {/* col 3, row 3: yellow */}
-      <div style={{ background: "#F5C800", gridColumn: "3", gridRow: "3" }} />
-      {/* col 3, row 4: white */}
-      <div style={{ background: "#FAFAFA", gridColumn: "3", gridRow: "4" }} />
     </div>
   );
 }
