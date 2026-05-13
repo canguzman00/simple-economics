@@ -223,7 +223,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
 
 function PageHeader() {
   return (
-    <div className="border-b-2 border-primary-black pb-8 mb-2">
+    <div className="pb-8 mb-2">
       <h1 className="font-sans font-black text-4xl sm:text-5xl text-primary-black leading-tight uppercase">
         Ask the Economist
       </h1>
