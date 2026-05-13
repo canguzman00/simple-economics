@@ -84,23 +84,24 @@ async function processArticles(
   tier: Tier,
   region?: string
 ): Promise<void> {
-  await Promise.allSettled(
-    articles.map(async (article) => {
-      // Skip if already cached
+  // Process max 3 articles per tier to stay within Vercel timeout
+  const toProcess = articles.slice(0, 3);
+  for (const article of toProcess) {
+    try {
       const existing = await prisma.newsCache.findUnique({ where: { url: article.url } });
-      if (existing) return;
+      if (existing) continue;
 
       const classified = await classifyArticle(
         article.title,
         article.description ?? article.title
       );
-      if (!classified) return;
+      if (!classified) continue;
 
       await prisma.newsCache.create({
         data: {
           title: article.title,
           summary: classified.summary,
-          fullExplanation: classified.fullExplanation,
+          fullExplanation: JSON.stringify(classified.bullets),
           url: article.url,
           source: article.source.name,
           publishedAt: new Date(article.publishedAt),
@@ -110,8 +111,10 @@ async function processArticles(
           region: region ?? null,
         },
       });
-    })
-  );
+    } catch (err) {
+      console.error("[news] failed to process article:", err);
+    }
+  }
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -120,11 +123,11 @@ export async function fetchAndCacheNews(region?: string): Promise<void> {
   const [globalArticles, nationalArticles] = await Promise.all([
     fetchNewsAPIArticles(
       "global economy OR trade war OR oil prices OR central bank OR IMF OR World Bank OR currency crisis",
-      5
+      3
     ),
     fetchNewsAPIArticles(
       "US economy OR Federal Reserve OR inflation OR unemployment OR GDP OR jobs report OR recession",
-      5
+      3
     ),
   ]);
 

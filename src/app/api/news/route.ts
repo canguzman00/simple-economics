@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
     });
 
     if (isCacheStale(newest?.createdAt ?? null)) {
-      await fetchAndCacheNews(region);
+      // Fire and forget — don't block the response
+      fetchAndCacheNews(region).catch((e) => console.error("[news] background fetch failed:", e));
     }
 
     const articles = await getCachedNews(tierParam ?? undefined, region);
