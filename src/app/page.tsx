@@ -16,7 +16,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-            <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+            <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
               Simple Economics
             </span>
           </div>
@@ -56,7 +56,7 @@ export default async function HomePage() {
               <p className="font-sans text-xs uppercase tracking-[0.25em] text-gray-500 mb-6">
                 Economic education for real life
               </p>
-              <h1 className="font-display font-black text-5xl sm:text-6xl lg:text-7xl text-primary-black leading-[0.95] tracking-tight uppercase">
+              <h1 className="font-sans font-black text-5xl sm:text-6xl lg:text-7xl text-primary-black leading-[0.95] tracking-tight uppercase">
                 Big ideas.<br />
                 Simple terms.<br />
                 <span className="text-primary-red">Smarter you.</span>
@@ -67,13 +67,13 @@ export default async function HomePage() {
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/onboarding"
-                  className="font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-7 py-4 text-center"
+                  className="font-sans text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-7 py-4 text-center"
                 >
                   Get Started Free →
                 </Link>
                 <a
                   href="#how-it-works"
-                  className="font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-7 py-4 text-center"
+                  className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-7 py-4 text-center"
                 >
                   See How It Works
                 </a>
@@ -113,7 +113,7 @@ export default async function HomePage() {
       {/* ── How It Works ── */}
       <section id="how-it-works" className="bg-primary-white border-b-2 border-primary-black">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
             How it works
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-t-2 border-primary-black">
@@ -144,9 +144,9 @@ export default async function HomePage() {
                 }`}
               >
                 <span className={`w-10 h-10 ${accent} flex items-center justify-center`}>
-                  <span className="font-display text-sm font-black text-primary-black">{step}</span>
+                  <span className="font-sans text-sm font-black text-primary-black">{step}</span>
                 </span>
-                <h3 className="font-display text-base font-bold uppercase tracking-wide text-primary-black leading-snug">
+                <h3 className="font-sans text-base font-bold uppercase tracking-wide text-primary-black leading-snug">
                   {title}
                 </h3>
                 <p className="font-sans text-sm text-gray-500 leading-relaxed">
@@ -161,7 +161,7 @@ export default async function HomePage() {
       {/* ── Two problems ── */}
       <section className="bg-gray-100 border-b-2 border-primary-black">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
             Two problems, one solution
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -180,10 +180,10 @@ export default async function HomePage() {
               },
             ].map(({ label, title, body, cta }) => (
               <div key={label} className="bg-primary-white border-2 border-primary-black p-8 flex flex-col gap-4">
-                <span className="font-display text-xs font-bold uppercase tracking-widest text-primary-red">
+                <span className="font-sans text-xs font-bold uppercase tracking-widest text-primary-red">
                   {label}
                 </span>
-                <h3 className="font-display text-xl font-black uppercase text-primary-black leading-tight">
+                <h3 className="font-sans text-xl font-black uppercase text-primary-black leading-tight">
                   {title}
                 </h3>
                 <p className="font-sans text-sm text-gray-500 leading-relaxed">{body}</p>
@@ -199,7 +199,7 @@ export default async function HomePage() {
       {/* ── Built on evidence ── */}
       <section className="bg-primary-yellow border-b-2 border-primary-black">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-display text-xs font-black uppercase tracking-[0.25em] text-primary-black mb-12">
+          <p className="font-sans text-xs font-black uppercase tracking-[0.25em] text-primary-black mb-12">
             Built on evidence
           </p>
           <div className="flex flex-wrap gap-3 mb-14">
@@ -215,7 +215,7 @@ export default async function HomePage() {
             ].map((source) => (
               <span
                 key={source}
-                className="font-display text-xs font-bold uppercase tracking-wide text-primary-black border-2 border-primary-black px-3 py-2"
+                className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black border-2 border-primary-black px-3 py-2"
               >
                 {source}
               </span>
@@ -234,7 +234,7 @@ export default async function HomePage() {
           <div className="mt-14">
             <Link
               href="/onboarding"
-              className="inline-block font-display text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-8 py-4"
+              className="inline-block font-sans text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-8 py-4"
             >
               Get Started Free →
             </Link>
@@ -252,7 +252,7 @@ export default async function HomePage() {
             <div className="flex flex-col gap-5">
               <div className="flex items-center gap-2.5">
                 <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-                <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-white">
+                <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-white">
                   Simple Economics
                 </span>
               </div>

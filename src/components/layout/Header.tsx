@@ -46,7 +46,7 @@ function LangToggle() {
   return (
     <button
       onClick={toggleLang}
-      className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors border border-gray-300 px-2 py-1"
+      className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors border border-gray-300 px-2 py-1"
     >
       {lang === "en" ? "ES" : "EN"}
     </button>
@@ -72,7 +72,7 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
       <button onClick={() => setOpen((v) => !v)} aria-label="Account menu">
         <Avatar className="rounded-none w-8 h-8">
           <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
-          <AvatarFallback className="rounded-none bg-primary-black text-primary-white font-display text-xs">
+          <AvatarFallback className="rounded-none bg-primary-black text-primary-white font-sans text-xs">
             {(session.user.name ?? session.user.email ?? "U").charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -127,7 +127,7 @@ export function Header() {
       <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-          <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+          <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
             Simple Economics
           </span>
         </Link>
@@ -153,7 +153,7 @@ export function Header() {
               <div className="flex flex-col h-full pt-14 px-6 pb-8">
                 <div className="flex items-center gap-2.5 mb-10">
                   <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-                  <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black">
+                  <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black">
                     Simple Economics
                   </span>
                 </div>

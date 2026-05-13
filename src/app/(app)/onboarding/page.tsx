@@ -53,7 +53,7 @@ function OptionCard({
     >
       <span className="text-2xl leading-none select-none">{emoji}</span>
       <div className="min-w-0">
-        <p className={`font-display text-sm font-bold uppercase tracking-wide ${selected ? "text-primary-white" : "text-primary-black"}`}>
+        <p className={`font-sans text-sm font-bold uppercase tracking-wide ${selected ? "text-primary-white" : "text-primary-black"}`}>
           {label}
         </p>
         <p className={`font-sans text-xs mt-0.5 ${selected ? "text-gray-300" : "text-gray-700"}`}>
@@ -92,7 +92,7 @@ function CheckboxCard({
     >
       <span className="text-2xl leading-none select-none shrink-0 mt-0.5">{emoji}</span>
       <div className="min-w-0 flex-1">
-        <p className={`font-display text-sm font-bold uppercase tracking-wide ${checked ? "text-primary-white" : "text-primary-black"}`}>
+        <p className={`font-sans text-sm font-bold uppercase tracking-wide ${checked ? "text-primary-white" : "text-primary-black"}`}>
           {label}
         </p>
         <p className={`font-sans text-xs mt-0.5 ${checked ? "text-gray-300" : "text-gray-700"}`}>
@@ -165,14 +165,14 @@ export default function OnboardingPage() {
   }
 
   const btnCls = (enabled: boolean) =>
-    `font-display text-xs font-black uppercase tracking-widest transition-colors py-4 ${
+    `font-sans text-xs font-black uppercase tracking-widest transition-colors py-4 ${
       enabled
         ? "bg-primary-red text-primary-white hover:bg-primary-black cursor-pointer"
         : "bg-gray-200 text-gray-300 cursor-not-allowed"
     }`;
-  const backCls = "flex-1 font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-gray-100 transition-colors py-4";
+  const backCls = "flex-1 font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-gray-100 transition-colors py-4";
   const stepLabel = (n: number) => (
-    <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
+    <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
       Step {n} of {TOTAL_STEPS}
     </p>
   );
@@ -186,7 +186,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div>
             {stepLabel(1)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
               Do you rent or own your home?
             </h1>
             <div className="flex flex-col gap-2">
@@ -204,7 +204,7 @@ export default function OnboardingPage() {
         {step === 2 && (
           <div>
             {stepLabel(2)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
               What&apos;s your employment situation?
             </h1>
             <div className="flex flex-col gap-2">
@@ -223,7 +223,7 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div>
             {stepLabel(3)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-8">
               What are your biggest financial concerns?
             </h1>
             <p className="font-sans text-sm text-gray-700 mb-8">Select all that apply — you can have more than one.</p>
@@ -243,7 +243,7 @@ export default function OnboardingPage() {
         {step === 4 && (
           <div>
             {stepLabel(4)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
               Where are you based?
             </h1>
             <p className="font-sans text-sm text-gray-700 mb-8">
@@ -271,7 +271,7 @@ export default function OnboardingPage() {
         {step === 5 && (
           <div>
             {stepLabel(5)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
               Which best describes where you are in life?
             </h1>
             <p className="font-sans text-sm text-gray-700 mb-8">
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
         {step === 6 && (
           <div>
             {stepLabel(6)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
               Do you carry any of these types of debt?
             </h1>
             <p className="font-sans text-sm text-gray-700 mb-8">
@@ -320,7 +320,7 @@ export default function OnboardingPage() {
         {step === 7 && (
           <div>
             {stepLabel(7)}
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
+            <h1 className="font-sans font-black text-3xl sm:text-4xl text-primary-black uppercase leading-tight mb-3">
               What industry do you work in?
             </h1>
             <p className="font-sans text-sm text-gray-700 mb-8">

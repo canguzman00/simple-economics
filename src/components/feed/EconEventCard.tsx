@@ -66,10 +66,10 @@ export function EconEventCard({
     <article className="flex flex-col gap-5 bg-primary-white border-2 border-primary-black px-6 py-6 transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A]">
       {/* Badges row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-flex items-center font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${pillarCfg.bg} ${pillarCfg.text}`}>
+        <span className={`inline-flex items-center font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${pillarCfg.bg} ${pillarCfg.text}`}>
           {pillarCfg.label}
         </span>
-        <span className={`inline-flex items-center font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${impactCfg.bg} ${impactCfg.text}`}>
+        <span className={`inline-flex items-center font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${impactCfg.bg} ${impactCfg.text}`}>
           {impactCfg.label} IMPACT
         </span>
         <span className="ml-auto font-sans text-[11px] text-primary-black">{formattedDate}</span>
@@ -87,7 +87,7 @@ export function EconEventCard({
 
       {/* "What this means for you" callout */}
       <div className="border-l-4 border-primary-black bg-primary-yellow px-4 py-4">
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-primary-black mb-2">
+        <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black mb-2">
           What this means for you
         </p>
         <p className="font-sans text-sm text-primary-black leading-relaxed">
@@ -122,7 +122,7 @@ export function EconEventCard({
         {/* Source URL links */}
         {urlSources.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <p className="font-display text-[10px] font-bold uppercase tracking-widest text-primary-black">
+            <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black">
               Sources
             </p>
             {urlSources.map((url) => (

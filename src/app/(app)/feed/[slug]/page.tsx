@@ -62,7 +62,7 @@ function RelatedCard({ slug, title, pillar, publishedAt }: { slug: string; title
       <span className={`self-start inline-flex items-center font-sans text-[10px] font-medium px-2 py-0.5 border ${cfg.badge}`}>
         {cfg.label}
       </span>
-      <p className="font-display text-sm font-bold uppercase text-primary-black leading-snug line-clamp-2">{title}</p>
+      <p className="font-sans text-sm font-bold uppercase text-primary-black leading-snug line-clamp-2">{title}</p>
       <p className="font-mono text-xs text-gray-400">
         {new Date(publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
       </p>
@@ -108,7 +108,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
       {/* Back link */}
       <Link
         href="/feed"
-        className="inline-flex items-center gap-1.5 font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors mb-8"
+        className="inline-flex items-center gap-1.5 font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors mb-8"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <path d="M8.5 3L5 7l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -128,14 +128,14 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
           </span>
           <span className="font-mono text-[11px] text-gray-400">{formattedDate}</span>
         </div>
-        <h1 className="font-display font-black text-4xl sm:text-5xl text-primary-black uppercase leading-tight">
+        <h1 className="font-sans font-black text-4xl sm:text-5xl text-primary-black uppercase leading-tight">
           {event.title}
         </h1>
       </header>
 
       {/* 2. What happened */}
       <section className="mb-10">
-        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+        <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
           What happened
         </h2>
         <p className="font-sans text-lg text-gray-800 leading-relaxed">
@@ -145,7 +145,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
 
       {/* 3. Full explanation */}
       <section className="mb-10">
-        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+        <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
           Why it happened
         </h2>
         <div className="font-sans text-base text-gray-700 leading-relaxed space-y-4">
@@ -157,14 +157,14 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
 
       {/* 4. The Economist's Take */}
       <section className="mb-10">
-        <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+        <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
           The Economist&apos;s Take
         </h2>
         <blockquote className="border-l-4 border-primary-yellow bg-yellow-50 px-6 py-5">
           <p className="font-sans text-lg text-primary-black leading-relaxed italic">
             &ldquo;{event.summary}&rdquo;
           </p>
-          <footer className="mt-3 font-display text-[10px] font-bold uppercase tracking-widest text-gray-500">
+          <footer className="mt-3 font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500">
             — The Economist
           </footer>
         </blockquote>
@@ -173,7 +173,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
       {/* 5. Sources */}
       {event.sources.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+          <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
             Sources
           </h2>
           <ol className="flex flex-col gap-2">
@@ -201,7 +201,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
       {/* 6. YouTube */}
       {event.youtubeUrl && (
         <section className="mb-12">
-          <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+          <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
             Watch
           </h2>
           <YouTubeEmbed url={event.youtubeUrl} title={event.title} />
@@ -211,7 +211,7 @@ export default async function EventDetailPage({ params }: { params: { slug: stri
       {/* 7. Related */}
       {related.length > 0 && (
         <section className="mt-12 pt-10 border-t-2 border-primary-black">
-          <h2 className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-5">
+          <h2 className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-5">
             Related Events
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

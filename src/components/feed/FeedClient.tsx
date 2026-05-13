@@ -90,13 +90,13 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
     <article className="flex flex-col gap-4 bg-primary-white border-2 border-primary-black px-6 py-6 transition-all duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A]">
       {/* Badge row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-display text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-primary-red text-primary-white">
+        <span className="font-sans text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-primary-red text-primary-white">
           NEWS
         </span>
-        <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[item.pillar]}`}>
+        <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[item.pillar]}`}>
           {PILLAR_LABEL[item.pillar]}
         </span>
-        <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[item.impact]}`}>
+        <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[item.impact]}`}>
           {item.impact} IMPACT
         </span>
         <span className="ml-auto font-sans text-[11px] text-primary-black">
@@ -105,7 +105,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
       </div>
 
       {/* Title */}
-      <h2 className="font-display font-bold text-xl text-primary-black leading-tight uppercase">
+      <h2 className="font-sans font-bold text-xl text-primary-black leading-tight uppercase">
         {item.title}
       </h2>
 
@@ -116,7 +116,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
 
       {/* What this means callout */}
       <div className="border-l-4 border-primary-black bg-primary-yellow px-4 py-4">
-        <p className="font-display text-[10px] font-bold uppercase tracking-widest text-primary-black mb-2">
+        <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black mb-2">
           What this means for you
         </p>
         <p className="font-sans text-sm text-primary-black leading-relaxed">
@@ -130,7 +130,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
           href={item.newsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="self-start font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-4 py-2"
+          className="self-start font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-4 py-2"
         >
           Read full story →
         </a>
@@ -144,7 +144,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 border-2 border-primary-black text-center gap-3">
-      <p className="font-display font-bold uppercase text-lg text-primary-black">No events yet</p>
+      <p className="font-sans font-bold uppercase text-lg text-primary-black">No events yet</p>
       <p className="font-sans text-sm text-primary-black">Check back soon.</p>
     </div>
   );
@@ -215,7 +215,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
           <button
             key={tab.value}
             onClick={() => { setTier(tab.value); setCount(PAGE_SIZE); }}
-            className={`flex-1 font-display text-xs font-black uppercase tracking-widest py-3 transition-colors ${
+            className={`flex-1 font-sans text-xs font-black uppercase tracking-widest py-3 transition-colors ${
               i > 0 ? "border-l-2 border-primary-black" : ""
             } ${
               tier === tab.value
@@ -232,7 +232,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
       {tier === "LOCAL" && (userCity || userState) && (
         <div className="border-2 border-primary-black bg-primary-blue px-5 py-3 mb-5 flex items-center gap-3">
           <span className="w-2.5 h-2.5 bg-primary-white shrink-0" />
-          <span className="font-display text-xs font-black uppercase tracking-widest text-primary-white">
+          <span className="font-sans text-xs font-black uppercase tracking-widest text-primary-white">
             Local Economy{userCity ? ` — ${userCity}` : ""}{userState ? `, ${userState}` : ""}
           </span>
         </div>
@@ -245,7 +245,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
             <button
               key={tab.value}
               onClick={() => { setPillar(tab.value); setCount(PAGE_SIZE); }}
-              className={`font-display text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors ${
+              className={`font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors ${
                 pillar === tab.value
                   ? "bg-primary-red text-primary-white"
                   : "bg-primary-white text-primary-black hover:bg-gray-100"
@@ -259,7 +259,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
 
       {/* ── Impact filter ── */}
       <div className="flex items-center gap-3 mb-8">
-        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-primary-black shrink-0">
+        <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black shrink-0">
           Impact:
         </span>
         <div className="flex gap-1.5">
@@ -267,7 +267,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
             <button
               key={tab.value}
               onClick={() => { setImpact(tab.value); setCount(PAGE_SIZE); }}
-              className={`font-display text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black transition-colors ${
+              className={`font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black transition-colors ${
                 impact === tab.value
                   ? "bg-primary-black text-primary-white"
                   : "bg-primary-white text-primary-black hover:bg-gray-100"
@@ -312,7 +312,7 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
         <div className="flex justify-center mt-10">
           <button
             onClick={() => setCount((c) => c + PAGE_SIZE)}
-            className="font-display text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-8 py-3"
+            className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-8 py-3"
           >
             Load more ({filtered.length - count} remaining)
           </button>

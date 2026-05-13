@@ -201,7 +201,7 @@ export default async function MyEconomyPage() {
 
       {/* ── 1. Header ── */}
       <section>
-        <h1 className="font-display font-black text-4xl sm:text-5xl text-primary-black uppercase leading-tight">
+        <h1 className="font-sans font-black text-4xl sm:text-5xl text-primary-black uppercase leading-tight">
           Your Economic Snapshot
         </h1>
         {user?.onboardingComplete && (situationStr || city) ? (
@@ -213,7 +213,7 @@ export default async function MyEconomyPage() {
         ) : (
           <div className="mt-6 border-2 border-primary-black bg-primary-yellow px-6 py-5 flex items-center justify-between gap-4">
             <div>
-              <p className="font-display text-sm font-bold uppercase tracking-wide text-primary-black">
+              <p className="font-sans text-sm font-bold uppercase tracking-wide text-primary-black">
                 Personalize your dashboard
               </p>
               <p className="mt-1 font-sans text-xs text-gray-700">
@@ -222,7 +222,7 @@ export default async function MyEconomyPage() {
             </div>
             <Link
               href="/onboarding"
-              className="shrink-0 font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
+              className="shrink-0 font-sans text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
             >
               Complete profile
             </Link>
@@ -235,7 +235,7 @@ export default async function MyEconomyPage() {
         {/* Section banner */}
         <div className="border-2 border-primary-black bg-primary-yellow px-5 py-3 mb-4 flex items-center gap-3">
           <span className="w-2.5 h-2.5 bg-primary-black shrink-0" />
-          <span className="font-display text-xs font-black uppercase tracking-widest text-primary-black">
+          <span className="font-sans text-xs font-black uppercase tracking-widest text-primary-black">
             National Economy
           </span>
         </div>
@@ -276,7 +276,7 @@ export default async function MyEconomyPage() {
                 <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
                   {/* Name + contextual value */}
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
+                    <p className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                       {meta.name}
                     </p>
                     {unavailable ? (
@@ -343,7 +343,7 @@ export default async function MyEconomyPage() {
             return (
               <div key={meta.key} className={`flex flex-col gap-3 bg-primary-white border-2 border-primary-black px-5 py-5 ${INDICATOR_BORDER[meta.key] ?? ""}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
+                  <p className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     {meta.name}
                   </p>
                   {unavailable ? (
@@ -371,7 +371,7 @@ export default async function MyEconomyPage() {
       <section>
         <div className="border-2 border-primary-black bg-primary-blue px-5 py-3 mb-4 flex items-center gap-3">
           <span className="w-2.5 h-2.5 bg-primary-white shrink-0" />
-          <span className="font-display text-xs font-black uppercase tracking-widest text-primary-white">
+          <span className="font-sans text-xs font-black uppercase tracking-widest text-primary-white">
             Your Local Economy{city ? ` — ${city.toUpperCase()}` : ""}
           </span>
         </div>
@@ -391,7 +391,7 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black border-l-4 border-l-primary-black px-5 py-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
+                  <p className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     Local Housing Market
                   </p>
                   <span className={`font-mono text-2xl leading-none shrink-0 ${cached ? "text-gray-500" : "text-primary-black"}`}>
@@ -418,7 +418,7 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 bg-primary-white border-2 border-primary-black border-l-4 border-l-primary-yellow px-5 py-5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
+                  <p className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black leading-snug">
                     Local Job Market
                   </p>
                   <span className="font-sans text-xs text-primary-black leading-none shrink-0 text-right">
@@ -454,7 +454,7 @@ export default async function MyEconomyPage() {
 
       {/* ── 3. Top HIGH impact events ── */}
       <section>
-        <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black mb-5 flex items-center gap-2">
+        <h2 className="font-sans text-xs font-bold uppercase tracking-widest text-primary-black mb-5 flex items-center gap-2">
           <span className="w-2.5 h-2.5 bg-primary-blue shrink-0" />
           What&apos;s affecting you right now
         </h2>
@@ -469,14 +469,14 @@ export default async function MyEconomyPage() {
                 className="flex flex-col gap-2 bg-primary-white border-2 border-primary-black px-5 py-4 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A] transition-all"
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[ev.pillar]}`}>
+                  <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[ev.pillar]}`}>
                     {PILLAR_LABEL[ev.pillar]}
                   </span>
-                  <span className={`font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[ev.impact]}`}>
+                  <span className={`font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${IMPACT_BG[ev.impact]}`}>
                     HIGH IMPACT
                   </span>
                 </div>
-                <p className="font-display font-bold text-base text-primary-black uppercase leading-snug">{ev.title}</p>
+                <p className="font-sans font-bold text-base text-primary-black uppercase leading-snug">{ev.title}</p>
                 <p className="font-sans text-xs text-primary-black line-clamp-2">{ev.summary}</p>
               </Link>
             ))}
@@ -487,18 +487,18 @@ export default async function MyEconomyPage() {
       {/* ── 4. Recent questions ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
+          <h2 className="font-sans text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-primary-yellow shrink-0" />
             Your recent questions
           </h2>
-          <Link href="/ask" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
+          <Link href="/ask" className="font-sans text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
             Ask new →
           </Link>
         </div>
         {recentQuestions.length === 0 ? (
           <div className="border-2 border-primary-black px-5 py-8 text-center">
             <p className="font-sans text-sm text-gray-500">You haven&apos;t asked anything yet.</p>
-            <Link href="/ask" className="mt-3 inline-block font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
+            <Link href="/ask" className="mt-3 inline-block font-sans text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
               Ask the Economist →
             </Link>
           </div>
@@ -524,18 +524,18 @@ export default async function MyEconomyPage() {
       {/* ── 5. Saved events ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
+          <h2 className="font-sans text-xs font-bold uppercase tracking-widest text-primary-black flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-primary-black shrink-0 border border-gray-300" />
             Saved events
           </h2>
-          <Link href="/saved" className="font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
+          <Link href="/saved" className="font-sans text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
             See all →
           </Link>
         </div>
         {savedEvents.length === 0 ? (
           <div className="border-2 border-primary-black px-5 py-8 text-center">
             <p className="font-sans text-sm text-gray-500">No saved events yet.</p>
-            <Link href="/feed" className="mt-3 inline-block font-display text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
+            <Link href="/feed" className="mt-3 inline-block font-sans text-xs font-bold uppercase tracking-widest text-primary-black hover:text-primary-red transition-colors">
               Browse the feed →
             </Link>
           </div>
@@ -547,10 +547,10 @@ export default async function MyEconomyPage() {
                 href={`/feed/${se.event.slug}`}
                 className="flex flex-col gap-2 bg-primary-white border-2 border-primary-black px-4 py-4 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#0A0A0A] transition-all"
               >
-                <span className={`self-start font-display text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[se.event.pillar]}`}>
+                <span className={`self-start font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 ${PILLAR_BG[se.event.pillar]}`}>
                   {PILLAR_LABEL[se.event.pillar]}
                 </span>
-                <p className="font-display font-bold text-sm text-primary-black uppercase leading-snug line-clamp-2">
+                <p className="font-sans font-bold text-sm text-primary-black uppercase leading-snug line-clamp-2">
                   {se.event.title}
                 </p>
                 <p className="font-sans text-[10px] text-primary-black">

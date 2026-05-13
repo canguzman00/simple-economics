@@ -120,7 +120,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
           </p>
           <Link
             href="/signin"
-            className="inline-block font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-6 py-3"
+            className="inline-block font-sans text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-6 py-3"
           >
             Sign in
           </Link>
@@ -136,7 +136,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
       {/* Suggested questions */}
       {!answer && !streaming && (
         <div className="flex flex-col gap-2 mt-8 mb-6">
-          <p className="font-display text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+          <p className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
             Try asking
           </p>
           {SUGGESTED.map((s) => (
@@ -170,7 +170,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
           <button
             type="submit"
             disabled={!question.trim() || streaming}
-            className="font-display text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-6 py-3"
+            className="font-sans text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-6 py-3"
           >
             {streaming ? "Thinking…" : "Get the answer"}
           </button>
@@ -196,7 +196,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
       {/* Streaming answer */}
       {(answer || streaming) && (
         <div className="mt-8">
-          <p className="font-display text-[10px] font-black uppercase tracking-[0.2em] text-primary-black mb-4">
+          <p className="font-sans text-[10px] font-black uppercase tracking-[0.2em] text-primary-black mb-4">
             The Economist Responds
           </p>
           <div className="border-l-4 border-primary-blue bg-primary-white border-2 border-primary-black px-6 py-5">
@@ -210,7 +210,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
           {!streaming && answer && (
             <button
               onClick={() => { setAnswer(""); setQuestion(""); }}
-              className="mt-5 font-display text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors"
+              className="mt-5 font-sans text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors"
             >
               Ask another question →
             </button>
@@ -224,7 +224,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
 function PageHeader() {
   return (
     <div className="border-b-2 border-primary-black pb-8 mb-2">
-      <h1 className="font-display font-black text-4xl sm:text-5xl text-primary-black leading-tight uppercase">
+      <h1 className="font-sans font-black text-4xl sm:text-5xl text-primary-black leading-tight uppercase">
         Ask the Economist
       </h1>
       <p className="mt-3 font-sans text-base text-gray-700 leading-relaxed">

@@ -10,7 +10,7 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2.5">
               <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-              <span className="font-display text-sm font-bold uppercase tracking-widest text-primary-black">
+              <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black">
                 Simple Economics
               </span>
             </div>
