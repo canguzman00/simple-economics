@@ -86,10 +86,10 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
     if (Array.isArray(parsed) && parsed.length > 0) {
       bullets = parsed;
     } else {
-      bullets = item.fullExplanation.split(/(?<=[.!?])\s+/).filter(Boolean).slice(0, 3);
+      bullets = item.fullExplanation.split(/[.!?]+\s+/).filter(Boolean).slice(0, 3);
     }
   } catch {
-    bullets = item.fullExplanation.split(/(?<=[.!?])\s+/).filter(Boolean).slice(0, 3);
+    bullets = item.fullExplanation.split(/[.!?]+\s+/).filter(Boolean).slice(0, 3);
   }
   if (bullets.length === 0) bullets = [item.fullExplanation];
 
