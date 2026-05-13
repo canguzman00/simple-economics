@@ -98,6 +98,9 @@ export default async function HomePage() {
                     { label: "Oil Price", value: "$82/bbl", source: "IMF Apr 2026" },
                     { label: "World Trade Growth", value: "3.0%", source: "WTO 2026" },
                     { label: "Global Unemployment", value: "5.1%", source: "ILO 2026" },
+                    { label: "World Population", value: "8.12B", source: "UN 2026" },
+                    { label: "Global Total Debt", value: "$251T", source: "IMF GDD 2024" },
+                    { label: "Global Poverty Rate", value: "8.5%", source: "World Bank 2026" },
                   ].map(({ label, value, source }) => (
                     <div key={label} style={{ background: "rgba(250,250,250,0.08)", border: "1px solid rgba(255,255,255,0.15)", padding: "12px" }}>
                       <div style={{ fontSize: "7px", fontFamily: "var(--font-inter)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>{label}</div>
