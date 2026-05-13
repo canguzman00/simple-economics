@@ -166,28 +166,30 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
   const [newsItems, setNewsItems] = useState<SerializedEvent[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
 
-  // Fetch news when tier tab changes to a non-ALL value
+  // Fetch all news on mount, refresh when userState changes
   useEffect(() => {
-    if (tier === "ALL") {
-      setNewsItems([]);
-      return;
-    }
     const abortCtrl = new AbortController();
     setNewsLoading(true);
 
-    const params = new URLSearchParams({ tier: tier === "LOCAL" ? "REGIONAL" : tier });
-    if (tier === "LOCAL" && userState) params.set("region", userState);
+    const fetches = [
+      fetch("/api/news?tier=GLOBAL",   { signal: abortCtrl.signal }).then((r) => r.json()),
+      fetch("/api/news?tier=NATIONAL", { signal: abortCtrl.signal }).then((r) => r.json()),
+      userState
+        ? fetch(`/api/news?tier=REGIONAL&region=${encodeURIComponent(userState)}`, { signal: abortCtrl.signal }).then((r) => r.json())
+        : Promise.resolve([]),
+    ];
 
-    fetch(`/api/news?${params}`, { signal: abortCtrl.signal })
-      .then((r) => r.json())
-      .then((data: SerializedEvent[]) => {
-        setNewsItems(data.map((a) => ({ ...a, isNews: true })));
+    Promise.all(fetches)
+      .then(([global, national, regional]) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const all = [...(global as any[]), ...(national as any[]), ...(regional as any[])];
+        setNewsItems(all.map((a) => ({ ...a, isNews: true })));
         setNewsLoading(false);
       })
       .catch(() => setNewsLoading(false));
 
     return () => abortCtrl.abort();
-  }, [tier, userState]);
+  }, [userState]);
 
   // Combine admin events + fetched news, then apply all filters independently
   const allItems: SerializedEvent[] = [
