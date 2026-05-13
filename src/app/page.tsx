@@ -90,16 +90,19 @@ export default async function HomePage() {
               <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.55)" }} />
               <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", gap: "12px" }}>
                 <p style={{ fontSize: "9px", fontFamily: "var(--font-unbounded)", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Live Economic Indicators</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
                   {[
-                    { label: "Global GDP", value: "$109T" },
-                    { label: "US Inflation", value: "3.2%" },
-                    { label: "Fed Rate", value: "4.5%" },
-                    { label: "Unemployment", value: "4.2%" },
-                  ].map(({ label, value }) => (
-                    <div key={label} style={{ background: "rgba(250,250,250,0.08)", border: "1px solid rgba(255,255,255,0.15)", padding: "14px" }}>
-                      <div style={{ fontSize: "8px", fontFamily: "var(--font-unbounded)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>{label}</div>
-                      <div style={{ fontSize: "26px", fontFamily: "var(--font-unbounded)", fontWeight: 900, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
+                    { label: "World GDP", value: "$123T", source: "IMF 2026" },
+                    { label: "Global Growth", value: "3.1%", source: "IMF WEO Apr 2026" },
+                    { label: "Global Inflation", value: "4.5%", source: "IMF 2026" },
+                    { label: "Oil Price", value: "$82/bbl", source: "IMF Apr 2026" },
+                    { label: "World Trade Growth", value: "3.0%", source: "WTO 2026" },
+                    { label: "Global Unemployment", value: "5.1%", source: "ILO 2026" },
+                  ].map(({ label, value, source }) => (
+                    <div key={label} style={{ background: "rgba(250,250,250,0.08)", border: "1px solid rgba(255,255,255,0.15)", padding: "12px" }}>
+                      <div style={{ fontSize: "7px", fontFamily: "var(--font-inter)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>{label}</div>
+                      <div style={{ fontSize: "20px", fontFamily: "var(--font-inter)", fontWeight: 900, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
+                      <div style={{ fontSize: "7px", fontFamily: "var(--font-jetbrains-mono)", color: "rgba(255,255,255,0.3)", marginTop: "4px" }}>{source}</div>
                     </div>
                   ))}
                 </div>
