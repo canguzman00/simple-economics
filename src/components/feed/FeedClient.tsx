@@ -49,26 +49,6 @@ const IMPACT_TABS: { value: Impact | "ALL"; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-const PILLAR_BG = {
-  GLOBAL_ECONOMICS:   "bg-primary-blue text-primary-white",
-  GEOPOLITICS_MONEY:  "bg-primary-red text-primary-white",
-  DEVELOPMENT_POLICY: "bg-primary-yellow text-primary-black",
-  PERSONAL_FINANCE:   "bg-primary-black text-primary-white",
-};
-
-const PILLAR_LABEL = {
-  GLOBAL_ECONOMICS:   "Global Economics",
-  GEOPOLITICS_MONEY:  "Geopolitics & Money",
-  DEVELOPMENT_POLICY: "Development & Policy",
-  PERSONAL_FINANCE:   "Personal Finance",
-};
-
-const IMPACT_BG = {
-  HIGH:   "bg-primary-red text-primary-white",
-  MEDIUM: "bg-primary-yellow text-primary-black",
-  LOW:    "bg-primary-blue text-primary-white",
-};
-
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const h = Math.floor(diff / 3_600_000);
@@ -131,7 +111,7 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
       <div className="flex flex-col gap-2 pt-1">
         {bullets.map((bullet, i) => (
           <div key={i} className="flex gap-3 items-start">
-            <span className={`w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 ${ACCENT_COLORS[i % 3]}`}>
+            <span className={`w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 ${accentColors[i % 3]}`}>
               {i + 1}
             </span>
             <p className="font-sans text-sm text-primary-black leading-relaxed">{bullet}</p>
