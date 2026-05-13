@@ -58,10 +58,8 @@ export default async function HomePage() {
               </p>
               <h1 className="font-display font-black text-5xl sm:text-6xl lg:text-7xl text-primary-black leading-[0.95] tracking-tight uppercase">
                 Big ideas.<br />
-                Simple<br />
-                terms.<br />
-                <span className="text-primary-red">Smarter</span><br />
-                you.
+                Simple terms.<br />
+                <span className="text-primary-red">Smarter you.</span>
               </h1>
               <p className="mt-8 font-sans text-base text-gray-700 leading-relaxed max-w-sm">
                 Simple Economics explains what&apos;s happening in the economy and what it means specifically for you — based on how you actually live.
