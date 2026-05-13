@@ -47,7 +47,7 @@ export default async function HomePage() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="bg-primary-white border-b-2 border-primary-black overflow-hidden">
+      <section className="bg-primary-white overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center min-h-[calc(100vh-3.5rem)]">
 
@@ -114,12 +114,12 @@ export default async function HomePage() {
       </section>
 
       {/* ── How It Works ── */}
-      <section id="how-it-works" className="bg-primary-white border-b-2 border-primary-black">
+      <section id="how-it-works" className="bg-primary-black">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-600 mb-16">
             How it works
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-t-2 border-primary-black">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
             {[
               {
                 step: "01",
@@ -142,17 +142,17 @@ export default async function HomePage() {
             ].map(({ step, accent, title, body }, i) => (
               <div
                 key={step}
-                className={`p-8 flex flex-col gap-5 border-b-2 border-primary-black sm:border-b-0 ${
-                  i < 2 ? "sm:border-r-2 sm:border-primary-black" : ""
+                className={`p-8 flex flex-col gap-5 border-b border-gray-800 sm:border-b-0 ${
+                  i < 2 ? "sm:border-r sm:border-gray-800" : ""
                 }`}
               >
                 <span className={`w-10 h-10 ${accent} flex items-center justify-center`}>
                   <span className="font-sans text-sm font-black text-primary-black">{step}</span>
                 </span>
-                <h3 className="font-sans text-base font-bold uppercase tracking-wide text-primary-black leading-snug">
+                <h3 className="font-sans text-base font-bold uppercase tracking-wide text-primary-white leading-snug">
                   {title}
                 </h3>
-                <p className="font-sans text-sm text-gray-500 leading-relaxed">
+                <p className="font-sans text-sm text-gray-400 leading-relaxed">
                   {body}
                 </p>
               </div>
@@ -162,9 +162,9 @@ export default async function HomePage() {
       </section>
 
       {/* ── Two problems ── */}
-      <section className="bg-gray-100 border-b-2 border-primary-black">
+      <section className="bg-primary-blue">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-500 mb-16">
+          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-blue-300 mb-16">
             Two problems, one solution
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -182,14 +182,14 @@ export default async function HomePage() {
                 cta: "Every answer is filtered through your real situation.",
               },
             ].map(({ label, title, body, cta }) => (
-              <div key={label} className="bg-primary-white border-2 border-primary-black p-8 flex flex-col gap-4">
+              <div key={label} className="bg-primary-white p-8 flex flex-col gap-4">
                 <span className="font-sans text-xs font-bold uppercase tracking-widest text-primary-red">
                   {label}
                 </span>
                 <h3 className="font-sans text-xl font-black uppercase text-primary-black leading-tight">
                   {title}
                 </h3>
-                <p className="font-sans text-sm text-gray-500 leading-relaxed">{body}</p>
+                <p className="font-sans text-sm text-gray-400 leading-relaxed">{body}</p>
                 <p className="font-sans text-sm font-semibold text-primary-black mt-auto pt-2">
                   {cta}
                 </p>
@@ -200,7 +200,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Built on evidence ── */}
-      <section className="bg-primary-yellow border-b-2 border-primary-black">
+      <section className="bg-primary-yellow">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <p className="font-sans text-xs font-black uppercase tracking-[0.25em] text-primary-black mb-12">
             Built on evidence
@@ -218,14 +218,14 @@ export default async function HomePage() {
             ].map((source) => (
               <span
                 key={source}
-                className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black border-2 border-primary-black px-3 py-2"
+                className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black bg-yellow-300 px-3 py-2"
               >
                 {source}
               </span>
             ))}
           </div>
 
-          <div className="border-2 border-primary-black bg-primary-white p-6 max-w-lg">
+          <div className="bg-primary-white p-6 max-w-lg">
             <p className="font-sans text-sm text-gray-700 leading-relaxed">
               Simple Economics provides economic education only.{" "}
               <strong className="text-primary-black">Not financial or investment advice.</strong>{" "}
