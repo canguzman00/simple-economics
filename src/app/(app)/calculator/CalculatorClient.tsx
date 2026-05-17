@@ -68,6 +68,7 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
   const [financials, setFinancials] = useState({
     income: "",
     housingCost: "",
+    homeValue: "",
     savings: "",
     investments: "",
     debtPayments: "",
@@ -186,8 +187,9 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
                 {[
                   { key: "income", label: "Monthly take-home pay (after tax)", placeholder: "5000" },
                   { key: "housingCost", label: "Monthly rent or mortgage payment", placeholder: "1800" },
-                  { key: "savings", label: "Cash savings (checking + savings accounts)", placeholder: "15000" },
-                  { key: "investments", label: "Investment accounts (401k, IRA, stocks, ETFs)", placeholder: "40000" },
+                  ...(profile.situation?.toLowerCase().includes("own") ? [{ key: "homeValue", label: "Estimated home value (current market)", placeholder: "450000" }] : []),
+                  { key: "savings", label: "Cash savings total balance (checking + savings)", placeholder: "15000" },
+                  { key: "investments", label: "Investment accounts total balance (401k, IRA, stocks, ETFs)", placeholder: "40000" },
                   { key: "debtPayments", label: "Total monthly debt payments (credit cards, loans)", placeholder: "400" },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
