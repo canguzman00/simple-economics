@@ -184,11 +184,11 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
               </div>
               <div className="space-y-3">
                 {[
-                  { key: "income", label: "Monthly income", placeholder: "5000" },
-                  { key: "housingCost", label: "Monthly rent / mortgage", placeholder: "1800" },
-                  { key: "savings", label: "Total savings", placeholder: "15000" },
-                  { key: "investments", label: "Investments (401k, stocks)", placeholder: "40000" },
-                  { key: "debtPayments", label: "Monthly debt payments", placeholder: "400" },
+                  { key: "income", label: "Monthly take-home pay (after tax)", placeholder: "5000" },
+                  { key: "housingCost", label: "Monthly rent or mortgage payment", placeholder: "1800" },
+                  { key: "savings", label: "Cash savings (checking + savings accounts)", placeholder: "15000" },
+                  { key: "investments", label: "Investment accounts (401k, IRA, stocks, ETFs)", placeholder: "40000" },
+                  { key: "debtPayments", label: "Total monthly debt payments (credit cards, loans)", placeholder: "400" },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="block text-[11px] text-[#666] mb-1 uppercase tracking-wider">{label}</label>
