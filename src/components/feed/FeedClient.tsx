@@ -32,14 +32,6 @@ const TIER_TABS: { value: TierTab; label: string }[] = [
   { value: "LOCAL",    label: "Local" },
 ];
 
-const PILLAR_TABS: { value: Pillar | "ALL"; label: string }[] = [
-  { value: "ALL",                label: "All Pillars" },
-  { value: "GLOBAL_ECONOMICS",   label: "Global Economics" },
-  { value: "GEOPOLITICS_MONEY",  label: "Geopolitics & Money" },
-  { value: "DEVELOPMENT_POLICY", label: "Development & Policy" },
-  { value: "PERSONAL_FINANCE",   label: "Personal Finance" },
-];
-
 const IMPACT_TABS: { value: Impact | "ALL"; label: string }[] = [
   { value: "ALL",    label: "All" },
   { value: "HIGH",   label: "High" },
@@ -180,7 +172,6 @@ interface Props {
 
 export function FeedClient({ initialEvents, userCity, userState }: Props) {
   const [tier, setTier]     = useState<TierTab>("ALL");
-  const [pillar, setPillar] = useState<Pillar | "ALL">("ALL");
   const [impact, setImpact] = useState<Impact | "ALL">("ALL");
   const [count, setCount]   = useState(PAGE_SIZE);
   const [newsItems, setNewsItems] = useState<SerializedEvent[]>([]);
@@ -216,7 +207,6 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
       if (tier === "LOCAL") return e.tier === "REGIONAL";
       return e.tier === tier;
     })
-    .filter((e) => pillar === "ALL" || e.pillar === pillar)
     .filter((e) => impact === "ALL" || e.impact === impact)
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
@@ -253,26 +243,6 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
           </span>
         </div>
       )}
-
-      {/* Pillar filters */}
-      <div className="overflow-x-auto -mx-1 px-1 mb-4">
-        <div className="flex gap-2 min-w-max">
-          {PILLAR_TABS.map((tab) => (
-            <button key={tab.value}
-              onClick={() => { setPillar(tab.value); setCount(PAGE_SIZE); }}
-              className="text-[11px] font-medium uppercase tracking-wider px-3 py-2 rounded-lg whitespace-nowrap transition-colors"
-              style={{
-                background: pillar === tab.value ? "#F43F5E" : "#fff",
-                color: pillar === tab.value ? "#fff" : "#64748B",
-                border: "1px solid " + (pillar === tab.value ? "#F43F5E" : "#E2E8F0"),
-                fontFamily: "Inter, sans-serif",
-              }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Impact filters */}
       <div className="flex items-center gap-3 mb-8">
         <span className="text-[11px] font-semibold uppercase tracking-wider shrink-0" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
