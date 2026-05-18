@@ -76,7 +76,7 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
   const since = new Date(Date.now() - CACHE_TTL_MS).toISOString().split("T")[0];
 
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("q", "economy OR inflation OR "interest rate" OR unemployment OR "Federal Reserve" OR trade OR GDP OR recession OR wages OR housing");
+  url.searchParams.set("q", "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing");
   url.searchParams.set("section", "business|money|us-news|world");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
