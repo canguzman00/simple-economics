@@ -159,7 +159,13 @@ export function Header() {
     >
       <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+              <circle cx="14" cy="14" r="12" stroke="#F43F5E" strokeWidth="2"/>
+              <ellipse cx="14" cy="14" rx="5" ry="12" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="2" y1="14" x2="26" y2="14" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="4" y1="8" x2="24" y2="8" stroke="#F43F5E" strokeWidth="1"/>
+              <line x1="4" y1="20" x2="24" y2="20" stroke="#F43F5E" strokeWidth="1"/>
+            </svg>
           <span
             className="text-sm font-bold tracking-wide leading-none"
             style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
@@ -195,7 +201,13 @@ export function Header() {
             >
               <div className="flex flex-col h-full pt-14 px-6 pb-8">
                 <div className="flex items-center gap-2.5 mb-10">
-                  <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+                  <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+              <circle cx="14" cy="14" r="12" stroke="#F43F5E" strokeWidth="2"/>
+              <ellipse cx="14" cy="14" rx="5" ry="12" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="2" y1="14" x2="26" y2="14" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="4" y1="8" x2="24" y2="8" stroke="#F43F5E" strokeWidth="1"/>
+              <line x1="4" y1="20" x2="24" y2="20" stroke="#F43F5E" strokeWidth="1"/>
+            </svg>
                   <span
                     className="text-sm font-bold tracking-wide"
                     style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}

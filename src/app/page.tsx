@@ -16,7 +16,13 @@ export default async function HomePage() {
       <nav style={{ background: "#1E293B", borderBottom: "1px solid #334155", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "0 1.5rem", height: "3.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "#F43F5E", flexShrink: 0 }} />
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+              <circle cx="14" cy="14" r="12" stroke="#F43F5E" strokeWidth="2"/>
+              <ellipse cx="14" cy="14" rx="5" ry="12" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="2" y1="14" x2="26" y2="14" stroke="#F43F5E" strokeWidth="1.5"/>
+              <line x1="4" y1="8" x2="24" y2="8" stroke="#F43F5E" strokeWidth="1"/>
+              <line x1="4" y1="20" x2="24" y2="20" stroke="#F43F5E" strokeWidth="1"/>
+            </svg>
             <span style={{ fontSize: "14px", fontWeight: 700, color: "#F8FAFC", letterSpacing: "0.02em" }}>Simple Economics</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
