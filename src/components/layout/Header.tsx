@@ -79,7 +79,7 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((v) => !v)} aria-label="Account menu">
-        <Avatar className="w-8 h-8 rounded-full ring-2" style={{ ringColor: "#334155" }}>
+        <Avatar className="w-8 h-8 rounded-full" style={{ outline: "2px solid #334155" }}>
           <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
           <AvatarFallback
             className="rounded-full text-xs font-semibold"
