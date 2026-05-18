@@ -129,29 +129,6 @@ const PILLAR_LABEL: Record<Pillar, string> = {
   PERSONAL_FINANCE:   "Personal Finance",
 };
 
-const PILLAR_BG: Record<Pillar, string> = {
-  GLOBAL_ECONOMICS:   "bg-primary-blue text-primary-white",
-  GEOPOLITICS_MONEY:  "bg-primary-red text-primary-white",
-  DEVELOPMENT_POLICY: "bg-primary-yellow text-primary-black",
-  PERSONAL_FINANCE:   "bg-primary-black text-primary-white",
-};
-
-const IMPACT_BG: Record<Impact, string> = {
-  HIGH:   "bg-primary-red text-primary-white",
-  MEDIUM: "bg-primary-yellow text-primary-black",
-  LOW:    "bg-primary-blue text-primary-white",
-};
-
-const INDICATOR_BORDER: Record<string, string> = {
-  CPI:          "border-l-4 border-primary-red",
-  FEDFUNDS:     "border-l-4 border-primary-blue",
-  UNRATE:       "border-l-4 border-primary-yellow",
-  CONSCONF:     "border-l-4 border-primary-black",
-  PRIMERATE:    "border-l-4 border-primary-red",
-  REALWAGES:    "border-l-4 border-primary-blue",
-  MORTGAGE30US: "border-l-4 border-primary-black",
-};
-
 const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "CONSCONF", "PRIMERATE", "REALWAGES"];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
