@@ -51,27 +51,25 @@ const HOT_TOPICS = [
 ];
 
 const VERDICT_CONFIG = {
-  positive: { bg: "#E8F5E9", border: "#2E7D32", text: "#1B5E20", label: "Positive Impact", dot: "#4CAF50" },
-  negative: { bg: "#FFEBEE", border: "#C62828", text: "#B71C1C", label: "Negative Impact", dot: "#E63329" },
-  neutral:  { bg: "#F5F5F5", border: "#424242", text: "#212121", label: "Neutral Impact", dot: "#757575" },
-  mixed:    { bg: "#FFF8E1", border: "#F57F17", text: "#E65100", label: "Mixed Impact", dot: "#F5C800" },
+  positive: { bg: "#F0FDF4", border: "#16A34A", text: "#14532D", label: "Positive Impact", dot: "#16A34A" },
+  negative: { bg: "#FFF1F2", border: "#F43F5E", text: "#881337", label: "Negative Impact", dot: "#F43F5E" },
+  neutral:  { bg: "#F8FAFC", border: "#64748B", text: "#1E293B", label: "Neutral Impact",  dot: "#64748B" },
+  mixed:    { bg: "#FFFBEB", border: "#F59E0B", text: "#78350F", label: "Mixed Impact",    dot: "#F59E0B" },
 };
 
 const URGENCY_CONFIG = {
-  now:      { bg: "#E63329", text: "#fff", label: "Act Now" },
-  soon:     { bg: "#F5C800", text: "#0A0A0A", label: "Soon" },
-  consider: { bg: "#F5F5F5", text: "#424242", label: "Consider" },
+  now:      { bg: "#F43F5E", text: "#fff",     label: "Act Now" },
+  soon:     { bg: "#FEF3C7", text: "#92400E",  label: "Soon" },
+  consider: { bg: "#F1F5F9", text: "#475569",  label: "Consider" },
 };
+
+const S = { fontFamily: "Inter, sans-serif" };
 
 export default function CalculatorClient({ profile }: CalculatorClientProps) {
   const [policy, setPolicy] = useState("");
   const [financials, setFinancials] = useState({
-    income: "",
-    housingCost: "",
-    homeValue: "",
-    savings: "",
-    investments: "",
-    debtPayments: "",
+    income: "", housingCost: "", homeValue: "",
+    savings: "", investments: "", debtPayments: "",
   });
   const [result, setResult] = useState<ImpactResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,23 +77,18 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
 
   async function runCalculator() {
     if (!policy.trim()) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
+    setLoading(true); setError(null); setResult(null);
     try {
       const res = await fetch("/api/impact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ policy, profile, financials }),
       });
-
       if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
       const jsonMatch = (data.result as string).match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("Could not parse response");
-      const parsed = JSON.parse(jsonMatch[0]) as ImpactResult;
-      setResult(parsed);
+      setResult(JSON.parse(jsonMatch[0]) as ImpactResult);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -106,46 +99,48 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
   const vc = result ? VERDICT_CONFIG[result.verdict] : null;
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="border-b-2 border-black bg-black text-white px-6 py-5">
-        <div className="max-w-6xl mx-auto flex items-baseline gap-4">
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#F5C800]">Simple Economics</span>
-          <span className="text-[#666] text-xs tracking-widest uppercase">/ Impact Calculator</span>
-        </div>
-      </div>
+    <div className="min-h-screen" style={{ background: "#F8FAFC", ...S }}>
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-10 border-b-2 border-black pb-6">
-          <h1 className="text-3xl font-black uppercase tracking-tight leading-none mb-2">
+        {/* Page header */}
+        <div className="mb-10 pb-6" style={{ borderBottom: "1px solid #E2E8F0" }}>
+          <h1 className="font-bold mb-2" style={{ fontSize: "30px", color: "#0F172A", ...S }}>
             Personal Impact Calculator
           </h1>
-          <p className="text-sm text-[#555] max-w-xl">
+          <p className="text-sm" style={{ color: "#64748B", ...S }}>
             Enter a policy or economic event. We analyze how it affects your specific situation.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
-          <div className="space-y-6">
-            <div className="border-2 border-black bg-white p-5">
-              <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#888] mb-3">
+
+          {/* LEFT — Inputs */}
+          <div className="space-y-5">
+
+            {/* Policy input */}
+            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#94A3B8", ...S }}>
                 01 — Policy or Event
               </div>
               <textarea
                 value={policy}
                 onChange={(e) => setPolicy(e.target.value)}
                 placeholder="e.g. Federal Reserve raises interest rates by 0.25%"
-                className="w-full text-sm border border-[#DDD] p-3 resize-none focus:outline-none focus:border-black transition-colors"
+                className="w-full text-sm resize-none outline-none rounded-lg transition-colors"
+                style={{ border: "1.5px solid #E2E8F0", padding: "10px 12px", color: "#0F172A", ...S }}
                 rows={3}
+                onFocus={e => e.currentTarget.style.borderColor = "#F43F5E"}
+                onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
               />
               <div className="mt-3">
-                <div className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#AAA] mb-2">Quick select</div>
+                <div className="text-[11px] font-medium mb-2" style={{ color: "#CBD5E1", ...S }}>Quick select</div>
                 <div className="flex flex-wrap gap-2">
                   {HOT_TOPICS.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setPolicy(t)}
-                      className="text-[11px] px-2.5 py-1 border border-[#CCC] hover:border-black hover:bg-black hover:text-white transition-all"
-                    >
+                    <button key={t} onClick={() => setPolicy(t)}
+                      className="text-[11px] px-2.5 py-1 rounded-lg transition-all"
+                      style={{ border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", ...S }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#F43F5E"; e.currentTarget.style.color = "#F43F5E"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#64748B"; }}>
                       {t}
                     </button>
                   ))}
@@ -153,8 +148,11 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
               </div>
             </div>
 
-            <div className="border-2 border-black bg-white p-5">
-              <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#888] mb-3">02 — Your Profile</div>
+            {/* Profile */}
+            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#94A3B8", ...S }}>
+                02 — Your Profile
+              </div>
               <div className="space-y-2">
                 {([
                   ["Housing", profile.situation],
@@ -165,43 +163,47 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
                   ["Concern", profile.concern],
                   ["Debt Types", profile.debtTypes?.join(", ") || null],
                 ] as [string, string | null][]).map(([label, value]) => (
-                  <div key={label} className="flex justify-between items-center text-sm py-1 border-b border-[#F0F0F0] last:border-0">
-                    <span className="text-[#888] text-xs uppercase tracking-wider">{label}</span>
-                    <span className="font-semibold text-xs text-right max-w-[180px]">
-                      {value || <span className="text-[#CCC] font-normal italic">Not set</span>}
+                  <div key={label} className="flex justify-between items-center py-1.5" style={{ borderBottom: "1px solid #F8FAFC" }}>
+                    <span className="text-xs uppercase tracking-wider" style={{ color: "#94A3B8", ...S }}>{label}</span>
+                    <span className="text-xs font-medium text-right max-w-[180px]" style={{ color: value ? "#0F172A" : "#CBD5E1", fontStyle: value ? "normal" : "italic", ...S }}>
+                      {value || "Not set"}
                     </span>
                   </div>
                 ))}
               </div>
-              <a href="/onboarding" className="mt-3 inline-block text-[11px] text-[#1B4FD8] underline">
+              <a href="/onboarding" className="mt-3 inline-block text-xs font-medium" style={{ color: "#F43F5E", ...S }}>
                 Update profile →
               </a>
             </div>
 
-            <div className="border-2 border-black bg-white p-5">
-              <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#888] mb-3">
+            {/* Financial details */}
+            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#94A3B8", ...S }}>
                 03 — Financial Details
-                <span className="ml-2 font-normal normal-case text-[#BBB]">(optional)</span>
               </div>
+              <div className="text-[11px] mb-4" style={{ color: "#CBD5E1", ...S }}>Optional — makes estimates more precise</div>
               <div className="space-y-3">
                 {[
-                  { key: "income", label: "Monthly take-home pay (after tax)", placeholder: "5000" },
-                  { key: "housingCost", label: "Monthly rent or mortgage payment", placeholder: "1800" },
+                  { key: "income",       label: "Monthly take-home pay (after tax)",              placeholder: "5000"   },
+                  { key: "housingCost",  label: "Monthly rent or mortgage payment",               placeholder: "1800"   },
                   ...(profile.situation?.toLowerCase().includes("own") ? [{ key: "homeValue", label: "Estimated home value (current market)", placeholder: "450000" }] : []),
-                  { key: "savings", label: "Cash savings total balance (checking + savings)", placeholder: "15000" },
-                  { key: "investments", label: "Investment accounts total balance (401k, IRA, stocks, ETFs)", placeholder: "40000" },
-                  { key: "debtPayments", label: "Total monthly debt payments (credit cards, loans)", placeholder: "400" },
+                  { key: "savings",      label: "Cash savings total balance (checking + savings)", placeholder: "15000"  },
+                  { key: "investments",  label: "Investment accounts total balance (401k, IRA, stocks)", placeholder: "40000" },
+                  { key: "debtPayments", label: "Total monthly debt payments (cards, loans)",     placeholder: "400"    },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
-                    <label className="block text-[11px] text-[#666] mb-1 uppercase tracking-wider">{label}</label>
+                    <label className="block text-[11px] mb-1 uppercase tracking-wider" style={{ color: "#64748B", ...S }}>{label}</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999] text-sm">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#CBD5E1" }}>$</span>
                       <input
                         type="number"
                         value={financials[key as keyof typeof financials]}
                         onChange={(e) => setFinancials((f) => ({ ...f, [key]: e.target.value }))}
                         placeholder={placeholder}
-                        className="w-full pl-7 pr-3 py-2 text-sm border border-[#DDD] focus:outline-none focus:border-black transition-colors font-mono"
+                        className="w-full pl-7 pr-3 py-2 text-sm rounded-lg outline-none transition-colors font-mono"
+                        style={{ border: "1.5px solid #E2E8F0", color: "#0F172A" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#F43F5E"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
                       />
                     </div>
                   </div>
@@ -209,41 +211,43 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
               </div>
             </div>
 
+            {/* Submit button */}
             <button
               onClick={runCalculator}
               disabled={loading || !policy.trim()}
-              className="w-full py-4 font-black text-sm tracking-[0.15em] uppercase transition-all border-2 border-black"
+              className="w-full py-3.5 text-sm font-semibold rounded-xl transition-all"
               style={{
-                background: loading ? "#888" : "#E63329",
-                color: "#fff",
+                background: loading || !policy.trim() ? "#E2E8F0" : "#F43F5E",
+                color: loading || !policy.trim() ? "#94A3B8" : "#fff",
                 cursor: loading || !policy.trim() ? "not-allowed" : "pointer",
-                opacity: !policy.trim() ? 0.5 : 1,
-              }}
-            >
-              {loading ? "Analyzing..." : "Calculate My Impact"}
+                ...S,
+              }}>
+              {loading ? "Analyzing..." : "Calculate My Impact →"}
             </button>
           </div>
 
+          {/* RIGHT — Results */}
           <div>
             {!result && !loading && !error && (
-              <div className="border-2 border-dashed border-[#DDD] flex flex-col items-center justify-center min-h-[400px] text-center p-10">
-                <div className="text-6xl font-black text-[#EEE] mb-4 leading-none">?</div>
-                <p className="text-[#BBB] text-sm max-w-xs">
+              <div className="rounded-xl flex flex-col items-center justify-center min-h-[400px] text-center p-10"
+                style={{ border: "1.5px dashed #E2E8F0", background: "#fff" }}>
+                <div className="text-5xl font-bold mb-4" style={{ color: "#E2E8F0" }}>?</div>
+                <p className="text-sm max-w-xs" style={{ color: "#CBD5E1", ...S }}>
                   Choose a policy or event on the left, then hit Calculate to see your personalized impact.
                 </p>
               </div>
             )}
 
             {loading && (
-              <div className="border-2 border-black bg-black text-white flex flex-col items-center justify-center min-h-[400px] p-10">
-                <div className="text-xs tracking-[0.3em] uppercase text-[#666] mb-8">Analyzing your situation</div>
+              <div className="rounded-xl flex flex-col items-center justify-center min-h-[400px] p-10"
+                style={{ background: "#1E293B", border: "1px solid #334155" }}>
+                <div className="text-xs font-medium uppercase tracking-widest mb-8" style={{ color: "#475569", ...S }}>
+                  Analyzing your situation
+                </div>
                 <div className="flex gap-2 mb-8">
                   {[0, 1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="w-3 h-3 bg-[#E63329]"
-                      style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: i * 0.2 + "s" }}
-                    />
+                    <div key={i} className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: "#F43F5E", animation: "pulse 1.2s ease-in-out infinite", animationDelay: i * 0.2 + "s" }} />
                   ))}
                 </div>
                 <style>{`@keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:1} }`}</style>
@@ -251,41 +255,48 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
             )}
 
             {error && (
-              <div className="border-2 border-[#E63329] bg-[#FFF5F5] p-6">
-                <p className="text-[#C62828] text-sm">{error}</p>
+              <div className="rounded-xl p-6" style={{ background: "#FFF1F2", border: "1px solid #FECDD3" }}>
+                <p className="text-sm" style={{ color: "#F43F5E", ...S }}>{error}</p>
               </div>
             )}
 
             {result && vc && (
               <div className="space-y-4">
-                <div className="border-2 p-6" style={{ borderColor: vc.border, background: vc.bg }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: vc.dot }} />
-                    <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: vc.text }}>
+
+                {/* Verdict */}
+                <div className="rounded-xl p-6" style={{ background: vc.bg, border: "1px solid " + vc.border }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: vc.dot }} />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: vc.text, ...S }}>
                       {vc.label}
                     </span>
                   </div>
-                  <p className="text-base font-bold leading-snug mb-3" style={{ color: vc.text }}>
+                  <p className="text-base font-bold leading-snug mb-2" style={{ color: vc.text, ...S }}>
                     {result.headline}
                   </p>
-                  <p className="text-sm leading-relaxed" style={{ color: vc.text, opacity: 0.85 }}>
+                  <p className="text-sm leading-relaxed" style={{ color: vc.text, opacity: 0.8, ...S }}>
                     {result.overall_summary}
                   </p>
                 </div>
 
+                {/* Short / Long term */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[result.short_term, result.long_term].map((section, idx) => (
-                    <div key={idx} className="border-2 border-black bg-white p-5">
-                      <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#888] mb-1">{section.label}</div>
+                    <div key={idx} className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E" }}>
+                      <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#94A3B8", ...S }}>
+                        {section.label}
+                      </div>
                       {section.dollar_estimate && (
-                        <div className="text-xl font-black text-[#E63329] mb-3 font-mono">{section.dollar_estimate}</div>
+                        <div className="text-xl font-bold mb-3 font-mono" style={{ color: "#F43F5E" }}>
+                          {section.dollar_estimate}
+                        </div>
                       )}
-                      <p className="text-sm text-[#444] leading-relaxed mb-4">{section.impact}</p>
+                      <p className="text-sm leading-relaxed mb-4" style={{ color: "#64748B", ...S }}>{section.impact}</p>
                       <div className="space-y-2">
                         {section.key_points.map((pt, i) => (
                           <div key={i} className="flex gap-2 items-start">
-                            <span className="text-[#F5C800] font-black text-xs mt-0.5 flex-shrink-0">▸</span>
-                            <span className="text-xs text-[#555] leading-relaxed">{pt}</span>
+                            <span className="text-xs mt-0.5 flex-shrink-0 font-bold" style={{ color: "#F43F5E" }}>▸</span>
+                            <span className="text-xs leading-relaxed" style={{ color: "#475569", ...S }}>{pt}</span>
                           </div>
                         ))}
                       </div>
@@ -293,52 +304,62 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
                   ))}
                 </div>
 
-                <div className="border-2 border-black bg-[#0A0A0A] text-white p-5">
-                  <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#F5C800] mb-3">Watch For</div>
+                {/* Watch for */}
+                <div className="rounded-xl p-5" style={{ background: "#1E293B", border: "1px solid #334155" }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#F43F5E", ...S }}>
+                    Watch For
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {result.watch_for.map((item, i) => (
-                      <div key={i} className="border border-[#333] p-3">
-                        <span className="text-xs text-[#CCC] leading-relaxed">{item}</span>
+                      <div key={i} className="rounded-lg p-3" style={{ background: "#0F172A", border: "1px solid #334155" }}>
+                        <span className="text-xs leading-relaxed" style={{ color: "#94A3B8", ...S }}>{item}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="border-2 border-black bg-white p-5">
-                  <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#888] mb-4">Action Steps</div>
+                {/* Action steps */}
+                <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#94A3B8", ...S }}>
+                    Action Steps
+                  </div>
                   <div className="space-y-3">
                     {result.action_steps.map((action, i) => {
                       const urg = URGENCY_CONFIG[action.urgency] || URGENCY_CONFIG.consider;
                       return (
                         <div key={i} className="flex gap-3 items-start">
-                          <span
-                            className="text-[10px] font-bold px-2 py-1 flex-shrink-0 mt-0.5"
-                            style={{ background: urg.bg, color: urg.text }}
-                          >
+                          <span className="text-[10px] font-semibold px-2 py-1 rounded flex-shrink-0 mt-0.5"
+                            style={{ background: urg.bg, color: urg.text, ...S }}>
                             {urg.label}
                           </span>
-                          <span className="text-sm text-[#333] leading-relaxed">{action.step}</span>
+                          <span className="text-sm leading-relaxed" style={{ color: "#374151", ...S }}>{action.step}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
+                {/* Sources */}
                 {result.sources?.length > 0 && (
-                  <div className="border border-[#EEE] p-4">
-                    <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#AAA] mb-2">Sources</div>
+                  <div className="rounded-xl p-4" style={{ border: "1px solid #F1F5F9", background: "#F8FAFC" }}>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#CBD5E1", ...S }}>Sources</div>
                     <div className="flex flex-wrap gap-2">
                       {result.sources.map((src, i) => (
-                        <span key={i} className="text-[11px] text-[#666] border border-[#EEE] px-2 py-1">{src}</span>
+                        <span key={i} className="text-[11px] px-2 py-1 rounded" style={{ color: "#64748B", background: "#fff", border: "1px solid #E2E8F0", ...S }}>
+                          {src}
+                        </span>
                       ))}
                     </div>
                   </div>
                 )}
 
+                {/* Reset */}
                 <button
                   onClick={() => { setResult(null); setPolicy(""); }}
-                  className="w-full py-3 text-xs font-bold tracking-[0.2em] uppercase border-2 border-black hover:bg-black hover:text-white transition-all"
-                >
+                  className="w-full py-3 text-sm font-medium rounded-xl transition-all"
+                  style={{ border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", ...S }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#1E293B"; e.currentTarget.style.color = "#F8FAFC"; e.currentTarget.style.borderColor = "#1E293B"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#64748B"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
                   New Analysis
                 </button>
               </div>
