@@ -140,7 +140,7 @@ function NewsCard({ item }: { item: NewsItem }) {
   let hostname = "";
   try {
     hostname = new URL(item.url).hostname.replace("www.", "");
-  } catch {
+  } catch (_e) {
     hostname = item.source;
   }
 
