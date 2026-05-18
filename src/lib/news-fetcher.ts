@@ -147,7 +147,7 @@ async function processGuardianArticles(articles: GuardianArticle[]): Promise<voi
   }
 }
 
-export async function fetchAndCacheNews(region?: string): Promise<void> {
+export async function fetchAndCacheNews(): Promise<void> {
   const articles = await fetchGuardianArticles();
   await processGuardianArticles(articles);
 }

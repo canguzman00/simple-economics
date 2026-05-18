@@ -52,21 +52,21 @@ interface RSSItem {
 
 function parseRSS(xml: string): RSSItem[] {
   const items: RSSItem[] = [];
-  const itemMatches = xml.matchAll(/<item[^>]*>([\s\S]*?)<\/item>/g);
+  const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/g;
+  let matchResult: RegExpExecArray | null;
+  while ((matchResult = itemRegex.exec(xml)) !== null) {
+    const item = matchResult[1];
 
-  for (const match of itemMatches) {
-    const item = match[1];
-
-    const title = item.match(/<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s)?.[1]?.trim() ?? "";
-    const link = item.match(/<link[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/s)?.[1]?.trim()
-      ?? item.match(/<guid[^>]*>(?:<!\[CDATA\[)?(https?:\/\/[^\s<]+)(?:\]\]>)?<\/guid>/s)?.[1]?.trim()
+    const title = item.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)?.[1]?.trim() ?? "";
+    const link = item.match(/<link[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/)?.[1]?.trim()
+      ?? item.match(/<guid[^>]*>(?:<!\[CDATA\[)?(https?:\/\/[^\s<]+)(?:\]\]>)?<\/guid>/)?.[1]?.trim()
       ?? "";
-    const description = item.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/s)?.[1]
+    const description = item.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/)?.[1]
       ?.replace(/<[^>]+>/g, "")
       ?.trim()
       ?.slice(0, 500) ?? "";
-    const pubDate = item.match(/<pubDate[^>]*>(.*?)<\/pubDate>/s)?.[1]?.trim()
-      ?? item.match(/<dc:date[^>]*>(.*?)<\/dc:date>/s)?.[1]?.trim()
+    const pubDate = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)?.[1]?.trim()
+      ?? item.match(/<dc:date[^>]*>([\s\S]*?)<\/dc:date>/)?.[1]?.trim()
       ?? new Date().toISOString();
 
     if (title && link) {

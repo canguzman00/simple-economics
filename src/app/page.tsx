@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import Link from "next/link";
+import Image from "next/image";
 import { getAuthSession } from "@/lib/auth";
 
 export default async function HomePage() {
@@ -55,7 +56,7 @@ export default async function HomePage() {
           </div>
 
           <div style={{ position: "relative", height: "calc(100vh - 3.5rem)", borderRadius: "16px", overflow: "hidden", border: "1px solid #E2E8F0" }}>
-            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&q=80&auto=format&fit=crop" alt="Global economic network" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            <Image src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&q=80&auto=format&fit=crop" alt="Global economic network" fill style={{ objectFit: "cover" }} />
             <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.65)" }} />
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px" }}>
               <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "12px" }}>Live Global Indicators</p>
