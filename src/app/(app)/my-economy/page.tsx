@@ -482,7 +482,7 @@ export default async function MyEconomyPage() {
         ) : (
           <div className="flex flex-col rounded-xl overflow-hidden" style={{border:"1px solid #E2E8F0"}}>
             {recentQuestions.map((q) => (
-              <div key={q.id} className="px-5 py-4 transition-colors" style="borderBottom:1px solid #F1F5F9;" onMouseEnter="this.style.background='#F8FAFC'" onMouseLeave="this.style.background='#fff'">
+              <div key={q.id} className="px-5 py-4 transition-colors" style={{borderBottom:"1px solid #F1F5F9"}}>
                 <p className="text-sm font-semibold leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
                   {q.question}
                 </p>
