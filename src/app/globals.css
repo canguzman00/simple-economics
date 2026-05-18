@@ -30,15 +30,30 @@
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Inter', sans-serif;
   }
   body {
-    background-color: #FAFAFA;
-    color: #0A0A0A;
-    @apply font-sans;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: 'Inter', sans-serif;
   }
-  h1, h2, h3 {
-    @apply font-sans;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    color: #0F172A;
   }
+}
+
+:root {
+  --slate-nav: #1E293B;
+  --slate-border: #334155;
+  --slate-text: #64748B;
+  --coral: #F43F5E;
+  --coral-dark: #E11D48;
+  --coral-light: #FFF1F2;
+  --page-bg: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
 }
 
 @layer components {

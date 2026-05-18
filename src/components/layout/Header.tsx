@@ -18,7 +18,7 @@ function useNavLinks() {
     { label: tr.nav.feed,      href: "/feed" },
     { label: tr.nav.ask,       href: "/ask" },
     { label: tr.nav.myEconomy, href: "/my-economy" },
-    { label: "My Impact", href: "/calculator" },
+    { label: "My Impact",      href: "/calculator" },
     { label: tr.nav.saved,     href: "/saved" },
   ];
 }
@@ -30,13 +30,15 @@ function NavLink({ href, label, onClick }: { href: string; label: string; onClic
     <Link
       href={href}
       onClick={onClick}
-      className={`relative font-sans text-xs uppercase tracking-widest transition-colors ${
-        isActive ? "text-primary-red" : "text-primary-black hover:text-primary-red"
-      }`}
+      className="relative text-xs font-medium tracking-wide transition-colors"
+      style={{
+        color: isActive ? "#F43F5E" : "#94A3B8",
+        fontFamily: "Inter, sans-serif",
+      }}
     >
       {label}
       {isActive && (
-        <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary-red" />
+        <span className="absolute -bottom-0.5 left-0 right-0 h-0.5" style={{ background: "#F43F5E" }} />
       )}
     </Link>
   );
@@ -47,7 +49,13 @@ function LangToggle() {
   return (
     <button
       onClick={toggleLang}
-      className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors border border-gray-300 px-2 py-1"
+      className="text-[10px] font-semibold uppercase tracking-widest transition-colors px-2 py-1 rounded"
+      style={{
+        color: "#94A3B8",
+        border: "1px solid #334155",
+        fontFamily: "Inter, sans-serif",
+        background: "transparent",
+      }}
     >
       {lang === "en" ? "ES" : "EN"}
     </button>
@@ -71,28 +79,42 @@ function AvatarMenu({ session }: { session: NonNullable<ReturnType<typeof useSes
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen((v) => !v)} aria-label="Account menu">
-        <Avatar className="rounded-none w-8 h-8">
+        <Avatar className="w-8 h-8 rounded-full ring-2" style={{ ringColor: "#334155" }}>
           <AvatarImage src={session.user.image ?? undefined} alt={session.user.name ?? "User"} />
-          <AvatarFallback className="rounded-none bg-primary-black text-primary-white font-sans text-xs">
+          <AvatarFallback
+            className="rounded-full text-xs font-semibold"
+            style={{ background: "#334155", color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
+          >
             {(session.user.name ?? session.user.email ?? "U").charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
       </button>
       {open && (
-        <div className="absolute right-0 top-10 w-48 bg-primary-white border-2 border-primary-black shadow-[4px_4px_0px_#0A0A0A] z-50">
-          <div className="px-3 py-2 border-b-2 border-primary-black">
-            <p className="font-sans text-xs text-gray-500 truncate">{session.user.email}</p>
+        <div
+          className="absolute right-0 top-10 w-48 z-50 rounded-lg overflow-hidden"
+          style={{ background: "#1E293B", border: "1px solid #334155", boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}
+        >
+          <div className="px-3 py-2" style={{ borderBottom: "1px solid #334155" }}>
+            <p className="text-xs truncate" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
+              {session.user.email}
+            </p>
           </div>
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-primary-black hover:bg-primary-red hover:text-primary-white transition-colors"
+            className="flex items-center px-3 py-2.5 text-xs font-medium transition-colors"
+            style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#F43F5E")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
             {tr.auth.editProfile}
           </Link>
           <button
             onClick={() => signOut()}
-            className="w-full text-left flex items-center px-3 py-2.5 font-sans text-xs uppercase tracking-wider text-gray-500 hover:bg-gray-100 hover:text-primary-black transition-colors"
+            className="w-full text-left flex items-center px-3 py-2.5 text-xs font-medium transition-colors"
+            style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#F8FAFC")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#64748B")}
           >
             {tr.auth.signOut}
           </button>
@@ -107,14 +129,21 @@ function AuthControl() {
   const { lang } = useLang();
   const tr = useTranslations(lang);
 
-  if (status === "loading") return <div className="h-8 w-16 bg-gray-200 animate-pulse" />;
+  if (status === "loading") return <div className="h-8 w-16 rounded animate-pulse" style={{ background: "#334155" }} />;
 
   if (session?.user) return <AvatarMenu session={session} />;
 
   return (
     <button
       onClick={() => signIn()}
-      className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
+      className="text-xs font-semibold tracking-wide px-4 py-2 rounded-lg transition-colors"
+      style={{
+        background: "#F43F5E",
+        color: "#fff",
+        fontFamily: "Inter, sans-serif",
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = "#E11D48")}
+      onMouseLeave={e => (e.currentTarget.style.background = "#F43F5E")}
     >
       {tr.auth.signIn}
     </button>
@@ -124,11 +153,17 @@ function AuthControl() {
 export function Header() {
   const NAV_LINKS = useNavLinks();
   return (
-    <header className="sticky top-0 z-40 bg-primary-white border-b-2 border-primary-black">
-      <div className="mx-auto max-w-5xl px-6 h-14 flex items-center justify-between">
+    <header
+      className="sticky top-0 z-40"
+      style={{ background: "#1E293B", borderBottom: "1px solid #334155" }}
+    >
+      <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-          <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+          <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+          <span
+            className="text-sm font-bold tracking-wide leading-none"
+            style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
+          >
             Simple Economics
           </span>
         </Link>
@@ -146,15 +181,25 @@ export function Header() {
           </div>
           <Sheet>
             <SheetTrigger asChild>
-              <button className="md:hidden text-primary-black hover:text-primary-red transition-colors" aria-label="Open menu">
+              <button
+                className="md:hidden transition-colors"
+                style={{ color: "#94A3B8" }}
+                aria-label="Open menu"
+              >
                 <Menu size={22} />
               </button>
             </SheetTrigger>
-            <SheetContent className="bg-primary-white border-l-2 border-primary-black p-0">
+            <SheetContent
+              className="p-0 border-l"
+              style={{ background: "#1E293B", borderColor: "#334155" }}
+            >
               <div className="flex flex-col h-full pt-14 px-6 pb-8">
                 <div className="flex items-center gap-2.5 mb-10">
-                  <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-                  <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black">
+                  <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+                  <span
+                    className="text-sm font-bold tracking-wide"
+                    style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}
+                  >
                     Simple Economics
                   </span>
                 </div>
