@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { BarChart2 } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 
 const URL_REGEX = /https?:\/\/[^\s]+/g;
@@ -190,7 +191,7 @@ export function AskClient({ profile, isAuthenticated }: Props) {
           <div className="flex items-center gap-3 mb-4">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: "#1E293B" }}>
-              <span style={{ color: "#F43F5E", fontSize: "14px", fontWeight: "700" }}>E</span>
+              <BarChart2 size={14} color="#F43F5E" />
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
               The Economist Responds
@@ -222,7 +223,7 @@ function PageHeader() {
     <div className="pb-8 mb-2">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#1E293B" }}>
-          <span style={{ color: "#F43F5E", fontSize: "18px", fontWeight: "800" }}>E</span>
+          <BarChart2 size={20} color="#F43F5E" />
         </div>
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
           AI-powered · Evidence-based
