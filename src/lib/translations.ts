@@ -4,7 +4,7 @@ export const t = {
   en: {
     nav: {
       feed: "Feed",
-      ask: "Ask the Economist",
+      ask: "Ask the Simple Economist",
       myEconomy: "My Economy",
       saved: "Saved",
     },
