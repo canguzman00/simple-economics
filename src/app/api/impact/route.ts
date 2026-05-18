@@ -37,8 +37,19 @@ export async function POST(req: NextRequest) {
     {"step": "action description", "urgency": "soon"},
     {"step": "action description", "urgency": "consider"}
   ],
-  "sources": ["Institution 1", "Institution 2"]
-}`;
+  "sources": ["Institution 1", "Institution 2"],
+  "impact_score": 0,
+  "areas_affected": [
+    {"area": "Housing", "impact": 0},
+    {"area": "Savings", "impact": 0},
+    {"area": "Investments", "impact": 0},
+    {"area": "Income", "impact": 0},
+    {"area": "Debt", "impact": 0}
+  ]
+}
+
+Where impact_score is a number from -100 (very negative) to +100 (very positive).
+For areas_affected, each impact is -100 to +100 showing how much that area is affected. Only include areas actually affected.`;
 
   const income = financials.income ? "$" + Number(financials.income).toLocaleString() : "Not provided";
   const housingCost = financials.housingCost ? "$" + Number(financials.housingCost).toLocaleString() : "Not provided";
