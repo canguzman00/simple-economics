@@ -101,7 +101,7 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
   return (
     <div className="min-h-screen" style={{ background: "#F8FAFC", ...S }}>
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div>
         {/* Page header */}
         <div className="mb-10 pb-6" style={{ borderBottom: "1px solid #E2E8F0" }}>
           <h1 className="font-bold mb-2" style={{ fontSize: "30px", color: "#0F172A", ...S }}>
