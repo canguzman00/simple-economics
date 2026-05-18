@@ -173,6 +173,7 @@ model NewsCache {
   fullExplanation String
   url             String   @unique
   source          String
+  contentType     String   @default("News")
   publishedAt     DateTime
   pillar          Pillar
   impact          Impact   @default(MEDIUM)
