@@ -9,36 +9,27 @@ export default async function HomePage() {
   const isAuthed = !!session?.user;
 
   return (
-    <div className="min-h-screen bg-primary-white text-primary-black">
+    <div className="min-h-screen" style={{ background: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>
 
-      {/* ── Top nav ── */}
-      <nav className="bg-primary-white border-b-2 border-primary-black sticky top-0 z-40">
+      {/* Nav */}
+      <nav style={{ background: "#1E293B", borderBottom: "1px solid #334155" }} className="sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-            <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-black leading-none">
+            <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+            <span className="text-sm font-bold tracking-wide leading-none" style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>
               Simple Economics
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/feed"
-              className="hidden sm:block font-sans text-xs uppercase tracking-widest text-gray-500 hover:text-primary-black transition-colors"
-            >
+            <Link href="/feed" className="hidden sm:block text-xs font-medium transition-colors" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
               Feed
             </Link>
             {isAuthed ? (
-              <Link
-                href="/feed"
-                className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
-              >
+              <Link href="/feed" className="text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{ background: "#F43F5E", color: "#fff", fontFamily: "Inter, sans-serif" }}>
                 Go to Feed
               </Link>
             ) : (
-              <Link
-                href="/signin"
-                className="font-sans text-xs uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-4 py-2"
-              >
+              <Link href="/signin" className="text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{ background: "#F43F5E", color: "#fff", fontFamily: "Inter, sans-serif" }}>
                 Sign in
               </Link>
             )}
@@ -46,66 +37,66 @@ export default async function HomePage() {
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="bg-primary-white overflow-hidden">
+      {/* Hero */}
+      <section style={{ background: "#F8FAFC" }} className="overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center min-h-[calc(100vh-3.5rem)]">
 
-            {/* Left: headline + CTA */}
+            {/* Left */}
             <div className="py-20 lg:py-0 lg:pr-16">
-              <p className="font-sans text-xs uppercase tracking-[0.25em] text-gray-500 mb-6">
-                Economic education for real life
-              </p>
-              <h1 className="font-sans font-black text-5xl sm:text-6xl lg:text-7xl text-primary-black leading-[0.95] tracking-tight uppercase">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6" style={{ background: "#FFF1F2", border: "1px solid #FECDD3" }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#F43F5E" }} />
+                <span className="text-xs font-medium" style={{ color: "#F43F5E", fontFamily: "Inter, sans-serif" }}>Economic education for real life</span>
+              </div>
+              <h1 className="font-bold leading-tight tracking-tight" style={{ fontSize: "clamp(40px, 6vw, 64px)", color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
                 Big ideas.<br />
                 Simple terms.<br />
-                <span className="text-primary-red">Smarter you.</span>
+                <span style={{ color: "#F43F5E" }}>Smarter you.</span>
               </h1>
-              <p className="mt-8 font-sans text-base text-gray-700 leading-relaxed max-w-sm">
+              <p className="mt-6 text-base leading-relaxed max-w-sm" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
                 Simple Economics explains what&apos;s happening in the economy and what it means specifically for you — based on how you actually live.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/onboarding"
-                  className="font-sans text-xs font-bold uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-7 py-4 text-center"
-                >
+                <Link href="/onboarding"
+                  className="text-sm font-semibold px-7 py-3.5 rounded-lg text-center transition-colors"
+                  style={{ background: "#F43F5E", color: "#fff", fontFamily: "Inter, sans-serif" }}>
                   Get Started Free →
                 </Link>
-                <a
-                  href="#how-it-works"
-                  className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-7 py-4 text-center"
-                >
+                <a href="#how-it-works"
+                  className="text-sm font-semibold px-7 py-3.5 rounded-lg text-center transition-colors"
+                  style={{ background: "#fff", color: "#1E293B", border: "1px solid #E2E8F0", fontFamily: "Inter, sans-serif" }}>
                   See How It Works
                 </a>
               </div>
+              <p className="mt-4 text-xs" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>No credit card. No paywall to start.</p>
             </div>
 
-            {/* Right: global economics image */}
-            <div className="hidden lg:flex h-full min-h-[calc(100vh-3.5rem)] relative border-l-2 border-primary-black overflow-hidden flex-col">
+            {/* Right: image + indicators */}
+            <div className="hidden lg:flex h-full min-h-[calc(100vh-3.5rem)] relative overflow-hidden flex-col rounded-2xl" style={{ border: "1px solid #E2E8F0" }}>
               <img
                 src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&q=80&auto=format&fit=crop"
-                alt="Global economic network — Earth at night"
+                alt="Global economic network"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
               />
-              <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.55)" }} />
+              <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.65)" }} />
               <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "32px", gap: "12px" }}>
-                <p style={{ fontSize: "9px", fontFamily: "var(--font-unbounded)", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Live Economic Indicators</p>
+                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>Live Global Indicators</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
                   {[
                     { label: "World GDP", value: "$123T", source: "IMF 2026" },
                     { label: "Global Growth", value: "3.1%", source: "IMF WEO Apr 2026" },
                     { label: "Global Inflation", value: "4.5%", source: "IMF 2026" },
                     { label: "Oil Price", value: "$82/bbl", source: "IMF Apr 2026" },
-                    { label: "World Trade Growth", value: "3.0%", source: "WTO 2026" },
-                    { label: "Global Unemployment", value: "5.1%", source: "ILO 2026" },
+                    { label: "World Trade", value: "3.0%", source: "WTO 2026" },
+                    { label: "Unemployment", value: "5.1%", source: "ILO 2026" },
                     { label: "World Population", value: "8.12B", source: "UN 2026" },
-                    { label: "Global Total Debt", value: "$251T", source: "IMF GDD 2024" },
-                    { label: "Global Poverty Rate", value: "8.5%", source: "World Bank 2026" },
+                    { label: "Global Debt", value: "$251T", source: "IMF GDD 2024" },
+                    { label: "Poverty Rate", value: "8.5%", source: "World Bank 2026" },
                   ].map(({ label, value, source }) => (
-                    <div key={label} style={{ background: "rgba(250,250,250,0.08)", border: "1px solid rgba(255,255,255,0.15)", padding: "12px" }}>
-                      <div style={{ fontSize: "7px", fontFamily: "var(--font-inter)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>{label}</div>
-                      <div style={{ fontSize: "20px", fontFamily: "var(--font-inter)", fontWeight: 900, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
-                      <div style={{ fontSize: "7px", fontFamily: "var(--font-jetbrains-mono)", color: "rgba(255,255,255,0.3)", marginTop: "4px" }}>{source}</div>
+                    <div key={label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", padding: "12px", borderRadius: "8px" }}>
+                      <div style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", fontFamily: "Inter, sans-serif" }}>{label}</div>
+                      <div style={{ fontSize: "20px", fontWeight: 700, color: "#FAFAFA", marginTop: "4px", lineHeight: 1, fontFamily: "Inter, sans-serif" }}>{value}</div>
+                      <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", marginTop: "4px", fontFamily: "Inter, sans-serif" }}>{source}</div>
                     </div>
                   ))}
                 </div>
@@ -116,171 +107,110 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── How It Works ── */}
-      <section id="how-it-works" className="bg-primary-black">
+      {/* How It Works */}
+      <section id="how-it-works" style={{ background: "#1E293B" }}>
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-gray-600 mb-16">
-            How it works
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-16" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>How it works</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              {
-                step: "01",
-                accent: "bg-primary-red",
-                title: "Tell us your situation",
-                body: "Renter, homeowner, employed, student. One quick question set. 60 seconds.",
-              },
-              {
-                step: "02",
-                accent: "bg-primary-blue",
-                title: "Get your personalized feed",
-                body: "Economic events translated into what they mean for your life — not for a hedge fund manager.",
-              },
-              {
-                step: "03",
-                accent: "bg-primary-yellow",
-                title: "Ask anything",
-                body: "Ask the Economist answers your questions with real data, named sources, and a clear bottom line.",
-              },
-            ].map(({ step, accent, title, body }, i) => (
-              <div
-                key={step}
-                className={`p-8 flex flex-col gap-5 border-b border-gray-800 sm:border-b-0 ${
-                  i < 2 ? "sm:border-r sm:border-gray-800" : ""
-                }`}
-              >
-                <span className={`w-10 h-10 ${accent} flex items-center justify-center`}>
-                  <span className="font-sans text-sm font-black text-primary-black">{step}</span>
-                </span>
-                <h3 className="font-sans text-base font-bold uppercase tracking-wide text-primary-white leading-snug">
-                  {title}
-                </h3>
-                <p className="font-sans text-sm text-gray-400 leading-relaxed">
-                  {body}
-                </p>
+              { step: "01", color: "#F43F5E", title: "Tell us your situation", body: "Renter, homeowner, employed, student. One quick question set. 60 seconds." },
+              { step: "02", color: "#3B82F6", title: "Get your personalized feed", body: "Economic events translated into what they mean for your life — not for a hedge fund manager." },
+              { step: "03", color: "#8B5CF6", title: "Ask anything", body: "Ask the Simple Economist answers your questions with real data, named sources, and a clear bottom line." },
+            ].map(({ step, color, title, body }) => (
+              <div key={step} className="rounded-xl p-7 flex flex-col gap-4" style={{ background: "#0F172A", border: "1px solid #334155" }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm" style={{ background: color, color: "#fff", fontFamily: "Inter, sans-serif" }}>
+                  {step}
+                </div>
+                <h3 className="font-semibold text-base leading-snug" style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Two problems ── */}
-      <section className="bg-primary-blue">
+      {/* Two Problems */}
+      <section style={{ background: "#F8FAFC" }}>
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-blue-300 mb-16">
-            Two problems, one solution
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-16" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>Two problems, one solution</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {[
               {
                 label: "Problem 1",
                 title: "The Translation Gap",
-                body: "Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question “what does this mean for me?” is never answered.",
+                body: "Economic news is written for economists, traders, and policymakers — not people. The jargon is dense, the implications are never spelled out, and the question "what does this mean for me?" is never answered.",
                 cta: "We translate it.",
               },
               {
                 label: "Problem 2",
                 title: "One Size Fits Nobody",
-                body: "Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people don’t. The same interest rate hike means something completely different to a renter than it does to a homeowner.",
+                body: "Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people don't. The same interest rate hike means something completely different to a renter than to a homeowner.",
                 cta: "Every answer is filtered through your real situation.",
               },
             ].map(({ label, title, body, cta }) => (
-              <div key={label} className="bg-primary-white p-8 flex flex-col gap-4">
-                <span className="font-sans text-xs font-bold uppercase tracking-widest text-primary-red">
-                  {label}
-                </span>
-                <h3 className="font-sans text-xl font-black uppercase text-primary-black leading-tight">
-                  {title}
-                </h3>
-                <p className="font-sans text-sm text-gray-400 leading-relaxed">{body}</p>
-                <p className="font-sans text-sm font-semibold text-primary-black mt-auto pt-2">
-                  {cta}
-                </p>
+              <div key={label} className="rounded-xl p-8 flex flex-col gap-4" style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E" }}>
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#F43F5E", fontFamily: "Inter, sans-serif" }}>{label}</span>
+                <h3 className="font-bold text-xl leading-tight" style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>{body}</p>
+                <p className="text-sm font-semibold mt-auto pt-2" style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>{cta}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Built on evidence ── */}
-      <section className="bg-primary-yellow">
+      {/* Built on Evidence */}
+      <section style={{ background: "#1E293B" }}>
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="font-sans text-xs font-black uppercase tracking-[0.25em] text-primary-black mb-12">
-            Built on evidence
-          </p>
-          <div className="flex flex-wrap gap-3 mb-14">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-12" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>Built on evidence</p>
+          <div className="flex flex-wrap gap-2 mb-12">
             {[
-              "Federal Reserve",
-              "Bureau of Labor Statistics",
-              "International Monetary Fund",
-              "World Bank",
-              "NBER Working Papers",
-              "Brookings Institution",
-              "Congressional Budget Office",
-              "Peer-reviewed journals",
+              "Federal Reserve", "Bureau of Labor Statistics", "International Monetary Fund",
+              "World Bank", "NBER Working Papers", "Brookings Institution",
+              "Congressional Budget Office", "Peer-reviewed journals",
             ].map((source) => (
-              <span
-                key={source}
-                className="font-sans text-xs font-bold uppercase tracking-wide text-primary-black bg-yellow-300 px-3 py-2"
-              >
+              <span key={source} className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "#0F172A", color: "#94A3B8", border: "1px solid #334155", fontFamily: "Inter, sans-serif" }}>
                 {source}
               </span>
             ))}
           </div>
-
-          <div className="bg-primary-white p-6 max-w-lg">
-            <p className="font-sans text-sm text-gray-700 leading-relaxed">
+          <div className="rounded-xl p-6 max-w-lg mb-14" style={{ background: "#0F172A", border: "1px solid #334155" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
               Simple Economics provides economic education only.{" "}
-              <strong className="text-primary-black">Not financial or investment advice.</strong>{" "}
+              <strong style={{ color: "#F8FAFC" }}>Not financial or investment advice.</strong>{" "}
               Every answer includes its sources so you can verify what we say.
             </p>
           </div>
-
-          {/* Final CTA */}
-          <div className="mt-14">
-            <Link
-              href="/onboarding"
-              className="inline-block font-sans text-xs font-black uppercase tracking-widest bg-primary-black text-primary-white hover:bg-primary-red transition-colors px-8 py-4"
-            >
-              Get Started Free →
-            </Link>
-            <p className="mt-4 font-sans text-xs text-primary-black">No credit card. No paywall to start.</p>
-          </div>
+          <Link href="/onboarding"
+            className="inline-block text-sm font-semibold px-8 py-4 rounded-lg transition-colors"
+            style={{ background: "#F43F5E", color: "#fff", fontFamily: "Inter, sans-serif" }}>
+            Get Started Free →
+          </Link>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-primary-black text-primary-white">
+      {/* Footer */}
+      <footer style={{ background: "#0F172A", borderTop: "1px solid #1E293B" }}>
         <div className="mx-auto max-w-6xl px-6 py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-
-            {/* Brand + nav */}
             <div className="flex flex-col gap-5">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 bg-primary-red shrink-0" aria-hidden="true" />
-                <span className="font-sans text-sm font-bold uppercase tracking-widest text-primary-white">
-                  Simple Economics
-                </span>
+                <div className="w-6 h-6 rounded-md flex-shrink-0" style={{ background: "#F43F5E" }} />
+                <span className="text-sm font-bold tracking-wide" style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>Simple Economics</span>
               </div>
               <nav className="flex flex-wrap gap-x-6 gap-y-2">
                 {[
-                  { label: "Feed",              href: "/feed" },
-                  { label: "Ask the Economist", href: "/ask" },
-                  { label: "My Economy",        href: "/my-economy" },
-                  { label: "Sign in",           href: "/signin" },
+                  { label: "Feed", href: "/feed" },
+                  { label: "Ask the Simple Economist", href: "/ask" },
+                  { label: "My Economy", href: "/my-economy" },
+                  { label: "Sign in", href: "/signin" },
                 ].map(({ label, href }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="font-sans text-xs uppercase tracking-wider text-gray-500 hover:text-primary-yellow transition-colors"
-                  >
+                  <Link key={href} href={href} className="text-xs transition-colors" style={{ color: "#475569", fontFamily: "Inter, sans-serif" }}>
                     {label}
                   </Link>
                 ))}
               </nav>
             </div>
-
-            {/* Social icons */}
             <div className="flex items-center gap-5">
               <FooterSocialLink href="https://youtube.com"   label="YouTube"   icon={<YouTubeIcon />} />
               <FooterSocialLink href="https://tiktok.com"    label="TikTok"    icon={<TikTokIcon />} />
@@ -288,14 +218,9 @@ export default async function HomePage() {
               <FooterSocialLink href="https://facebook.com"  label="Facebook"  icon={<FacebookIcon />} />
             </div>
           </div>
-
-          <div className="mt-10 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <p className="font-sans text-[10px] uppercase tracking-wider text-gray-700">
-              © {new Date().getFullYear()} Simple Economics
-            </p>
-            <p className="font-sans text-[10px] text-gray-700 sm:text-right">
-              Economic education only. Not financial advice.
-            </p>
+          <div className="mt-10 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ borderTop: "1px solid #1E293B" }}>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: "#334155", fontFamily: "Inter, sans-serif" }}>© {new Date().getFullYear()} Simple Economics</p>
+            <p className="text-[10px] sm:text-right" style={{ color: "#334155", fontFamily: "Inter, sans-serif" }}>Economic education only. Not financial advice.</p>
           </div>
         </div>
       </footer>
@@ -304,12 +229,9 @@ export default async function HomePage() {
   );
 }
 
-// ─── Social icons ─────────────────────────────────────────────────────────────
-
 function FooterSocialLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-      className="text-primary-white hover:text-primary-yellow transition-colors">
+    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} style={{ color: "#475569" }}>
       {icon}
     </a>
   );
