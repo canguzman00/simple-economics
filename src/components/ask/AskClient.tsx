@@ -230,7 +230,7 @@ function PageHeader() {
         </span>
       </div>
       <h1 className="font-bold leading-tight" style={{ fontSize: "36px", color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
-        Ask the Economist
+        Ask the Simple Economist
       </h1>
       <p className="mt-3 text-base leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
         A straight answer on anything economics — based on your situation.
