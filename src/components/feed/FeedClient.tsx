@@ -49,6 +49,26 @@ const IMPACT_TABS: { value: Impact | "ALL"; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
+const PILLAR_COLOR: Record<Pillar, string> = {
+  GLOBAL_ECONOMICS:   "#3B82F6",
+  GEOPOLITICS_MONEY:  "#F43F5E",
+  DEVELOPMENT_POLICY: "#8B5CF6",
+  PERSONAL_FINANCE:   "#0F172A",
+};
+
+const PILLAR_LABEL: Record<Pillar, string> = {
+  GLOBAL_ECONOMICS:   "Global Economics",
+  GEOPOLITICS_MONEY:  "Geopolitics & Money",
+  DEVELOPMENT_POLICY: "Development & Policy",
+  PERSONAL_FINANCE:   "Personal Finance",
+};
+
+const IMPACT_STYLE: Record<Impact, { bg: string; text: string }> = {
+  HIGH:   { bg: "#FEE2E2", text: "#DC2626" },
+  MEDIUM: { bg: "#FFF7ED", text: "#EA580C" },
+  LOW:    { bg: "#F0FDF4", text: "#16A34A" },
+};
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const h = Math.floor(diff / 3600000);
@@ -60,88 +80,83 @@ function timeAgo(iso: string): string {
 }
 
 function NewsFeedCard({ item }: { item: SerializedEvent }) {
-  const pillarBg: Record<Pillar, string> = {
-    GLOBAL_ECONOMICS:   "bg-primary-blue text-primary-white",
-    GEOPOLITICS_MONEY:  "bg-primary-red text-primary-white",
-    DEVELOPMENT_POLICY: "bg-primary-yellow text-primary-black",
-    PERSONAL_FINANCE:   "bg-primary-black text-primary-white",
-  };
-  const pillarLabel: Record<Pillar, string> = {
-    GLOBAL_ECONOMICS:   "Global Economics",
-    GEOPOLITICS_MONEY:  "Geopolitics & Money",
-    DEVELOPMENT_POLICY: "Development & Policy",
-    PERSONAL_FINANCE:   "Personal Finance",
-  };
-  const impactBg: Record<Impact, string> = {
-    HIGH:   "bg-primary-red text-primary-white",
-    MEDIUM: "bg-primary-yellow text-primary-black",
-    LOW:    "bg-primary-blue text-primary-white",
-  };
-  const accentColors = [
-    "bg-primary-red text-primary-white",
-    "bg-primary-blue text-primary-white",
-    "bg-primary-yellow text-primary-black",
-  ];
-
   let bullets: string[] = [];
   try {
     const parsed = JSON.parse(item.fullExplanation);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      bullets = parsed as string[];
-    }
+    if (Array.isArray(parsed) && parsed.length > 0) bullets = parsed as string[];
   } catch (e) { void e; }
-  if (bullets.length === 0) {
-    bullets = item.fullExplanation.split(". ").filter(Boolean).slice(0, 3);
-  }
-  if (bullets.length === 0) {
-    bullets = [item.fullExplanation];
-  }
+  if (bullets.length === 0) bullets = item.fullExplanation.split(". ").filter(Boolean).slice(0, 3);
+  if (bullets.length === 0) bullets = [item.fullExplanation];
+
+  const pillarColor = PILLAR_COLOR[item.pillar];
+  const impactStyle = IMPACT_STYLE[item.impact];
 
   return (
-    <article className="flex flex-col gap-4 bg-primary-white border-2 border-primary-black px-6 py-6 hover:shadow-[4px_4px_0px_#0A0A0A] transition-shadow">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-sans text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-primary-red text-primary-white">
-          NEWS
+    <article
+      className="flex flex-col gap-4 bg-white rounded-xl transition-shadow hover:shadow-md"
+      style={{ border: "1px solid #E2E8F0", borderTop: "3px solid " + pillarColor }}
+    >
+      <div className="px-6 pt-5 flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded"
+          style={{ background: "#FFF1F2", color: "#F43F5E", fontFamily: "Inter, sans-serif" }}>
+          News
         </span>
-        <span className={"font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 " + pillarBg[item.pillar]}>
-          {pillarLabel[item.pillar]}
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded"
+          style={{ background: "#F1F5F9", color: "#475569", fontFamily: "Inter, sans-serif" }}>
+          {PILLAR_LABEL[item.pillar]}
         </span>
-        <span className={"font-sans text-[10px] font-bold uppercase tracking-wider px-2 py-1 " + impactBg[item.impact]}>
-          {item.impact} IMPACT
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded"
+          style={{ background: impactStyle.bg, color: impactStyle.text, fontFamily: "Inter, sans-serif" }}>
+          {item.impact} Impact
         </span>
-        <span className="ml-auto font-sans text-[10px] text-gray-500">
+        <span className="ml-auto text-[11px]" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
           {item.newsSource ? item.newsSource + " · " : ""}{timeAgo(item.publishedAt)}
         </span>
       </div>
 
-      {item.newsUrl ? (
-        <a href={item.newsUrl} target="_blank" rel="noopener noreferrer" className="group">
-          <h2 className="font-sans font-black text-lg text-primary-black leading-tight group-hover:text-primary-red transition-colors">
+      <div className="px-6">
+        {item.newsUrl ? (
+          <a href={item.newsUrl} target="_blank" rel="noopener noreferrer" className="group">
+            <h2 className="font-bold text-xl leading-snug group-hover:text-[#F43F5E] transition-colors"
+              style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
+              {item.title}
+            </h2>
+          </a>
+        ) : (
+          <h2 className="font-bold text-xl leading-snug" style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
             {item.title}
           </h2>
-        </a>
-      ) : (
-        <h2 className="font-sans font-black text-lg text-primary-black leading-tight">{item.title}</h2>
-      )}
+        )}
+      </div>
 
-      <p className="font-sans text-sm text-gray-600 leading-relaxed">{item.summary}</p>
+      <div className="px-6">
+        <p className="text-sm leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
+          {item.summary}
+        </p>
+      </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 px-6">
         {bullets.map((bullet, i) => (
           <div key={i} className="flex gap-3 items-start">
-            <span className={"w-5 h-5 shrink-0 flex items-center justify-center font-sans text-[10px] font-black mt-0.5 " + accentColors[i % 3]}>
+            <span className="w-5 h-5 shrink-0 flex items-center justify-center text-[10px] font-bold rounded mt-0.5"
+              style={{ background: "#1E293B", color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>
               {i + 1}
             </span>
-            <p className="font-sans text-sm text-primary-black leading-relaxed">{bullet}</p>
+            <p className="text-sm leading-relaxed" style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
+              {bullet}
+            </p>
           </div>
         ))}
       </div>
 
       {item.newsUrl && (
-        <a href={item.newsUrl} target="_blank" rel="noopener noreferrer"
-          className="self-start font-sans text-xs font-bold uppercase tracking-widest text-primary-red hover:text-primary-black transition-colors">
-          Read full article{item.newsSource ? " at " + item.newsSource : ""} →
-        </a>
+        <div className="px-6 pb-5" style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px" }}>
+          <a href={item.newsUrl} target="_blank" rel="noopener noreferrer"
+            className="text-sm font-semibold transition-colors"
+            style={{ color: "#F43F5E", fontFamily: "Inter, sans-serif" }}>
+            Read full article{item.newsSource ? " at " + item.newsSource : ""} →
+          </a>
+        </div>
       )}
     </article>
   );
@@ -149,9 +164,10 @@ function NewsFeedCard({ item }: { item: SerializedEvent }) {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 border-2 border-primary-black text-center gap-3">
-      <p className="font-sans font-bold uppercase text-lg text-primary-black">No events yet</p>
-      <p className="font-sans text-sm text-primary-black">Check back soon.</p>
+    <div className="flex flex-col items-center justify-center py-20 rounded-xl text-center gap-3"
+      style={{ border: "1px solid #E2E8F0", background: "#fff" }}>
+      <p className="font-bold text-lg" style={{ color: "#0F172A", fontFamily: "Inter, sans-serif" }}>No events yet</p>
+      <p className="text-sm" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>Check back soon.</p>
     </div>
   );
 }
@@ -208,60 +224,87 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
   const hasMore = filtered.length > count;
 
   return (
-    <div>
-      <div className="flex gap-0 mb-6 border-2 border-primary-black overflow-hidden">
+    <div style={{ fontFamily: "Inter, sans-serif" }}>
+
+      {/* Tier tabs */}
+      <div className="flex gap-0 mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid #E2E8F0", background: "#fff" }}>
         {TIER_TABS.map((tab, i) => (
           <button key={tab.value}
             onClick={() => { setTier(tab.value); setCount(PAGE_SIZE); }}
-            className={"flex-1 font-sans text-xs font-black uppercase tracking-widest py-3 transition-colors " + (i > 0 ? "border-l-2 border-primary-black " : "") + (tier === tab.value ? "bg-primary-black text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
+            className="flex-1 text-xs font-semibold uppercase tracking-wider py-3 transition-colors"
+            style={{
+              borderLeft: i > 0 ? "1px solid #E2E8F0" : "none",
+              background: tier === tab.value ? "#1E293B" : "#fff",
+              color: tier === tab.value ? "#F8FAFC" : "#64748B",
+              fontFamily: "Inter, sans-serif",
+            }}>
             {tab.label}
           </button>
         ))}
       </div>
 
+      {/* Local banner */}
       {tier === "LOCAL" && (userCity || userState) && (
-        <div className="border-2 border-primary-black bg-primary-blue px-5 py-3 mb-5 flex items-center gap-3">
-          <span className="w-2.5 h-2.5 bg-primary-white shrink-0" />
-          <span className="font-sans text-xs font-black uppercase tracking-widest text-primary-white">
+        <div className="rounded-lg px-5 py-3 mb-5 flex items-center gap-3"
+          style={{ background: "#1E293B", border: "1px solid #334155" }}>
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#F43F5E" }} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#F8FAFC", fontFamily: "Inter, sans-serif" }}>
             Local Economy{userCity ? " — " + userCity : ""}{userState ? ", " + userState : ""}
           </span>
         </div>
       )}
 
+      {/* Pillar filters */}
       <div className="overflow-x-auto -mx-1 px-1 mb-4">
-        <div className="flex gap-1.5 min-w-max">
+        <div className="flex gap-2 min-w-max">
           {PILLAR_TABS.map((tab) => (
             <button key={tab.value}
               onClick={() => { setPillar(tab.value); setCount(PAGE_SIZE); }}
-              className={"font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black whitespace-nowrap transition-colors " + (pillar === tab.value ? "bg-primary-red text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
+              className="text-[11px] font-medium uppercase tracking-wider px-3 py-2 rounded-lg whitespace-nowrap transition-colors"
+              style={{
+                background: pillar === tab.value ? "#F43F5E" : "#fff",
+                color: pillar === tab.value ? "#fff" : "#64748B",
+                border: "1px solid " + (pillar === tab.value ? "#F43F5E" : "#E2E8F0"),
+                fontFamily: "Inter, sans-serif",
+              }}>
               {tab.label}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Impact filters */}
       <div className="flex items-center gap-3 mb-8">
-        <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-primary-black shrink-0">Impact:</span>
-        <div className="flex gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider shrink-0" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
+          Impact:
+        </span>
+        <div className="flex gap-2">
           {IMPACT_TABS.map((tab) => (
             <button key={tab.value}
               onClick={() => { setImpact(tab.value); setCount(PAGE_SIZE); }}
-              className={"font-sans text-[10px] font-bold uppercase tracking-wider px-3 py-2 border-2 border-primary-black transition-colors " + (impact === tab.value ? "bg-primary-black text-primary-white" : "bg-primary-white text-primary-black hover:bg-gray-100")}>
+              className="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                background: impact === tab.value ? "#1E293B" : "#fff",
+                color: impact === tab.value ? "#F8FAFC" : "#64748B",
+                border: "1px solid " + (impact === tab.value ? "#1E293B" : "#E2E8F0"),
+                fontFamily: "Inter, sans-serif",
+              }}>
               {tab.label}
             </button>
           ))}
         </div>
         {filtered.length > 0 && (
-          <span className="ml-auto font-sans text-xs text-primary-black">
+          <span className="ml-auto text-xs" style={{ color: "#94A3B8", fontFamily: "Inter, sans-serif" }}>
             {filtered.length} {filtered.length === 1 ? "event" : "events"}
           </span>
         )}
       </div>
 
+      {/* Cards */}
       {newsLoading ? (
         <div className="flex flex-col gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-gray-100 border-2 border-primary-black animate-pulse" />
+            <div key={i} className="h-40 rounded-xl animate-pulse" style={{ background: "#F1F5F9" }} />
           ))}
         </div>
       ) : visible.length === 0 ? (
@@ -280,10 +323,19 @@ export function FeedClient({ initialEvents, userCity, userState }: Props) {
         </div>
       )}
 
+      {/* Load more */}
       {hasMore && (
         <div className="flex justify-center mt-10">
           <button onClick={() => setCount((c) => c + PAGE_SIZE)}
-            className="font-sans text-xs font-bold uppercase tracking-widest border-2 border-primary-black text-primary-black hover:bg-primary-black hover:text-primary-white transition-colors px-8 py-3">
+            className="text-sm font-semibold px-8 py-3 rounded-lg transition-colors"
+            style={{
+              border: "1px solid #1E293B",
+              color: "#1E293B",
+              background: "#fff",
+              fontFamily: "Inter, sans-serif",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#1E293B"; e.currentTarget.style.color = "#F8FAFC"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#1E293B"; }}>
             Load more ({filtered.length - count} remaining)
           </button>
         </div>
