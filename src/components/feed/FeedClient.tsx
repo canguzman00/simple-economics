@@ -248,7 +248,7 @@ function NewsCard({ item }: { item: NewsItem }): JSX.Element {
             className="text-sm font-medium"
             style={{ color: "#F43F5E" }}
           >
-            Read full {item.contentType.toLowerCase()} at {hostname} &rarr;
+            Read full {item.contentType.toLowerCase()} at {hostname} →
           </a>
         </div>
       </div>
