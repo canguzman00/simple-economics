@@ -178,28 +178,28 @@ export default async function MyEconomyPage() {
 
       {/* ── 1. Header ── */}
       <section>
-        <h1 className="font-bold leading-tight" style="font-size:36px;color:#0F172A;font-family:Inter,sans-serif;">
+        <h1 className="font-bold leading-tight" style={{fontSize:"36px",color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
           Your Economic Snapshot
         </h1>
         {user?.onboardingComplete && (situationStr || city) ? (
-          <p className="mt-3 text-base flex items-center gap-2" style="color:#64748B;font-family:Inter,sans-serif;">
-            <span className="w-2 h-2 rounded-full shrink-0" style="background:#F43F5E;" />
+          <p className="mt-3 text-base flex items-center gap-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
             Personalized for{situationStr && <strong className="text-primary-black"> {situationStr}</strong>}
             {city && <span> in <strong className="text-primary-black">{city}</strong></span>}
           </p>
         ) : (
-          <div className="mt-6 rounded-xl px-6 py-5 flex items-center justify-between gap-4" style="background:#FFF1F2;border:1px solid #FECDD3;">
+          <div className="mt-6 rounded-xl px-6 py-5 flex items-center justify-between gap-4" style={{background:"#FFF1F2",border:"1px solid #FECDD3"}}>
             <div>
-              <p className="text-sm font-semibold" style="color:#0F172A;font-family:Inter,sans-serif;">
+              <p className="text-sm font-semibold" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
                 Personalize your dashboard
               </p>
-              <p className="mt-1 text-xs" style="color:#64748B;font-family:Inter,sans-serif;">
+              <p className="mt-1 text-xs" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                 Tell us about your situation and we&apos;ll tailor every indicator to you.
               </p>
             </div>
             <Link
               href="/onboarding"
-              className="shrink-0 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style="background:#F43F5E;color:#fff;font-family:Inter,sans-serif;"
+              className="shrink-0 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{background:"#F43F5E",color:"#fff",fontFamily:"Inter,sans-serif"}}
             >
               Complete profile
             </Link>
@@ -210,9 +210,9 @@ export default async function MyEconomyPage() {
       {/* ── 2a. National indicators ── */}
       <section>
         {/* Section banner */}
-        <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style="background:#1E293B;border:1px solid #334155;">
-          <span className="w-2 h-2 rounded-full shrink-0" style="background:#F43F5E;" />
-          <span className="text-xs font-semibold uppercase tracking-wider" style="color:#F8FAFC;font-family:Inter,sans-serif;">
+        <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style={{background:"#1E293B",border:"1px solid #334155"}}>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{color:"#F8FAFC",fontFamily:"Inter,sans-serif"}}>
             National Economy
           </span>
         </div>
@@ -253,11 +253,11 @@ export default async function MyEconomyPage() {
                 <div key={meta.key} className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #F43F5E"}}>
                   {/* Name + contextual value */}
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style="color:#64748B;font-family:Inter,sans-serif;">
+                    <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                       {meta.name}
                     </p>
                     {unavailable ? (
-                      <span className="text-xs leading-none shrink-0" style="color:#CBD5E1;font-family:Inter,sans-serif;">unavailable</span>
+                      <span className="text-xs leading-none shrink-0" style={{color:"#CBD5E1",fontFamily:"Inter,sans-serif"}}>unavailable</span>
                     ) : sentiment ? (
                       <span className="font-mono text-sm font-bold leading-none shrink-0 whitespace-nowrap" style={{color: cached ? "#94A3B8" : "#0F172A"}}>
                         {sentiment.label} ({value})
@@ -270,7 +270,7 @@ export default async function MyEconomyPage() {
                   {/* Scale bar */}
                   {validRaw && !unavailable && (
                     <div>
-                      <div className="relative h-3 flex rounded overflow-hidden" style="border:1px solid #E2E8F0;">
+                      <div className="relative h-3 flex rounded overflow-hidden" style={{border:"1px solid #E2E8F0"}}>
                         {/* Red zone 0–60 = 42.8% */}
                         <div className="bg-primary-red" style={{ width: "42.8%" }} />
                         {/* Yellow zone 60–90 = 21.4% */}
@@ -297,7 +297,7 @@ export default async function MyEconomyPage() {
                   )}
 
                   {/* Contextual description */}
-                  <p className="text-xs leading-relaxed" style="color:#64748B;font-family:Inter,sans-serif;">
+                  <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                     {unavailable
                       ? "Data temporarily unavailable."
                       : validRaw
@@ -307,11 +307,11 @@ export default async function MyEconomyPage() {
 
                   {/* Source + historical note */}
                   <div>
-                    <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+                    <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                       {meta.source} · {date}
                       {cached && <span className="ml-1">(cached)</span>}
                     </p>
-                    <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">Historical average: ~86</p>
+                    <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>Historical average: ~86</p>
                   </div>
                 </div>
               );
@@ -320,21 +320,21 @@ export default async function MyEconomyPage() {
             return (
               <div key={meta.key} className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #F43F5E"}}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style="color:#64748B;font-family:Inter,sans-serif;">
+                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                     {meta.name}
                   </p>
                   {unavailable ? (
-                    <span className="text-xs leading-none shrink-0" style="color:#CBD5E1;font-family:Inter,sans-serif;">unavailable</span>
+                    <span className="text-xs leading-none shrink-0" style={{color:"#CBD5E1",fontFamily:"Inter,sans-serif"}}>unavailable</span>
                   ) : (
                     <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color: cached ? "#94A3B8" : "#0F172A"}}>
                       {value}
                     </span>
                   )}
                 </div>
-                <p className="text-xs leading-relaxed" style="color:#64748B;font-family:Inter,sans-serif;">
+                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
                 </p>
-                <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   {meta.source} · {date}
                   {cached && <span className="ml-1">(cached)</span>}
                 </p>
@@ -346,9 +346,9 @@ export default async function MyEconomyPage() {
 
       {/* ── 2b. Local indicators ── */}
       <section>
-        <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style="background:#1E293B;border:1px solid #334155;">
-          <span className="w-2 h-2 rounded-full shrink-0" style="background:#F43F5E;" />
-          <span className="text-xs font-semibold uppercase tracking-wider" style="color:#F8FAFC;font-family:Inter,sans-serif;">
+        <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style={{background:"#1E293B",border:"1px solid #334155"}}>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{color:"#F8FAFC",fontFamily:"Inter,sans-serif"}}>
             Your Local Economy{city ? ` — ${city.toUpperCase()}` : ""}
           </span>
         </div>
@@ -368,19 +368,19 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #0F172A"}}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style="color:#64748B;font-family:Inter,sans-serif;">
+                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                     Local Housing Market
                   </p>
                   <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color: cached ? "#94A3B8" : "#0F172A"}}>
                     {mortgageRateStr}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed" style="color:#64748B;font-family:Inter,sans-serif;">
+                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {city && monthlyPayment
                     ? `In ${city}, this rate means a $400K home costs approximately $${monthlyPayment.toLocaleString()} per month. Local rental markets typically move in the same direction as mortgage rates — when buying gets expensive, rental demand rises.`
                     : `At this rate, a $400K home costs approximately $${monthlyPayment?.toLocaleString() ?? "—"} per month. Add your city to your profile for local housing context.`}
                 </p>
-                <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   30-Year Fixed · Freddie Mac via FRED{cached && " (cached)"}
                 </p>
               </div>
@@ -395,14 +395,14 @@ export default async function MyEconomyPage() {
             return (
               <div className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #F43F5E"}}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style="color:#64748B;font-family:Inter,sans-serif;">
+                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                     Local Job Market
                   </p>
                   <span className="font-sans text-xs text-primary-black leading-none shrink-0 text-right">
                     {state}
                   </span>
                 </div>
-                <p className="text-xs leading-relaxed" style="color:#64748B;font-family:Inter,sans-serif;">
+                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   Unemployment in {state} typically tracks within 0.5% of the national rate of {unrateValue}.
                   {city ? ` For ${city}-area job data, see:` : " Add your city to get a direct link to local data."}
                 </p>
@@ -411,12 +411,12 @@ export default async function MyEconomyPage() {
                     href={blsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-[10px] underline underline-offset-2 transition-colors break-all" style="color:#F43F5E;"
+                    className="font-mono text-[10px] underline underline-offset-2 transition-colors break-all" style={{color:"#F43F5E"}}
                   >
                     {blsUrl}
                   </a>
                 )}
-                <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   Bureau of Labor Statistics · State & Local Data
                 </p>
               </div>
@@ -424,26 +424,26 @@ export default async function MyEconomyPage() {
           })()}
         </div>
 
-        <p className="mt-3 text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+        <p className="mt-3 text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
           Local data is estimated based on your city. For the most accurate local figures, check your state&apos;s labor department website.
         </p>
       </section>
 
       {/* ── 3. Top HIGH impact events ── */}
       <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider mb-5 flex items-center gap-2" style="color:#64748B;font-family:Inter,sans-serif;">
-          <span className="w-2 h-2 rounded-full shrink-0" style="background:#3B82F6;" />
+        <h2 className="text-xs font-semibold uppercase tracking-wider mb-5 flex items-center gap-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#3B82F6"}} />
           What&apos;s affecting you right now
         </h2>
         {topEvents.length === 0 ? (
-          <p className="text-sm" style="color:#94A3B8;font-family:Inter,sans-serif;">No high-impact events published yet.</p>
+          <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>No high-impact events published yet.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {topEvents.map((ev) => (
               <Link
                 key={ev.id}
                 href={`/feed/${ev.slug}`}
-                className="flex flex-col gap-2 rounded-xl px-5 py-4 transition-shadow hover:shadow-md" style="background:#fff;border:1px solid #E2E8F0;"
+                className="flex flex-col gap-2 rounded-xl px-5 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}
               >
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>
@@ -453,8 +453,8 @@ export default async function MyEconomyPage() {
                     HIGH IMPACT
                   </span>
                 </div>
-                <p className="font-semibold text-base leading-snug" style="color:#0F172A;font-family:Inter,sans-serif;">{ev.title}</p>
-                <p className="text-xs line-clamp-2" style="color:#64748B;font-family:Inter,sans-serif;">{ev.summary}</p>
+                <p className="font-semibold text-base leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>{ev.title}</p>
+                <p className="text-xs line-clamp-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{ev.summary}</p>
               </Link>
             ))}
           </div>
@@ -464,29 +464,29 @@ export default async function MyEconomyPage() {
       {/* ── 4. Recent questions ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style="color:#64748B;font-family:Inter,sans-serif;">
-            <span className="w-2 h-2 rounded-full shrink-0" style="background:#F43F5E;" />
+          <h2 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
             Your recent questions
           </h2>
-          <Link href="/ask" className="text-xs font-semibold transition-colors" style="color:#F43F5E;font-family:Inter,sans-serif;">
+          <Link href="/ask" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
             Ask new →
           </Link>
         </div>
         {recentQuestions.length === 0 ? (
-          <div className="rounded-xl px-5 py-8 text-center" style="background:#fff;border:1px solid #E2E8F0;">
-            <p className="text-sm" style="color:#94A3B8;font-family:Inter,sans-serif;">You haven&apos;t asked anything yet.</p>
-            <Link href="/ask" className="mt-3 inline-block text-xs font-semibold transition-colors" style="color:#F43F5E;font-family:Inter,sans-serif;">
+          <div className="rounded-xl px-5 py-8 text-center" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
+            <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>You haven&apos;t asked anything yet.</p>
+            <Link href="/ask" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
               Ask the Economist →
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col rounded-xl overflow-hidden" style="border:1px solid #E2E8F0;">
+          <div className="flex flex-col rounded-xl overflow-hidden" style={{border:"1px solid #E2E8F0"}}>
             {recentQuestions.map((q) => (
               <div key={q.id} className="px-5 py-4 transition-colors" style="borderBottom:1px solid #F1F5F9;" onMouseEnter="this.style.background='#F8FAFC'" onMouseLeave="this.style.background='#fff'">
-                <p className="text-sm font-semibold leading-snug" style="color:#0F172A;font-family:Inter,sans-serif;">
+                <p className="text-sm font-semibold leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
                   {q.question}
                 </p>
-                <p className="mt-1.5 text-xs line-clamp-2 leading-relaxed" style="color:#64748B;font-family:Inter,sans-serif;">
+                <p className="mt-1.5 text-xs line-clamp-2 leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "…" : ""); })()}
                 </p>
                 <p className="mt-2 font-mono text-[10px]" style="color:#94A3B8;">
@@ -501,18 +501,18 @@ export default async function MyEconomyPage() {
       {/* ── 5. Saved events ── */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style="color:#64748B;font-family:Inter,sans-serif;">
-            <span className="w-2 h-2 rounded-full shrink-0" style="background:#1E293B;" />
+          <h2 className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+            <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#1E293B"}} />
             Saved events
           </h2>
-          <Link href="/saved" className="text-xs font-semibold transition-colors" style="color:#F43F5E;font-family:Inter,sans-serif;">
+          <Link href="/saved" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
             See all →
           </Link>
         </div>
         {savedEvents.length === 0 ? (
-          <div className="rounded-xl px-5 py-8 text-center" style="background:#fff;border:1px solid #E2E8F0;">
-            <p className="text-sm" style="color:#94A3B8;font-family:Inter,sans-serif;">No saved events yet.</p>
-            <Link href="/feed" className="mt-3 inline-block text-xs font-semibold transition-colors" style="color:#F43F5E;font-family:Inter,sans-serif;">
+          <div className="rounded-xl px-5 py-8 text-center" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
+            <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>No saved events yet.</p>
+            <Link href="/feed" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
               Browse the feed →
             </Link>
           </div>
@@ -522,15 +522,15 @@ export default async function MyEconomyPage() {
               <Link
                 key={se.id}
                 href={`/feed/${se.event.slug}`}
-                className="flex flex-col gap-2 rounded-xl px-4 py-4 transition-shadow hover:shadow-md" style="background:#fff;border:1px solid #E2E8F0;"
+                className="flex flex-col gap-2 rounded-xl px-4 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}
               >
                 <span className="self-start text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>
                   {PILLAR_LABEL[se.event.pillar]}
                 </span>
-                <p className="font-semibold text-sm leading-snug line-clamp-2" style="color:#0F172A;font-family:Inter,sans-serif;">
+                <p className="font-semibold text-sm leading-snug line-clamp-2" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
                   {se.event.title}
                 </p>
-                <p className="text-[10px]" style="color:#94A3B8;font-family:Inter,sans-serif;">
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   Saved · {new Date(se.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>
               </Link>
