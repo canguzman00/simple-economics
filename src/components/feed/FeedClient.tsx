@@ -93,7 +93,7 @@ function formatDate(iso: string): string {
   });
 }
 
-function NewsCard({ item }: { item: NewsItem }) {
+function NewsCard({ item }: { item: NewsItem }): JSX.Element {
   const [points, setPoints] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -256,7 +256,7 @@ function NewsCard({ item }: { item: NewsItem }) {
   );
 }
 
-function EmptyState() {
+function EmptyState(): JSX.Element {
   return (
     <div
       className="rounded-xl flex flex-col items-center justify-center py-20 text-center gap-3"
