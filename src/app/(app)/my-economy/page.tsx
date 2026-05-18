@@ -489,7 +489,7 @@ export default async function MyEconomyPage() {
                 <p className="mt-1.5 text-xs line-clamp-2 leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "…" : ""); })()}
                 </p>
-                <p className="mt-2 font-mono text-[10px]" style="color:#94A3B8;">
+                <p className="mt-2 font-mono text-[10px]" style={{"color":"#94A3B8"}}>
                   {new Date(q.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
