@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Pillar, Impact } from "@prisma/client";
+import type { Pillar } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { situationLabel } from "@/components/onboarding/data";
