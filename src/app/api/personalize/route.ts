@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
       if (user) {
         const parts: string[] = [];
-        if (user.situation) parts.push(user.situation === "rent" ? "a renter" : "a homeowner");
+        if (user.situation) parts.push(user.situation === "RENTER" ? "a renter" : "a homeowner");
         if (user.employmentStatus) parts.push(`employment: ${user.employmentStatus}`);
         if (user.industry) parts.push(`works in ${user.industry}`);
         if (user.city) parts.push(`lives in ${user.city}`);
