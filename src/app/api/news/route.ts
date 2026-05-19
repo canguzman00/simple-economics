@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
   const region     = searchParams.get("region") ?? undefined;
 
   try {
-    // Check when we last fetched for this tier
     const newest = await prisma.newsCache.findFirst({
       where: tierParam ? { tier: tierParam } : {},
       orderBy: { createdAt: "desc" },
@@ -20,27 +19,25 @@ export async function GET(req: NextRequest) {
     });
 
     if (isCacheStale(newest?.createdAt ?? null)) {
-      // Fire and forget — don't block the response
       fetchAndCacheNews().catch((e) => console.error("[news] background fetch failed:", e));
     }
 
     const articles = await getCachedNews(tierParam ?? undefined, region);
 
     return NextResponse.json(
-articles.map((a) => ({
-  id:              a.id,
-  title:           a.title,
-  summary:         a.summary,
-  fullExplanation: a.fullExplanation,
-  url:             a.url,
-  source:          a.source,
-  contentType:     a.contentType ?? "News",
-  publishedAt:     a.publishedAt.toISOString(),
-  pillar:          a.pillar,
-  impact:          a.impact,
-  tier:            a.tier,
-  region:          a.region,
-}))
+      articles.map((a) => ({
+        id:          a.id,
+        title:       a.title,
+        summary:     a.summary,
+        url:         a.url,
+        source:      a.source,
+        contentType: a.contentType ?? "News",
+        publishedAt: a.publishedAt.toISOString(),
+        pillar:      a.pillar,
+        impact:      a.impact,
+        tier:        a.tier,
+        region:      a.region,
+      })),
       {
         headers: {
           "Cache-Control": `public, s-maxage=${CACHE_TTL_MS / 1000}, stale-while-revalidate=60`,
