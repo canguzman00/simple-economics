@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { Tier } from "@prisma/client";
-import { fetchAndCacheNews, getCachedNews, isCacheStale, CACHE_TTL_MS } from "@/lib/news-fetcher";
+import { fetchAndCacheNews, fetchAndCacheRegionalNews, getCachedNews, isCacheStale, CACHE_TTL_MS } from "@/lib/news-fetcher";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const tierParam  = searchParams.get("tier") as Tier | null;
-  const region     = searchParams.get("region") ?? undefined;
+  const tierParam = searchParams.get("tier") as Tier | null;
+  const region    = searchParams.get("region") ?? undefined;
 
   try {
     const newest = await prisma.newsCache.findFirst({
-      where: tierParam ? { tier: tierParam } : {},
+      where: {
+        ...(tierParam ? { tier: tierParam } : {}),
+        ...(tierParam === "REGIONAL" && region ? { region } : {}),
+      },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
     });
 
     if (isCacheStale(newest?.createdAt ?? null)) {
-      fetchAndCacheNews().catch((e) => console.error("[news] background fetch failed:", e));
+      if (tierParam === "REGIONAL" && region) {
+        fetchAndCacheRegionalNews(region).catch((e) => console.error("[news] regional fetch failed:", e));
+      } else {
+        fetchAndCacheNews().catch((e) => console.error("[news] background fetch failed:", e));
+      }
     }
 
     const articles = await getCachedNews(tierParam ?? undefined, region);
