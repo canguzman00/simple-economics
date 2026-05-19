@@ -168,7 +168,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
         <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px", marginTop: "14px" }}>
           <a href={item.url} target="_blank" rel="noopener noreferrer"
             style={{ fontSize: "13px", fontWeight: 500, color: "#F43F5E", textDecoration: "none" }}>
-            Read full {item.contentType.toLowerCase()} at {hostname} →
+            Read full {(item.contentType ?? "article").toLowerCase()} at {hostname} →
           </a>
         </div>
       </div>
