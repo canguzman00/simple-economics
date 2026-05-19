@@ -66,7 +66,7 @@ Description: ${description.slice(0, 400)}`,
   }
 }
 
-async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
+async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianArticle[]> {
   const apiKey = process.env.GUARDIAN_API_KEY;
   if (!apiKey) {
     console.error("[news] GUARDIAN_API_KEY not set");
@@ -75,8 +75,12 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
 
   const since = new Date(Date.now() - CACHE_TTL_MS).toISOString().split("T")[0];
 
+  const q = locationQuery
+    ? `(${locationQuery}) AND (economy OR jobs OR housing OR inflation OR wages OR budget OR unemployment)`
+    : "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing";
+
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("q", "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing");
+  url.searchParams.set("q", q);
   url.searchParams.set("section", "business|money|us-news|world");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
@@ -93,7 +97,6 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
     const json = await res.json() as { response?: { results?: GuardianArticle[] } };
     const articles = json.response?.results ?? [];
 
-    // Score by keyword relevance and pick top 5
     const scored = articles
       .map((a) => {
         const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
@@ -111,7 +114,11 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
   }
 }
 
-async function processGuardianArticles(articles: GuardianArticle[]): Promise<void> {
+async function processGuardianArticles(
+  articles: GuardianArticle[],
+  tier: Tier = "GLOBAL",
+  region?: string
+): Promise<void> {
   for (const article of articles) {
     try {
       const existing = await prisma.newsCache.findUnique({ where: { url: article.webUrl } });
@@ -121,10 +128,13 @@ async function processGuardianArticles(articles: GuardianArticle[]): Promise<voi
       const classified = await classifyArticle(article.webTitle, description, "The Guardian");
       if (!classified) continue;
 
-      // Determine tier based on content
-      const text = (article.webTitle + " " + description).toLowerCase();
-      const isNational = text.includes("us ") || text.includes("america") || text.includes("federal reserve") || text.includes("congress");
-      const tier: Tier = isNational ? "NATIONAL" : "GLOBAL";
+      // Auto-detect tier if not explicitly set
+      let resolvedTier = tier;
+      if (tier === "GLOBAL") {
+        const text = (article.webTitle + " " + description).toLowerCase();
+        const isNational = text.includes("us ") || text.includes("america") || text.includes("federal reserve") || text.includes("congress");
+        resolvedTier = isNational ? "NATIONAL" : "GLOBAL";
+      }
 
       await prisma.newsCache.create({
         data: {
@@ -133,12 +143,12 @@ async function processGuardianArticles(articles: GuardianArticle[]): Promise<voi
           fullExplanation: "",
           url: article.webUrl,
           source: "The Guardian",
-          contentType: "News",
+          contentType: classified.contentType,
           publishedAt: new Date(article.webPublicationDate),
           pillar: classified.pillar,
           impact: classified.impact,
-          tier,
-          region: null,
+          tier: resolvedTier,
+          region: region ?? null,
         },
       });
     } catch (err) {
@@ -150,6 +160,11 @@ async function processGuardianArticles(articles: GuardianArticle[]): Promise<voi
 export async function fetchAndCacheNews(): Promise<void> {
   const articles = await fetchGuardianArticles();
   await processGuardianArticles(articles);
+}
+
+export async function fetchAndCacheRegionalNews(region: string): Promise<void> {
+  const articles = await fetchGuardianArticles(region);
+  await processGuardianArticles(articles, "REGIONAL", region);
 }
 
 export async function getCachedNews(
@@ -172,5 +187,5 @@ export async function getCachedNews(
 export function isCacheStale(oldestCreatedAt: Date | null): boolean {
   if (!oldestCreatedAt) return true;
   const ageMs = Date.now() - oldestCreatedAt.getTime();
-  return ageMs > 6 * 60 * 60 * 1000; // refresh every 6 hours
+  return ageMs > 6 * 60 * 60 * 1000;
 }
