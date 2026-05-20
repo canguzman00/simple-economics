@@ -11,13 +11,29 @@ interface RSSSource {
 }
 
 const RSS_SOURCES: RSSSource[] = [
+  // US Government
   { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml", contentType: "Statement", defaultTier: "NATIONAL", defaultPillar: "PERSONAL_FINANCE" },
   { name: "Bureau of Labor Statistics", url: "https://www.bls.gov/feed/news.rss", contentType: "Data release", defaultTier: "NATIONAL", defaultPillar: "PERSONAL_FINANCE" },
+  { name: "US Treasury", url: "https://home.treasury.gov/news/press-releases/feed", contentType: "Statement", defaultTier: "NATIONAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "Congressional Budget Office", url: "https://www.cbo.gov/rss/all", contentType: "Report", defaultTier: "NATIONAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  { name: "Census Bureau", url: "https://www.census.gov/newsroom/press-releases.xml", contentType: "Data release", defaultTier: "NATIONAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  // Global Institutions
   { name: "IMF", url: "https://www.imf.org/en/news/rss?language=eng", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
   { name: "World Bank", url: "https://www.worldbank.org/en/news/rss.xml", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "DEVELOPMENT_POLICY" },
-  { name: "US Treasury", url: "https://home.treasury.gov/news/press-releases/feed", contentType: "Statement", defaultTier: "NATIONAL", defaultPillar: "GLOBAL_ECONOMICS" },
-  { name: "Brookings Institution", url: "https://www.brookings.edu/feed/", contentType: "Analysis", defaultTier: "NATIONAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  { name: "WTO", url: "https://www.wto.org/english/news_e/rss_e/rss_e.xml", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "ILO", url: "https://www.ilo.org/rss/en", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "PERSONAL_FINANCE" },
+  { name: "OECD", url: "https://www.oecd.org/newsroom/rss.xml", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "United Nations", url: "https://news.un.org/feed/subscribe/en/news/topic/economic-development/feed/rss.xml", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  { name: "BIS", url: "https://www.bis.org/rss.htm", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "Asian Development Bank", url: "https://www.adb.org/news/rss", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  // Think Tanks & Research
   { name: "NBER", url: "https://www.nber.org/rss/new.xml", contentType: "Report", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "Brookings Institution", url: "https://www.brookings.edu/feed/", contentType: "Analysis", defaultTier: "NATIONAL", defaultPillar: "DEVELOPMENT_POLICY" },
+  { name: "Peterson Institute", url: "https://www.piie.com/rss.xml", contentType: "Analysis", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "Economic Policy Institute", url: "https://www.epi.org/feed/", contentType: "Analysis", defaultTier: "NATIONAL", defaultPillar: "PERSONAL_FINANCE" },
+  { name: "CFR", url: "https://www.cfr.org/rss/economics.xml", contentType: "Analysis", defaultTier: "GLOBAL", defaultPillar: "GEOPOLITICS_MONEY" },
+  { name: "CEPR", url: "https://cepr.org/rss.xml", contentType: "Analysis", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
+  { name: "Bruegel", url: "https://www.bruegel.org/feed", contentType: "Analysis", defaultTier: "GLOBAL", defaultPillar: "GLOBAL_ECONOMICS" },
 ];
 
 const ECONOMIC_KEYWORDS = [
