@@ -77,11 +77,11 @@ async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianAr
 
   const q = locationQuery
     ? `(${locationQuery}) AND (economy OR jobs OR housing OR inflation OR wages OR budget OR unemployment)`
-    : "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing";
+    : "\"United States\" OR \"US economy\" OR \"Federal Reserve\" OR \"American workers\" OR \"US inflation\" OR \"US jobs\" OR \"US housing\" OR \"US wages\" OR \"US debt\" OR \"US tariffs\"";
 
   const url = new URL("https://content.guardianapis.com/search");
   url.searchParams.set("q", q);
-  url.searchParams.set("section", "business|money|us-news|world");
+  url.searchParams.set("section", "us-news|business|money");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
   url.searchParams.set("page-size", "20");
