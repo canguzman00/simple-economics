@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchAndCacheNews } from "@/lib/news-fetcher";
+import { fetchAndCacheRSSFeeds } from "@/lib/rss-fetcher";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 
@@ -8,7 +9,10 @@ export const runtime = "nodejs";
 
 async function runRefresh() {
   await prisma.newsCache.deleteMany({});
-  await fetchAndCacheNews();
+  await Promise.all([
+    fetchAndCacheNews(),
+    fetchAndCacheRSSFeeds(),
+  ]);
 }
 
 export async function GET() {
