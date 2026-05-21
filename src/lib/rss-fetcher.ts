@@ -154,8 +154,8 @@ async function fetchRSSSource(source: RSSSource): Promise<void> {
 
     // Filter to recent economic content only
     const relevant = items
-      .filter((item) => isRecent(item.pubDate) && isEconomicContent(item.title, item.description))
-      .slice(0, 2); // max 2 per source
+      .filter((item) => isRecent(item.pubDate, source.name) && isEconomicContent(item.title, item.description))
+      .slice(0, 2);
 
     for (const item of relevant) {
       try {
