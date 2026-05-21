@@ -82,11 +82,16 @@ function isEconomicContent(title: string, description: string): boolean {
   return ECONOMIC_KEYWORDS.some((kw) => text.includes(kw.toLowerCase()));
 }
 
-function isRecent(pubDate: string): boolean {
+const NEWS_SOURCES = ["The Guardian", "Reuters", "AP", "BBC"];
+const INSTITUTIONAL_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const NEWS_MAX_AGE_MS = 48 * 60 * 60 * 1000; // 48 hours
+
+function isRecent(pubDate: string, sourceName: string): boolean {
   try {
     const date = new Date(pubDate);
     const ageMs = Date.now() - date.getTime();
-    return ageMs < 48 * 60 * 60 * 1000; // 48 hours
+    const isNewsSource = NEWS_SOURCES.some((s) => sourceName.includes(s));
+    return ageMs < (isNewsSource ? NEWS_MAX_AGE_MS : INSTITUTIONAL_MAX_AGE_MS);
   } catch {
     return false;
   }
