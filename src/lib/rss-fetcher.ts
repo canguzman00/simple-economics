@@ -159,8 +159,8 @@ async function fetchRSSSource(source: RSSSource): Promise<void> {
 
     for (const item of relevant) {
       try {
-        const existing = await prisma.newsCache.findUnique({ where: { url: item.link } });
-        if (existing) continue;
+        const relevant = items
+  .filter((item) => isRecent(item.pubDate, source.name) && isEconomicContent(item.title, item.description))
 
         const classified = await classifyRSSItem(
           item.title,
