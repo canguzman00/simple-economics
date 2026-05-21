@@ -171,7 +171,7 @@ export async function getCachedNews(
   tier?: Tier,
   region?: string
 ): Promise<ReturnType<typeof prisma.newsCache.findMany> extends Promise<infer T> ? T : never> {
-  const since = new Date(Date.now() - CACHE_TTL_MS);
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   return prisma.newsCache.findMany({
     where: {
