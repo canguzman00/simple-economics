@@ -152,15 +152,14 @@ async function fetchRSSSource(source: RSSSource): Promise<void> {
     const xml = await res.text();
     const items = parseRSS(xml);
 
-    // Filter to recent economic content only
-    const relevant = items
+    const filtered = items
       .filter((item) => isRecent(item.pubDate, source.name) && isEconomicContent(item.title, item.description))
       .slice(0, 2);
 
-    for (const item of relevant) {
+    for (const item of filtered) {
       try {
-        const relevant = items
-  .filter((item) => isRecent(item.pubDate, source.name) && isEconomicContent(item.title, item.description))
+        const existing = await prisma.newsCache.findUnique({ where: { url: item.link } });
+        if (existing) continue;
 
         const classified = await classifyRSSItem(
           item.title,
