@@ -101,3 +101,117 @@ export async function fetchMetroUnemployment(city: string | null): Promise<Local
     return { value: null, period: null, metro: metro.metro, source: "Bureau of Labor Statistics" };
   }
 }
+// ── HUD Fair Market Rents ────────────────────────────────────────────────────
+
+export interface RentIndicator {
+  rent_0br: number | null;
+  rent_1br: number | null;
+  rent_2br: number | null;
+  areaname: string | null;
+  year: string | null;
+}
+
+// Maps cities to HUD entity IDs (CBSA codes)
+const CITY_TO_HUD_ENTITY: Record<string, string> = {
+  "providence":    "METRO39300N39300",
+  "boston":        "METRO14460M14460",
+  "new york":      "METRO35620M35620",
+  "los angeles":   "METRO31080M31080",
+  "chicago":       "METRO16980M16980",
+  "houston":       "METRO26420M26420",
+  "phoenix":       "METRO38060M38060",
+  "philadelphia":  "METRO37980M37980",
+  "dallas":        "METRO19100M19100",
+  "san antonio":   "METRO41700M41700",
+  "san diego":     "METRO41740M41740",
+  "san francisco": "METRO41860M41860",
+  "seattle":       "METRO42660M42660",
+  "denver":        "METRO19740M19740",
+  "atlanta":       "METRO12060M12060",
+  "miami":         "METRO33100M33100",
+  "minneapolis":   "METRO33460M33460",
+  "portland":      "METRO38900M38900",
+  "detroit":       "METRO19820M19820",
+  "austin":        "METRO12420M12420",
+  "nashville":     "METRO34980M34980",
+  "charlotte":     "METRO16740M16740",
+  "las vegas":     "METRO29820M29820",
+  "baltimore":     "METRO12580M12580",
+  "tampa":         "METRO45300M45300",
+  "orlando":       "METRO36740M36740",
+  "pittsburgh":    "METRO38300M38300",
+  "cleveland":     "METRO17460M17460",
+  "columbus":      "METRO18140M18140",
+  "indianapolis":  "METRO26900M26900",
+  "kansas city":   "METRO28140M28140",
+  "salt lake city":"METRO41620M41620",
+  "new orleans":   "METRO35380M35380",
+  "raleigh":       "METRO39580M39580",
+  "st. louis":     "METRO41180M41180",
+  "san jose":      "METRO41940M41940",
+  "jacksonville":  "METRO27260M27260",
+};
+
+export async function fetchFairMarketRent(city: string | null): Promise<RentIndicator> {
+  const apiKey = process.env.HUD_API_KEY;
+  const empty: RentIndicator = { rent_0br: null, rent_1br: null, rent_2br: null, areaname: null, year: null };
+
+  if (!apiKey) {
+    console.error("[local-indicators] HUD_API_KEY not set");
+    return empty;
+  }
+
+  const normalized = (city ?? "").toLowerCase().trim();
+  if (!normalized) return empty;
+
+  let entityId = CITY_TO_HUD_ENTITY[normalized];
+  if (!entityId) {
+    for (const [key, val] of Object.entries(CITY_TO_HUD_ENTITY)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        entityId = val;
+        break;
+      }
+    }
+  }
+  if (!entityId) return empty;
+
+  try {
+    const url = `https://www.huduser.gov/hudapi/public/fmr/listMetroAreas/${entityId}`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "User-Agent": "SimpleEconomics/1.0",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) throw new Error(`HUD API ${res.status}`);
+
+    const json = await res.json() as {
+      data?: {
+        basicdata?: {
+          Efficiency: number;
+          One_Bedroom: number;
+          Two_Bedroom: number;
+          areaname: string;
+          year: string;
+        };
+      };
+    };
+
+    const d = json.data?.basicdata;
+    if (!d) throw new Error("No data");
+
+    return {
+      rent_0br: d.Efficiency,
+      rent_1br: d.One_Bedroom,
+      rent_2br: d.Two_Bedroom,
+      areaname: d.areaname,
+      year: d.year,
+    };
+  } catch (err) {
+    console.error("[local-indicators] HUD fetch error:", err);
+    return empty;
+  }
+}
