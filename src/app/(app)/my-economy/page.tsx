@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { situationLabel } from "@/components/onboarding/data";
 import type { Situation } from "@/components/onboarding/data";
 import { fetchAllIndicators } from "@/lib/economic-indicators";
+import { fetchGlobalIndicators, formatGlobalValue } from "@/lib/global-indicators";
+import type { GlobalIndicators } from "@/lib/global-indicators";;
 import type { IndicatorResult } from "@/lib/economic-indicators";
 import { cityToState } from "@/lib/city-state";
 
