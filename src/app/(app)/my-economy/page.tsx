@@ -10,6 +10,8 @@ import { situationLabel } from "@/components/onboarding/data";
 import type { Situation } from "@/components/onboarding/data";
 import { fetchAllIndicators } from "@/lib/economic-indicators";
 import { fetchGlobalIndicators, formatGlobalValue } from "@/lib/global-indicators";
+import { fetchMetroUnemployment } from "@/lib/local-indicators";
+import type { LocalIndicator } from "@/lib/local-indicators";
 import type { GlobalIndicators } from "@/lib/global-indicators";
 import type { IndicatorResult } from "@/lib/economic-indicators";
 
@@ -170,8 +172,9 @@ export default async function MyEconomyPage() {
   ]);
 
   const situation = user?.situation ?? null;
-  const situationStr = situation ? situationLabel(situation as Situation) : null;
   const city = user?.city ?? null;
+  const metroUnemployment: LocalIndicator = await fetchMetroUnemployment(city);
+  const situationStr = situation ? situationLabel(situation as Situation) : null;
 
   return (
     <div className="flex flex-col gap-12">
@@ -197,10 +200,7 @@ export default async function MyEconomyPage() {
                 Tell us about your situation and we&apos;ll tailor every indicator to you.
               </p>
             </div>
-            <Link
-              href="/onboarding"
-              className="shrink-0 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{background:"#F43F5E",color:"#fff",fontFamily:"Inter,sans-serif"}}
-            >
+            <Link href="/onboarding" className="shrink-0 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{background:"#F43F5E",color:"#fff",fontFamily:"Inter,sans-serif"}}>
               Complete profile
             </Link>
           </div>
@@ -229,9 +229,9 @@ export default async function MyEconomyPage() {
               const validRaw = !isNaN(raw);
               const sentiment =
                 !validRaw    ? null :
-                raw >= 90    ? { label: "HIGH",     color: "text-[#2A5C3A]",      bg: "bg-[#3D8A55]" } :
-                raw >= 70    ? { label: "MODERATE",  color: "text-primary-black",  bg: "bg-primary-yellow" } :
-                               { label: "LOW",      color: "text-primary-red",     bg: "bg-primary-red" };
+                raw >= 90    ? { label: "HIGH" } :
+                raw >= 70    ? { label: "MODERATE" } :
+                               { label: "LOW" };
               const HIST_AVG = 86;
               const diff = validRaw ? Math.abs(Math.round(raw - HIST_AVG)) : 0;
               const direction = validRaw && raw >= HIST_AVG ? "above" : "below";
@@ -289,8 +289,7 @@ export default async function MyEconomyPage() {
                   </p>
                   <div>
                     <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
-                      {meta.source} · {date}
-                      {cached && <span className="ml-1">(cached)</span>}
+                      {meta.source} · {date}{cached && <span className="ml-1">(cached)</span>}
                     </p>
                     <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>Historical average: ~86</p>
                   </div>
@@ -316,8 +315,7 @@ export default async function MyEconomyPage() {
                   {unavailable ? "Data temporarily unavailable." : meta.meaning(situation)}
                 </p>
                 <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
-                  {meta.source} · {date}
-                  {cached && <span className="ml-1">(cached)</span>}
+                  {meta.source} · {date}{cached && <span className="ml-1">(cached)</span>}
                 </p>
               </div>
             );
@@ -367,11 +365,31 @@ export default async function MyEconomyPage() {
             );
           })()}
 
-    
+          {metroUnemployment.value && (
+            <div className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #1B4FD8"}}>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+                  Local Unemployment
+                </p>
+                <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color:"#0F172A"}}>
+                  {metroUnemployment.value}%
+                </span>
+              </div>
+              <span className="self-start text-[10px] font-semibold px-2 py-1 rounded" style={{background:"#EFF6FF",color:"#1E40AF",fontFamily:"Inter,sans-serif"}}>
+                {metroUnemployment.metro}
+              </span>
+              <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+                The actual unemployment rate for your metro area — not the national average. This tells you how tight or loose the local job market really is where you live.
+              </p>
+              <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
+                {metroUnemployment.source}{metroUnemployment.period ? ` · ${metroUnemployment.period}` : ""}
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="mt-3 text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
-          Local data is estimated based on your city. For the most accurate local figures, check your state&apos;s labor department website.
+          Local data is based on your city. For the most accurate figures, check your state&apos;s labor department website.
         </p>
       </section>
 
@@ -397,89 +415,33 @@ export default async function MyEconomyPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {([
-            {
-              key: "GDP_GROWTH",
-              name: "GDP Growth",
-              accentColor: "#1B4FD8",
-              explain: "How fast the total US economy is growing. Above 2% is healthy. Two consecutive negative quarters = recession.",
-              deltaLabel: (v: string) => `${parseFloat(v) >= 2 ? "Healthy growth" : "Below target"}`,
-              deltaGood: (v: string) => parseFloat(v) >= 2,
-            },
-            {
-              key: "GOVT_DEBT",
-              name: "Gov. Debt / GDP",
-              accentColor: "#1B4FD8",
-              explain: "The US owes more than it produces in a year. High debt can crowd out spending on healthcare and infrastructure.",
-              deltaLabel: (v: string) => `${parseFloat(v) > 100 ? "Above 100% — elevated" : "Below 100%"}`,
-              deltaGood: (v: string) => parseFloat(v) <= 100,
-            },
-            {
-              key: "CURRENT_ACCOUNT",
-              name: "Current Account",
-              accentColor: "#1B4FD8",
-              explain: "The US buys more from the world than it sells. This deficit is funded by foreign investment flowing into US assets.",
-              deltaLabel: (v: string) => `${parseFloat(v) < 0 ? "Trade deficit" : "Trade surplus"}`,
-              deltaGood: (v: string) => parseFloat(v) >= 0,
-            },
-            {
-              key: "GDP_PER_CAPITA",
-              name: "GDP Per Capita",
-              accentColor: "#0F6E56",
-              explain: "Total economic output divided by population — a rough measure of average living standards. Inequality means most earn far below this.",
-              deltaLabel: () => "Among world's highest",
-              deltaGood: () => true,
-            },
-            {
-              key: "GINI",
-              name: "Income Inequality",
-              accentColor: "#0F6E56",
-              explain: "Scored 0–1. Zero means everyone earns the same. The US at ~0.49 is among the most unequal wealthy nations — Denmark is 0.29.",
-              deltaLabel: (v: string) => `${parseFloat(v) > 0.4 ? "High inequality" : "Moderate"}`,
-              deltaGood: (v: string) => parseFloat(v) <= 0.4,
-            },
-            {
-              key: "POVERTY_RATE",
-              name: "Poverty Rate",
-              accentColor: "#0F6E56",
-              explain: "Share of Americans below the poverty line (~$30K/year for a family of 4). Doesn't capture cost-of-living differences between cities.",
-              deltaLabel: (v: string) => `${parseFloat(v) > 15 ? "Above avg" : "Near average"}`,
-              deltaGood: (v: string) => parseFloat(v) <= 15,
-            },
+            { key: "GDP_GROWTH", name: "GDP Growth", accentColor: "#1B4FD8", explain: "How fast the total US economy is growing. Above 2% is healthy. Two consecutive negative quarters = recession.", deltaLabel: (v: string) => parseFloat(v) >= 2 ? "Healthy growth" : "Below target", deltaGood: (v: string) => parseFloat(v) >= 2 },
+            { key: "GOVT_DEBT", name: "Gov. Debt / GDP", accentColor: "#1B4FD8", explain: "The US owes more than it produces in a year. High debt can crowd out spending on healthcare and infrastructure.", deltaLabel: (v: string) => parseFloat(v) > 100 ? "Above 100% — elevated" : "Below 100%", deltaGood: (v: string) => parseFloat(v) <= 100 },
+            { key: "CURRENT_ACCOUNT", name: "Current Account", accentColor: "#1B4FD8", explain: "The US buys more from the world than it sells. This deficit is funded by foreign investment flowing into US assets.", deltaLabel: (v: string) => parseFloat(v) < 0 ? "Trade deficit" : "Trade surplus", deltaGood: (v: string) => parseFloat(v) >= 0 },
+            { key: "GDP_PER_CAPITA", name: "GDP Per Capita", accentColor: "#0F6E56", explain: "Total economic output divided by population — a rough measure of average living standards. Inequality means most earn far below this.", deltaLabel: () => "Among world's highest", deltaGood: () => true },
+            { key: "GINI", name: "Income Inequality", accentColor: "#0F6E56", explain: "Scored 0–1. Zero means everyone earns the same. The US at ~0.49 is among the most unequal wealthy nations — Denmark is 0.29.", deltaLabel: (v: string) => parseFloat(v) > 0.4 ? "High inequality" : "Moderate", deltaGood: (v: string) => parseFloat(v) <= 0.4 },
+            { key: "POVERTY_RATE", name: "Poverty Rate", accentColor: "#0F6E56", explain: "Share of Americans below the poverty line (~$30K/year for a family of 4). Doesn't capture cost-of-living differences between cities.", deltaLabel: (v: string) => parseFloat(v) > 15 ? "Above avg" : "Near average", deltaGood: (v: string) => parseFloat(v) <= 15 },
           ] as Array<{key: string; name: string; accentColor: string; explain: string; deltaLabel: (v: string) => string; deltaGood: (v: string) => boolean}>).map((meta) => {
             const indicator = (globalIndicators as GlobalIndicators)[meta.key];
             const rawValue = indicator?.value ?? null;
             const formatted = rawValue ? formatGlobalValue(meta.key, rawValue) : null;
             const year = indicator?.year;
-
             return (
               <div key={meta.key} className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:`3px solid ${meta.accentColor}`}}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
-                    {meta.name}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{meta.name}</p>
                   {formatted ? (
-                    <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color:"#0F172A"}}>
-                      {formatted}
-                    </span>
+                    <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color:"#0F172A"}}>{formatted}</span>
                   ) : (
                     <span className="text-xs leading-none shrink-0" style={{color:"#CBD5E1",fontFamily:"Inter,sans-serif"}}>loading…</span>
                   )}
                 </div>
                 {formatted && (
-                  <span
-                    className="self-start text-[10px] font-semibold px-2 py-1 rounded"
-                    style={{
-                      background: meta.deltaGood(rawValue!) ? "#F0FDF4" : "#FEF2F2",
-                      color: meta.deltaGood(rawValue!) ? "#166534" : "#991B1B",
-                      fontFamily: "Inter,sans-serif",
-                    }}
-                  >
+                  <span className="self-start text-[10px] font-semibold px-2 py-1 rounded" style={{background: meta.deltaGood(rawValue!) ? "#F0FDF4" : "#FEF2F2", color: meta.deltaGood(rawValue!) ? "#166534" : "#991B1B", fontFamily:"Inter,sans-serif"}}>
                     {meta.deltaLabel(rawValue!)}
                   </span>
                 )}
-                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
-                  {meta.explain}
-                </p>
+                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{meta.explain}</p>
                 <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   {indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}
                 </p>
@@ -499,19 +461,11 @@ export default async function MyEconomyPage() {
           <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>No high-impact events published yet.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {topEvents.map((ev) => (
-              <Link
-                key={ev.id}
-                href={`/feed/${ev.slug}`}
-                className="flex flex-col gap-2 rounded-xl px-5 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}
-              >
+            {topEvents.map((ev: typeof topEvents[0]) => (
+              <Link key={ev.id} href={`/feed/${ev.slug}`} className="flex flex-col gap-2 rounded-xl px-5 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>
-                    {PILLAR_LABEL[ev.pillar]}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#FEE2E2",color:"#DC2626",fontFamily:"Inter,sans-serif"}}>
-                    HIGH IMPACT
-                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>{PILLAR_LABEL[ev.pillar]}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#FEE2E2",color:"#DC2626",fontFamily:"Inter,sans-serif"}}>HIGH IMPACT</span>
                 </div>
                 <p className="font-semibold text-base leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>{ev.title}</p>
                 <p className="text-xs line-clamp-2" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{ev.summary}</p>
@@ -528,28 +482,22 @@ export default async function MyEconomyPage() {
             <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
             Your recent questions
           </h2>
-          <Link href="/ask" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
-            Ask new →
-          </Link>
+          <Link href="/ask" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>Ask new →</Link>
         </div>
         {recentQuestions.length === 0 ? (
           <div className="rounded-xl px-5 py-8 text-center" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
             <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>You haven&apos;t asked anything yet.</p>
-            <Link href="/ask" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
-              Ask the Economist →
-            </Link>
+            <Link href="/ask" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>Ask the Economist →</Link>
           </div>
         ) : (
           <div className="flex flex-col rounded-xl overflow-hidden" style={{border:"1px solid #E2E8F0"}}>
-            {recentQuestions.map((q) => (
+            {recentQuestions.map((q: typeof recentQuestions[0]) => (
               <div key={q.id} className="px-5 py-4 transition-colors" style={{borderBottom:"1px solid #F1F5F9"}}>
-                <p className="text-sm font-semibold leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
-                  {q.question}
-                </p>
+                <p className="text-sm font-semibold leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>{q.question}</p>
                 <p className="mt-1.5 text-xs line-clamp-2 leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "…" : ""); })()}
                 </p>
-                <p className="mt-2 font-mono text-[10px]" style={{"color":"#94A3B8"}}>
+                <p className="mt-2 font-mono text-[10px]" style={{color:"#94A3B8"}}>
                   {new Date(q.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
@@ -565,31 +513,19 @@ export default async function MyEconomyPage() {
             <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#1E293B"}} />
             Saved events
           </h2>
-          <Link href="/saved" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
-            See all →
-          </Link>
+          <Link href="/saved" className="text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>See all →</Link>
         </div>
         {savedEvents.length === 0 ? (
           <div className="rounded-xl px-5 py-8 text-center" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
             <p className="text-sm" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>No saved events yet.</p>
-            <Link href="/feed" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>
-              Browse the feed →
-            </Link>
+            <Link href="/feed" className="mt-3 inline-block text-xs font-semibold transition-colors" style={{color:"#F43F5E",fontFamily:"Inter,sans-serif"}}>Browse the feed →</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {savedEvents.map((se) => (
-              <Link
-                key={se.id}
-                href={`/feed/${se.event.slug}`}
-                className="flex flex-col gap-2 rounded-xl px-4 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}
-              >
-                <span className="self-start text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>
-                  {PILLAR_LABEL[se.event.pillar]}
-                </span>
-                <p className="font-semibold text-sm leading-snug line-clamp-2" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>
-                  {se.event.title}
-                </p>
+            {savedEvents.map((se: typeof savedEvents[0]) => (
+              <Link key={se.id} href={`/feed/${se.event.slug}`} className="flex flex-col gap-2 rounded-xl px-4 py-4 transition-shadow hover:shadow-md" style={{background:"#fff",border:"1px solid #E2E8F0"}}>
+                <span className="self-start text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded" style={{background:"#F1F5F9",color:"#475569",fontFamily:"Inter,sans-serif"}}>{PILLAR_LABEL[se.event.pillar]}</span>
+                <p className="font-semibold text-sm leading-snug line-clamp-2" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>{se.event.title}</p>
                 <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                   Saved · {new Date(se.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>
