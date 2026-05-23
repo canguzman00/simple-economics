@@ -29,9 +29,11 @@ const ECONOMIC_KEYWORDS = [
 ];
 
 const POLITICAL_EXCLUSION_KEYWORDS = [
-  "autopsy", "campaign", "presidential race", "election result", "ballroom",
-  "war powers", "democrats release", "republicans could", "live blog", "– live",
-  "latest updates", "live updates", "as it happened",
+  "autopsy", "presidential campaign", "ballroom", "war powers", "– live",
+  "live blog", "latest updates", "live updates", "as it happened",
+  "democrats release", "republicans could", "election result",
+  "campaign trail", "senate vote", "house vote", "congress passes",
+  "white house says", "trump says", "biden says",
 ];
 
 async function classifyArticle(
@@ -72,7 +74,7 @@ Description: ${description.slice(0, 400)}`,
   }
 }
 
-async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianArticle[]> {
+async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
   const apiKey = process.env.GUARDIAN_API_KEY;
   if (!apiKey) {
     console.error("[news] GUARDIAN_API_KEY not set");
@@ -81,12 +83,8 @@ async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianAr
 
   const since = new Date(Date.now() - CACHE_TTL_MS).toISOString().split("T")[0];
 
-  const q = locationQuery
-    ? `(${locationQuery}) AND (economy OR jobs OR housing OR inflation OR wages OR budget OR unemployment)`
-    : "\"United States\" OR \"US economy\" OR \"Federal Reserve\" OR \"American workers\" OR \"US inflation\" OR \"US jobs\" OR \"US housing\" OR \"US wages\" OR \"US debt\" OR \"US tariffs\"";
-
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("q", q);
+  url.searchParams.set("q", "\"United States\" OR \"US economy\" OR \"Federal Reserve\" OR \"American workers\" OR \"US inflation\" OR \"US jobs\" OR \"US housing\" OR \"US wages\" OR \"US debt\" OR \"US tariffs\"");
   url.searchParams.set("section", "us-news|business|money");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
@@ -105,12 +103,21 @@ async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianAr
 
     const scored = articles
       .map((a) => {
-        const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
         const titleLower = a.webTitle.toLowerCase();
-      const isPolitical = POLITICAL_EXCLUSION_KEYWORDS.some((kw) => titleLower.includes(kw.toLowerCase()));
-      const score = isPolitical ? 0 : ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
+        const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
+
+        // Exclude political non-economic articles
+        const isPolitical = POLITICAL_EXCLUSION_KEYWORDS.some((kw) =>
+          titleLower.includes(kw.toLowerCase())
+        );
+
+        const score = isPolitical
+          ? 0
+          : ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
+
         return { article: a, score };
       })
+      .filter((s) => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5)
       .map((s) => s.article);
@@ -122,11 +129,7 @@ async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianAr
   }
 }
 
-async function processGuardianArticles(
-  articles: GuardianArticle[],
-  tier: Tier = "GLOBAL",
-  region?: string
-): Promise<void> {
+async function processGuardianArticles(articles: GuardianArticle[]): Promise<void> {
   for (const article of articles) {
     try {
       const existing = await prisma.newsCache.findUnique({ where: { url: article.webUrl } });
@@ -136,13 +139,9 @@ async function processGuardianArticles(
       const classified = await classifyArticle(article.webTitle, description, "The Guardian");
       if (!classified) continue;
 
-      // Auto-detect tier if not explicitly set
-      let resolvedTier = tier;
-      if (tier === "GLOBAL") {
-        const text = (article.webTitle + " " + description).toLowerCase();
-        const isNational = text.includes("us ") || text.includes("america") || text.includes("federal reserve") || text.includes("congress");
-        resolvedTier = isNational ? "NATIONAL" : "GLOBAL";
-      }
+      const text = (article.webTitle + " " + description).toLowerCase();
+      const isNational = text.includes("us ") || text.includes("america") || text.includes("federal reserve") || text.includes("congress");
+      const tier: Tier = isNational ? "NATIONAL" : "GLOBAL";
 
       await prisma.newsCache.create({
         data: {
@@ -151,12 +150,12 @@ async function processGuardianArticles(
           fullExplanation: "",
           url: article.webUrl,
           source: "The Guardian",
-          contentType: classified.contentType,
+          contentType: "News",
           publishedAt: new Date(article.webPublicationDate),
           pillar: classified.pillar,
           impact: classified.impact,
-          tier: resolvedTier,
-          region: region ?? null,
+          tier,
+          region: null,
         },
       });
     } catch (err) {
@@ -171,8 +170,9 @@ export async function fetchAndCacheNews(): Promise<void> {
 }
 
 export async function fetchAndCacheRegionalNews(region: string): Promise<void> {
-  const articles = await fetchGuardianArticles(region);
-  await processGuardianArticles(articles, "REGIONAL", region);
+  const articles = await fetchGuardianArticles();
+  await processGuardianArticles(articles);
+  console.log(`[news] regional fetch complete for ${region}`);
 }
 
 export async function getCachedNews(
