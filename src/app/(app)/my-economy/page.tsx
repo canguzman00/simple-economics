@@ -368,36 +368,7 @@ export default async function MyEconomyPage() {
             );
           })()}
 
-          {(() => {
-            const unrateValue = liveIndicators["UNRATE"]?.value ?? "4.2%";
-            const { state, blsUrl } = cityToState(city);
-
-            return (
-              <div className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #F43F5E"}}>
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
-                    Local Job Market
-                  </p>
-                  <span className="font-sans text-xs text-primary-black leading-none shrink-0 text-right">
-                    {state}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
-                  Unemployment in {state} typically tracks within 0.5% of the national rate of {unrateValue}.
-                  {city ? ` For ${city}-area job data, see:` : " Add your city to get a direct link to local data."}
-                </p>
-                {blsUrl && (
-                  <a href={blsUrl} target="_blank" rel="noopener noreferrer"
-                    className="font-mono text-[10px] underline underline-offset-2 transition-colors break-all" style={{color:"#F43F5E"}}>
-                    {blsUrl}
-                  </a>
-                )}
-                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
-                  Bureau of Labor Statistics · State & Local Data
-                </p>
-              </div>
-            );
-          })()}
+    
         </div>
 
         <p className="mt-3 text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
