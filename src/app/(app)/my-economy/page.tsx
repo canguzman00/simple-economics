@@ -10,7 +10,7 @@ import { situationLabel } from "@/components/onboarding/data";
 import type { Situation } from "@/components/onboarding/data";
 import { fetchAllIndicators } from "@/lib/economic-indicators";
 import { fetchGlobalIndicators, formatGlobalValue } from "@/lib/global-indicators";
-import type { GlobalIndicators } from "@/lib/global-indicators";;
+import type { GlobalIndicators } from "@/lib/global-indicators";
 import type { IndicatorResult } from "@/lib/economic-indicators";
 import { cityToState } from "@/lib/city-state";
 
@@ -91,7 +91,7 @@ const INDICATOR_META: IndicatorMeta[] = [
       if (s === "OWNER")         return "Low consumer confidence typically precedes lower home sales volume — fewer buyers means longer days on market and more negotiating room for buyers.";
       if (s === "STUDENT")       return "Consumer sentiment predicts hiring. When confidence falls, businesses cut hiring budgets first. A reading below 70 historically signals tighter job markets within a year.";
       if (s === "SELF_EMPLOYED") return "Consumer confidence is a direct leading indicator for small business revenue. When people feel financially insecure, discretionary spending drops first — which hits small businesses hardest.";
-      return "The University of Michigan Consumer Sentiment Index measures how optimistic Americans feel about their finances. Readings above 80 signal expansion; below 70 often precede recessions. It leads actual spending by 6–12 months, making it one of the most watched leading indicators in economics.";
+      return "The University of Michigan Consumer Sentiment Index measures how optimistic Americans feel about their finances. Readings above 80 signal expansion; below 70 often precede recessions.";
     },
   },
   {
@@ -105,7 +105,7 @@ const INDICATOR_META: IndicatorMeta[] = [
       if (s === "OWNER")         return "Home equity lines of credit (HELOCs) float with the prime rate. If you have one, your monthly payments move when this does.";
       if (s === "STUDENT")       return "Private student loans and most credit cards are priced off the prime rate. High prime means borrowing for school costs more.";
       if (s === "SELF_EMPLOYED") return "Business lines of credit are typically priced as prime plus a spread. When prime is high, short-term business borrowing gets expensive.";
-      return "The prime rate is what banks charge their best customers — it sets the floor for consumer credit cards, car loans, and personal loans. Currently elevated alongside the federal funds rate.";
+      return "The prime rate is what banks charge their best customers — it sets the floor for consumer credit cards, car loans, and personal loans.";
     },
   },
   {
@@ -115,11 +115,11 @@ const INDICATOR_META: IndicatorMeta[] = [
     fallbackValue: "$30.15",
     fallbackDate: "March 2025",
     meaning: (s) => {
-      if (s === "RENTER")        return "This is the average hourly wage for production workers nationally. If your wages are below this, you're earning less than the median — which matters most when rent takes the largest share of your paycheck.";
-      if (s === "OWNER")         return "Rising wages support home values by keeping more buyers in the market. If wage growth outpaces inflation (compare to CPI), purchasing power is improving.";
+      if (s === "RENTER")        return "This is the average hourly wage for production workers nationally. If your wages are below this, you're earning less than the median.";
+      if (s === "OWNER")         return "Rising wages support home values by keeping more buyers in the market. If wage growth outpaces inflation, purchasing power is improving.";
       if (s === "STUDENT")       return "This is the wage floor you're entering. Whether your starting salary is above or below this benchmark signals how your field pays relative to the broader workforce.";
       if (s === "SELF_EMPLOYED") return "When average wages rise, consumer spending tends to follow — which supports demand for independent businesses and services.";
-      return "The average hourly wage for production and nonsupervisory workers. Compare this to the CPI inflation rate — if wages are rising faster than prices, workers are gaining real purchasing power.";
+      return "The average hourly wage for production and nonsupervisory workers. Compare this to CPI — if wages are rising faster than prices, workers are gaining real purchasing power.";
     },
   },
 ];
@@ -133,15 +133,13 @@ const PILLAR_LABEL: Record<Pillar, string> = {
 
 const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "CONSCONF", "PRIMERATE", "REALWAGES"];
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default async function MyEconomyPage() {
   const session = await getAuthSession();
   if (!session?.user?.id) redirect("/signin");
 
   const userId = session.user.id;
 
-  const [user, topEvents, recentQuestions, savedEvents, liveIndicators] = await Promise.all([
+  const [user, topEvents, recentQuestions, savedEvents, liveIndicators, globalIndicators] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { situation: true, city: true, onboardingComplete: true },
@@ -169,6 +167,7 @@ export default async function MyEconomyPage() {
       },
     }),
     fetchAllIndicators(),
+    fetchGlobalIndicators(),
   ]);
 
   const situation = user?.situation ?? null;
@@ -211,7 +210,6 @@ export default async function MyEconomyPage() {
 
       {/* ── 2a. National indicators ── */}
       <section>
-        {/* Section banner */}
         <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style={{background:"#1E293B",border:"1px solid #334155"}}>
           <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
           <span className="text-xs font-semibold uppercase tracking-wider" style={{color:"#F8FAFC",fontFamily:"Inter,sans-serif"}}>
@@ -253,7 +251,6 @@ export default async function MyEconomyPage() {
 
               return (
                 <div key={meta.key} className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:"3px solid #F43F5E"}}>
-                  {/* Name + contextual value */}
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                       {meta.name}
@@ -268,27 +265,14 @@ export default async function MyEconomyPage() {
                       <span className="font-mono text-2xl leading-none shrink-0 text-primary-black">{value}</span>
                     )}
                   </div>
-
-                  {/* Scale bar */}
                   {validRaw && !unavailable && (
                     <div>
                       <div className="relative h-3 flex rounded overflow-hidden" style={{border:"1px solid #E2E8F0"}}>
-                        {/* Red zone 0–60 = 42.8% */}
                         <div className="bg-primary-red" style={{ width: "42.8%" }} />
-                        {/* Yellow zone 60–90 = 21.4% */}
                         <div className="bg-primary-yellow border-x border-primary-black" style={{ width: "21.4%" }} />
-                        {/* Green zone 90–140 = 35.7% */}
                         <div className="bg-[#3D8A55] flex-1" />
-                        {/* Historical average reference line */}
-                        <div
-                          className="absolute top-0 bottom-0 w-px bg-primary-black opacity-60"
-                          style={{ left: `${avgPct}%` }}
-                        />
-                        {/* Current value marker */}
-                        <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-primary-black"
-                          style={{ left: `${markerPct}%` }}
-                        />
+                        <div className="absolute top-0 bottom-0 w-px bg-primary-black opacity-60" style={{ left: `${avgPct}%` }} />
+                        <div className="absolute top-0 bottom-0 w-0.5 bg-primary-black" style={{ left: `${markerPct}%` }} />
                       </div>
                       <div className="flex justify-between mt-1">
                         <span className="font-sans text-[9px] text-primary-black">0 (pessimistic)</span>
@@ -297,8 +281,6 @@ export default async function MyEconomyPage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Contextual description */}
                   <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                     {unavailable
                       ? "Data temporarily unavailable."
@@ -306,8 +288,6 @@ export default async function MyEconomyPage() {
                         ? `Americans are feeling ${sentiment_word} about the economy right now. The index runs from 0 to 140 — the long-run average is 86. At ${raw.toFixed(1)}, consumers are ${diff} points ${direction} the historical average, which ${spending}`
                         : meta.meaning(situation)}
                   </p>
-
-                  {/* Source + historical note */}
                   <div>
                     <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
                       {meta.source} · {date}
@@ -356,7 +336,6 @@ export default async function MyEconomyPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Local Housing Market — derived from live mortgage rate */}
           {(() => {
             const mortgageLive = liveIndicators["MORTGAGE30US"];
             const mortgageRateStr = mortgageLive?.value ?? "6.65%";
@@ -379,7 +358,7 @@ export default async function MyEconomyPage() {
                 </div>
                 <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
                   {city && monthlyPayment
-                    ? `In ${city}, this rate means a $400K home costs approximately $${monthlyPayment.toLocaleString()} per month. Local rental markets typically move in the same direction as mortgage rates — when buying gets expensive, rental demand rises.`
+                    ? `In ${city}, this rate means a $400K home costs approximately $${monthlyPayment.toLocaleString()} per month. Local rental markets typically move in the same direction as mortgage rates.`
                     : `At this rate, a $400K home costs approximately $${monthlyPayment?.toLocaleString() ?? "—"} per month. Add your city to your profile for local housing context.`}
                 </p>
                 <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
@@ -389,7 +368,6 @@ export default async function MyEconomyPage() {
             );
           })()}
 
-          {/* Local Job Market — dynamic state reference */}
           {(() => {
             const unrateValue = liveIndicators["UNRATE"]?.value ?? "4.2%";
             const { state, blsUrl } = cityToState(city);
@@ -409,12 +387,8 @@ export default async function MyEconomyPage() {
                   {city ? ` For ${city}-area job data, see:` : " Add your city to get a direct link to local data."}
                 </p>
                 {blsUrl && (
-                  <a
-                    href={blsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[10px] underline underline-offset-2 transition-colors break-all" style={{color:"#F43F5E"}}
-                  >
+                  <a href={blsUrl} target="_blank" rel="noopener noreferrer"
+                    className="font-mono text-[10px] underline underline-offset-2 transition-colors break-all" style={{color:"#F43F5E"}}>
                     {blsUrl}
                   </a>
                 )}
@@ -429,6 +403,120 @@ export default async function MyEconomyPage() {
         <p className="mt-3 text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
           Local data is estimated based on your city. For the most accurate local figures, check your state&apos;s labor department website.
         </p>
+      </section>
+
+      {/* ── 2c. Global indicators (IMF + World Bank) ── */}
+      <section>
+        <div className="rounded-lg px-5 py-3 mb-4 flex items-center gap-3" style={{background:"#1E293B",border:"1px solid #334155"}}>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{background:"#F43F5E"}} />
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{color:"#F8FAFC",fontFamily:"Inter,sans-serif"}}>
+            Global Context · IMF &amp; World Bank
+          </span>
+        </div>
+
+        <div className="flex gap-4 mb-4 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{background:"#1B4FD8"}}/>
+            <span className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>IMF</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{background:"#0F6E56"}}/>
+            <span className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>World Bank</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {([
+            {
+              key: "GDP_GROWTH",
+              name: "GDP Growth",
+              accentColor: "#1B4FD8",
+              explain: "How fast the total US economy is growing. Above 2% is healthy. Two consecutive negative quarters = recession.",
+              deltaLabel: (v: string) => `${parseFloat(v) >= 2 ? "Healthy growth" : "Below target"}`,
+              deltaGood: (v: string) => parseFloat(v) >= 2,
+            },
+            {
+              key: "GOVT_DEBT",
+              name: "Gov. Debt / GDP",
+              accentColor: "#1B4FD8",
+              explain: "The US owes more than it produces in a year. High debt can crowd out spending on healthcare and infrastructure.",
+              deltaLabel: (v: string) => `${parseFloat(v) > 100 ? "Above 100% — elevated" : "Below 100%"}`,
+              deltaGood: (v: string) => parseFloat(v) <= 100,
+            },
+            {
+              key: "CURRENT_ACCOUNT",
+              name: "Current Account",
+              accentColor: "#1B4FD8",
+              explain: "The US buys more from the world than it sells. This deficit is funded by foreign investment flowing into US assets.",
+              deltaLabel: (v: string) => `${parseFloat(v) < 0 ? "Trade deficit" : "Trade surplus"}`,
+              deltaGood: (v: string) => parseFloat(v) >= 0,
+            },
+            {
+              key: "GDP_PER_CAPITA",
+              name: "GDP Per Capita",
+              accentColor: "#0F6E56",
+              explain: "Total economic output divided by population — a rough measure of average living standards. Inequality means most earn far below this.",
+              deltaLabel: () => "Among world's highest",
+              deltaGood: () => true,
+            },
+            {
+              key: "GINI",
+              name: "Income Inequality",
+              accentColor: "#0F6E56",
+              explain: "Scored 0–1. Zero means everyone earns the same. The US at ~0.49 is among the most unequal wealthy nations — Denmark is 0.29.",
+              deltaLabel: (v: string) => `${parseFloat(v) > 0.4 ? "High inequality" : "Moderate"}`,
+              deltaGood: (v: string) => parseFloat(v) <= 0.4,
+            },
+            {
+              key: "POVERTY_RATE",
+              name: "Poverty Rate",
+              accentColor: "#0F6E56",
+              explain: "Share of Americans below the poverty line (~$30K/year for a family of 4). Doesn't capture cost-of-living differences between cities.",
+              deltaLabel: (v: string) => `${parseFloat(v) > 15 ? "Above avg" : "Near average"}`,
+              deltaGood: (v: string) => parseFloat(v) <= 15,
+            },
+          ] as Array<{key: string; name: string; accentColor: string; explain: string; deltaLabel: (v: string) => string; deltaGood: (v: string) => boolean}>).map((meta) => {
+            const indicator = (globalIndicators as GlobalIndicators)[meta.key];
+            const rawValue = indicator?.value ?? null;
+            const formatted = rawValue ? formatGlobalValue(meta.key, rawValue) : null;
+            const year = indicator?.year;
+
+            return (
+              <div key={meta.key} className="flex flex-col gap-3 rounded-xl px-5 py-5" style={{background:"#fff",border:"1px solid #E2E8F0",borderTop:`3px solid ${meta.accentColor}`}}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider leading-snug" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+                    {meta.name}
+                  </p>
+                  {formatted ? (
+                    <span className="font-mono text-2xl leading-none shrink-0 font-bold" style={{color:"#0F172A"}}>
+                      {formatted}
+                    </span>
+                  ) : (
+                    <span className="text-xs leading-none shrink-0" style={{color:"#CBD5E1",fontFamily:"Inter,sans-serif"}}>loading…</span>
+                  )}
+                </div>
+                {formatted && (
+                  <span
+                    className="self-start text-[10px] font-semibold px-2 py-1 rounded"
+                    style={{
+                      background: meta.deltaGood(rawValue!) ? "#F0FDF4" : "#FEF2F2",
+                      color: meta.deltaGood(rawValue!) ? "#166534" : "#991B1B",
+                      fontFamily: "Inter,sans-serif",
+                    }}
+                  >
+                    {meta.deltaLabel(rawValue!)}
+                  </span>
+                )}
+                <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
+                  {meta.explain}
+                </p>
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>
+                  {indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* ── 3. Top HIGH impact events ── */}
