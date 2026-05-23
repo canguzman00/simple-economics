@@ -107,7 +107,7 @@ function findCityKey(normalized: string, map: Record<string, unknown>): string |
   return null;
 }
 
-export async function fetchMetroUnemployment(city: string | null): Promise<LocalIndicator> {
+import async function fetchMetroUnemployment(city: string | null): Promise<LocalIndicator> {
   const normalized = normalizeCity(city);
   const key = findCityKey(normalized, CITY_TO_BLS_SERIES);
   const metro = key ? CITY_TO_BLS_SERIES[key] : null;
