@@ -28,6 +28,12 @@ const ECONOMIC_KEYWORDS = [
   "debt", "deficit", "budget", "market", "housing", "wages", "jobs", "growth",
 ];
 
+const POLITICAL_EXCLUSION_KEYWORDS = [
+  "autopsy", "campaign", "presidential race", "election result", "ballroom",
+  "war powers", "democrats release", "republicans could", "live blog", "– live",
+  "latest updates", "live updates", "as it happened",
+];
+
 async function classifyArticle(
   title: string,
   description: string,
