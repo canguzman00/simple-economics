@@ -12,7 +12,6 @@ import { fetchAllIndicators } from "@/lib/economic-indicators";
 import { fetchGlobalIndicators, formatGlobalValue } from "@/lib/global-indicators";
 import type { GlobalIndicators } from "@/lib/global-indicators";
 import type { IndicatorResult } from "@/lib/economic-indicators";
-import { cityToState } from "@/lib/city-state";
 
 interface IndicatorMeta {
   key: string;
