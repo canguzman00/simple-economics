@@ -106,7 +106,9 @@ async function fetchGuardianArticles(locationQuery?: string): Promise<GuardianAr
     const scored = articles
       .map((a) => {
         const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
-        const score = ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
+        const titleLower = a.webTitle.toLowerCase();
+      const isPolitical = POLITICAL_EXCLUSION_KEYWORDS.some((kw) => titleLower.includes(kw.toLowerCase()));
+      const score = isPolitical ? 0 : ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
         return { article: a, score };
       })
       .sort((a, b) => b.score - a.score)
