@@ -6,7 +6,7 @@ export interface LocalIndicator {
 }
 
 const CITY_TO_BLS_SERIES: Record<string, { seriesId: string; metro: string }> = {
-  "providence":      { seriesId: "LAUMT440774000000003", metro: "Providence-Warwick, RI-MA" },
+  "providence":      { seriesId: "LAUMT443930000000003", metro: "Providence-Warwick, RI-MA" },
   "boston":          { seriesId: "LAUMT251484000000003", metro: "Boston-Cambridge, MA-NH" },
   "new york":        { seriesId: "LAUMT356935600000003", metro: "New York-Newark, NY-NJ-CT" },
   "los angeles":     { seriesId: "LAUMT064749000000003", metro: "Los Angeles-Long Beach, CA" },
