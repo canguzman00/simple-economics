@@ -73,7 +73,6 @@ export function TodaysIssueCard({ userProfile }: {
   return (
     <div className="rounded-2xl overflow-hidden mb-6" style={{ background: "#0F172A", border: "1px solid #1E293B" }}>
 
-      {/* Header */}
       <div className="px-5 pt-5 pb-0" style={{ borderBottom: "1px solid #1E293B" }}>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full" style={{ background: "rgba(230,51,41,0.12)", border: "1px solid rgba(230,51,41,0.25)" }}>
@@ -81,19 +80,17 @@ export function TodaysIssueCard({ userProfile }: {
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#E63329" }}>Today&apos;s Issue</span>
           </div>
           <span className="text-[10px]" style={{ color: "#475569" }}>
-            {issue.sourceLabel} · {new Date(issue.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {issue.sourceLabel} &middot; {new Date(issue.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </div>
 
         <h2 className="text-base font-bold leading-snug mb-3" style={{ color: "#F8FAFC" }}>{issue.title}</h2>
 
-        {/* Tabs */}
         <div className="flex gap-0" style={{ borderBottom: "1px solid #1E293B" }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="text-[11px] font-semibold px-3 py-2 transition-colors"
               style={{
                 color: activeTab === tab.id ? "#F8FAFC" : "#475569",
                 borderBottom: activeTab === tab.id ? "2px solid #E63329" : "2px solid transparent",
@@ -101,9 +98,12 @@ export function TodaysIssueCard({ userProfile }: {
                 background: "transparent",
                 border: "none",
                 borderBottomWidth: "2px",
-                borderBottomStyle: "solid",
+                borderBottomStyle: "solid" as const,
                 borderBottomColor: activeTab === tab.id ? "#E63329" : "transparent",
                 cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "8px 12px",
               }}
             >
               {tab.label}
@@ -112,10 +112,8 @@ export function TodaysIssueCard({ userProfile }: {
         </div>
       </div>
 
-      {/* Tab Body */}
       <div className="px-5 py-4">
 
-        {/* Tab 1: What's happening */}
         {activeTab === "happening" && (
           <div>
             <p className="text-xs leading-relaxed mb-4" style={{ color: "#94A3B8" }}>{issue.happeningBody}</p>
@@ -131,24 +129,22 @@ export function TodaysIssueCard({ userProfile }: {
           </div>
         )}
 
-        {/* Tab 2: What research says */}
         {activeTab === "research" && (
           <div className="flex flex-col gap-3">
             {issue.researchItems.map((item, i) => (
               <div key={i} className="rounded-lg px-4 py-3" style={{ background: "#1E293B", borderLeft: "3px solid #1B4FD8" }}>
                 <div className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: "#475569" }}>
-                  {item.journal} · {item.year}
+                  {item.journal} &middot; {item.year}
                 </div>
                 <p className="text-xs leading-relaxed mb-2" style={{ color: "#94A3B8" }}>{item.finding}</p>
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-[10px]" style={{ color: "#E63329" }}>
-                  Read paper →
+                  Read paper
                 </a>
               </div>
             ))}
           </div>
         )}
 
-        {/* Tab 3: Your impact */}
         {activeTab === "impact" && (
           <div>
             {(userProfile?.city || userProfile?.situation) && (
@@ -185,16 +181,14 @@ export function TodaysIssueCard({ userProfile }: {
         )}
       </div>
 
-      {/* Footer */}
       <div className="px-5 pb-4">
         
           href={issue.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[11px] font-medium"
-          style={{ color: "#E63329" }}
+          style={{ color: "#E63329", fontSize: "11px", fontWeight: 500 }}
         >
-          Read full story at {issue.sourceLabel} &#8594;
+          Read full story at {issue.sourceLabel}
         </a>
       </div>
 
