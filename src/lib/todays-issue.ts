@@ -86,6 +86,7 @@ export async function generateTodaysIssue(): Promise<string | null> {
   const works = await searchOpenAlex(ranked.openAlexQuery, 3);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const researchItems = works.length > 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? await translateResearchToFindings(works, ranked.topic, anthropic as any)
     : [];
 
