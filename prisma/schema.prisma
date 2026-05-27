@@ -212,3 +212,17 @@ model EconomicIndicator {
   date      String
   fetchedAt DateTime @default(now())
 }
+model TodaysIssue {
+  id            String   @id @default(cuid())
+  date          String   @unique
+  title         String
+  sourceUrl     String
+  sourceLabel   String
+  happeningBody String
+  liveStats     Json
+  researchItems Json
+  impactGeneric Json
+  approved      Boolean  @default(false)
+  generatedAt   DateTime @default(now())
+  approvedAt    DateTime?
+}
