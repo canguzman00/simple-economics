@@ -58,10 +58,10 @@ export async function searchOpenAlex(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function translateResearchToFindings(
   works: OpenAlexWork[],
   topic: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   anthropicClient: any
 ): Promise<ResearchItem[]> {
   const items: ResearchItem[] = [];
