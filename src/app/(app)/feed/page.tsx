@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 import { FeedClient } from "@/components/feed/FeedClient";
+import { TodaysIssueCard } from "@/components/feed/TodaysIssueCard";
 import type { SerializedEvent } from "@/components/feed/FeedClient";
 import { cityToStateName } from "@/lib/city-state";
 
@@ -18,7 +19,7 @@ export default async function FeedPage() {
     session?.user?.id
       ? prisma.user.findUnique({
           where: { id: session.user.id },
-          select: { city: true, onboardingComplete: true },
+          select: { city: true, onboardingComplete: true, situation: true, industry: true },
         })
       : null,
   ]);
@@ -45,10 +46,13 @@ export default async function FeedPage() {
   const userState = userCity ? cityToStateName(userCity) : null;
 
   return (
-    <FeedClient
+    <>
+      <TodaysIssueCard userProfile={userProfile} />
+      <FeedClient
       initialEvents={initialEvents}
       userCity={userCity}
       userState={userState}
     />
+    </>
   );
 }
