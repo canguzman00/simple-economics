@@ -194,7 +194,7 @@ export function TodaysIssueCard({ userProfile }: {
           className="text-[11px] font-medium"
           style={{ color: "#E63329" }}
         >
-          Read full story at {issue.sourceLabel} →
+          Read full story at {issue.sourceLabel} &#8594;
         </a>
       </div>
 
