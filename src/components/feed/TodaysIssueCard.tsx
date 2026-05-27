@@ -161,7 +161,7 @@ export function TodaysIssueCard({ userProfile }: {
                 )}
                 {userProfile.industry && (
                   <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "#94A3B8" }}>
-                    {userProfile.industry.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {userProfile.industry.replace(/_/g, " ").toLowerCase().split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
                   </span>
                 )}
               </div>
