@@ -105,9 +105,9 @@ export async function generateTodaysIssue(): Promise<string | null> {
       sourceUrl: topStory.url,
       sourceLabel: topStory.source,
       happeningBody: ranked.happeningBody,
-      liveStats: ranked.liveStats,
-      researchItems: finalResearch,
-      impactGeneric: ranked.impactBullets,
+      liveStats: JSON.parse(JSON.stringify(ranked.liveStats)),
+      researchItems: JSON.parse(JSON.stringify(finalResearch)),
+      impactGeneric: JSON.parse(JSON.stringify(ranked.impactBullets)),
       approved: false,
     },
   });
