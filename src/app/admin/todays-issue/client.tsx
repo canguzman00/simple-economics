@@ -57,7 +57,7 @@ export function TodaysIssueAdminClient({ issues }: { issues: Issue[] }) {
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px", fontFamily: "Inter, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
         <div>
-          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0F172A" }}>{"Today's Issue"} — Admin</h1>
+          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0F172A" }}>{"Today's Issue"}{" - Admin"}</h1>
           <p style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>Generate, review, and approve daily issue cards</p>
         </div>
         <button
