@@ -49,7 +49,7 @@ function ImpactTab({ issue, userProfile }: { issue: TodaysIssueData; userProfile
     userProfile?.situation ?? null;
 
   const industryWords = userProfile?.industry
-    ? userProfile.industry.replace(/_/g, " ").toLowerCase().split(" ")
+    ? userProfile.industry.replace(/_/g, String.fromCharCode(32)).toLowerCase().split(String.fromCharCode(32))
     : [];
   const industryLabel = industryWords.length > 0
     ? industryWords.map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ")
