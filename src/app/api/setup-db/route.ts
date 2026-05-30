@@ -34,7 +34,32 @@ export async function GET() {
       CREATE UNIQUE INDEX IF NOT EXISTS "TodaysIssue_date_key" ON "TodaysIssue"("date");
     `);
 
-    return NextResponse.json({ ok: true, message: "TodaysIssue table created" });
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "InvestmentSignal" (
+        "id" TEXT NOT NULL,
+        "weekOf" TEXT NOT NULL,
+        "eventTitle" TEXT NOT NULL,
+        "eventSummary" TEXT NOT NULL,
+        "sourceUrl" TEXT NOT NULL,
+        "sourceLabel" TEXT NOT NULL,
+        "signalsUp" JSONB NOT NULL,
+        "signalsDown" JSONB NOT NULL,
+        "historicalBars" JSONB NOT NULL,
+        "researchItems" JSONB NOT NULL,
+        "impactGeneric" JSONB NOT NULL,
+        "disclaimer" TEXT NOT NULL,
+        "approved" BOOLEAN NOT NULL DEFAULT false,
+        "generatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "approvedAt" TIMESTAMP(3),
+        CONSTRAINT "InvestmentSignal_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "InvestmentSignal_weekOf_key" ON "InvestmentSignal"("weekOf");
+    `);
+
+    return NextResponse.json({ ok: true, message: "TodaysIssue and InvestmentSignal tables created" });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
