@@ -18,6 +18,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "i.ytimg.com",
       },
+      {
+        // Unsplash hero images
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 };
