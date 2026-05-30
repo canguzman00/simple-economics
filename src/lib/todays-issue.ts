@@ -27,7 +27,9 @@ async function rankTopStory(headlines: string[]): Promise<{
     max_tokens: 1500,
     messages: [{
       role: "user",
-      content: `You are the chief economist at a financial education platform. Given these economic headlines, identify the single most important story for everyday Americans' finances and wallets.
+      content: `You are the chief economist at a financial education platform writing for everyday Americans who are NOT economists.
+
+Given these economic headlines, identify the single most important story for people's daily finances.
 
 Headlines (numbered):
 ${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}
@@ -35,20 +37,27 @@ ${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 Respond with ONLY a JSON object (no markdown, no preamble):
 {
   "index": <number 0-based>,
-  "topic": "<3-5 word topic label>",
+  "topic": "<3-5 word plain English topic e.g. 'Prices rising faster'>",
   "openAlexQuery": "<6-10 word academic search query>",
-  "happeningBody": "<3-4 plain English sentences explaining what happened and why it matters for people's wallets. No jargon.>",
+  "happeningBody": "<3-4 sentences in plain English. Write like you are texting a smart friend who has never studied economics. No jargon whatsoever.>",
   "liveStats": [
-    { "label": "<short metric name>", "value": "<current value>", "delta": "<change description>", "deltaType": "up|down|neutral" }
+    { "label": "<plain English description of what this number means e.g. 'Prices rising compared to last year' NOT 'CPI YoY'>", "value": "<number only, no abbreviations>", "delta": "<plain English change e.g. 'Fastest rise in 3 years' NOT 'Up YoY'>", "deltaType": "up|down|neutral" }
   ],
   "impactBullets": [
-    { "bold": "<3-5 word bold header>", "text": "<1-2 sentences of specific impact for a typical American worker or renter>" }
+    { "bold": "<3-5 word plain English header>", "text": "<1-2 sentences of specific impact for a typical American worker or renter>" }
   ]
 }
 
-Rules:
-- liveStats: 3-4 stats maximum
-- impactBullets: 3-4 bullets, be specific
+STRICT RULES — violations will confuse readers:
+- NEVER use abbreviations: no YoY, CPI, GDP, PCE, MoM, QoQ, Fed, FOMC, SPR, ETF, or any other acronym
+- NEVER use jargon: no 'real wages', 'monetary policy', 'fiscal', 'aggregate demand', 'yield curve', 'basis points'
+- Instead of 'real wage growth is negative' say 'your paycheck buys less than it did last year'
+- Instead of 'CPI rose 4.2% YoY' say 'Prices are 4.2% higher than they were a year ago'
+- Instead of 'Federal Reserve' use 'the Fed' or 'America's central bank'
+- stat labels must describe what the number means in plain English
+- stat values must be actual numbers or dollar amounts — never words like 'Negative' or 'Moderate'
+- liveStats: exactly 3-4 stats
+- impactBullets: exactly 3-4 bullets
 - Choose the story with the MOST concrete financial impact on everyday people`,
     }],
   });
@@ -86,7 +95,6 @@ export async function generateTodaysIssue(): Promise<string | null> {
   const works = await searchOpenAlex(ranked.openAlexQuery, 3);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const researchItems = works.length > 0
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? await translateResearchToFindings(works, ranked.topic, anthropic as any)
     : [];
 
@@ -98,6 +106,7 @@ export async function generateTodaysIssue(): Promise<string | null> {
     url: "https://www.nber.org",
   }];
 
+  // Auto-approve — no manual review needed
   const issue = await prisma.todaysIssue.create({
     data: {
       date: today,
@@ -108,11 +117,12 @@ export async function generateTodaysIssue(): Promise<string | null> {
       liveStats: JSON.parse(JSON.stringify(ranked.liveStats)),
       researchItems: JSON.parse(JSON.stringify(finalResearch)),
       impactGeneric: JSON.parse(JSON.stringify(ranked.impactBullets)),
-      approved: false,
+      approved: true,
+      approvedAt: new Date(),
     },
   });
 
-  console.log(`[todays-issue] Created ${issue.id} — pending approval`);
+  console.log(`[todays-issue] Created and auto-approved: ${issue.id}`);
   return issue.id;
 }
 
