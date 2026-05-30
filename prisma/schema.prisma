@@ -226,37 +226,3 @@ model TodaysIssue {
   generatedAt   DateTime @default(now())
   approvedAt    DateTime?
 }
-model InvestmentSignal {
-  id            String   @id @default(cuid())
-  weekOf        String   @unique
-  eventTitle    String
-  eventSummary  String
-  sourceUrl     String
-  sourceLabel   String
-  signalsUp     Json
-  signalsDown   Json
-  historicalBars Json
-  researchItems Json
-  impactGeneric Json
-  disclaimer    String
-  approved      Boolean  @default(false)
-  generatedAt   DateTime @default(now())
-  approvedAt    DateTime?
-}
-model InvestmentSignal {
-  id             String   @id @default(cuid())
-  weekOf         String   @unique
-  eventTitle     String
-  eventSummary   String
-  sourceUrl      String
-  sourceLabel    String
-  signalsUp      Json
-  signalsDown    Json
-  historicalBars Json
-  researchItems  Json
-  impactGeneric  Json
-  disclaimer     String
-  approved       Boolean  @default(false)
-  generatedAt    DateTime @default(now())
-  approvedAt     DateTime?
-}
