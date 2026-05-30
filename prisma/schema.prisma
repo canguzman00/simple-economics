@@ -84,8 +84,8 @@ enum Tier {
 }
 
 model User {
-  id                 String      @id @default(cuid())
-  email              String      @unique
+  id                 String            @id @default(cuid())
+  email              String            @unique
   name               String?
   image              String?
   emailVerified      DateTime?
@@ -97,11 +97,11 @@ model User {
   lifeStage          LifeStage?
   debtTypes          String[]
   industry           Industry?
-  language           String      @default("en")
-  isPremium          Boolean     @default(false)
-  onboardingComplete Boolean     @default(false)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  language           String            @default("en")
+  isPremium          Boolean           @default(false)
+  onboardingComplete Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   accounts           Account[]
   sessions           Session[]
@@ -212,9 +212,10 @@ model EconomicIndicator {
   date      String
   fetchedAt DateTime @default(now())
 }
+
 model TodaysIssue {
-  id            String   @id @default(cuid())
-  date          String   @unique
+  id            String    @id @default(cuid())
+  date          String    @unique
   title         String
   sourceUrl     String
   sourceLabel   String
@@ -222,7 +223,25 @@ model TodaysIssue {
   liveStats     Json
   researchItems Json
   impactGeneric Json
-  approved      Boolean  @default(false)
-  generatedAt   DateTime @default(now())
+  approved      Boolean   @default(false)
+  generatedAt   DateTime  @default(now())
   approvedAt    DateTime?
+}
+
+model InvestmentSignal {
+  id             String    @id @default(cuid())
+  weekOf         String    @unique
+  eventTitle     String
+  eventSummary   String
+  sourceUrl      String
+  sourceLabel    String
+  signalsUp      Json
+  signalsDown    Json
+  historicalBars Json
+  researchItems  Json
+  impactGeneric  Json
+  disclaimer     String
+  approved       Boolean   @default(false)
+  generatedAt    DateTime  @default(now())
+  approvedAt     DateTime?
 }
