@@ -18,7 +18,7 @@ function useNavLinks() {
     { label: tr.nav.feed,      href: "/feed" },
     { label: tr.nav.ask,       href: "/ask" },
     { label: tr.nav.myEconomy, href: "/my-economy" },
-    <Link href="/investment-context">Investment Context</Link>
+    { label: "Investment Context", href: "/investment-context" },
     { label: "My Impact",      href: "/calculator" },
     { label: tr.nav.saved,     href: "/saved" },
   ];
