@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+export const runtime = "nodejs";parseInt
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -249,7 +249,7 @@ export default async function MyEconomyPage() {
                 </div>
                 {formatted && <span className="self-start text-[10px] font-semibold px-2 py-1 rounded" style={{background: meta.deltaGood(rawValue!) ? "#F0FDF4" : "#FEF2F2", color: meta.deltaGood(rawValue!) ? "#166534" : "#991B1B", fontFamily:"Inter,sans-serif"}}>{meta.deltaLabel(rawValue!)}</span>}
                 <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{meta.explain}</p>
-                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}{year && parseInt(year) < 2025 ? " (latest available)" : ""}</p>
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{indicator?.source ?? "IMF / World Bank"}{year ? ` · ${String(year)}` : ""}{year && year < 2025 ? " (latest available)" : ""}</p>
               </div>
             );
           })}
