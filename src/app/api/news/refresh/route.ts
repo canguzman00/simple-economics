@@ -9,10 +9,10 @@ export const runtime = "nodejs";
 
 async function runRefresh() {
   await prisma.newsCache.deleteMany({});
-  await Promise.all([
-    fetchAndCacheNews(),
-    fetchAndCacheRSSFeeds(),
-  ]);
+  // Guardian news — await this so we have something immediately
+  await fetchAndCacheNews();
+  // RSS feeds (IMF, World Bank, Fed, NBER etc) — fire in background
+  fetchAndCacheRSSFeeds().catch((e) => console.error("[refresh] RSS error:", e));
 }
 
 export async function GET() {
