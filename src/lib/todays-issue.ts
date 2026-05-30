@@ -53,7 +53,10 @@ STRICT RULES:
 - NEVER use: real wages, monetary policy, fiscal, aggregate demand, yield curve, basis points
 - Say 'prices are 4% higher than last year' NOT 'CPI rose 4% YoY'
 - Say 'your paycheck buys less than it did last year' NOT 'real wage growth is negative'
-- stat values must be actual numbers — never words like 'Negative' or 'Moderate'
+- - stat values must include units — use % for percentages (e.g. '4.2%'), $ for prices (e.g. '$3.80/gal'), $ for dollar amounts
+- NEVER show just a raw number without its unit — '4.2' is wrong, '4.2%' is correct, '18' is wrong, '$3.80/gal' is correct
+- For gas prices always show the full price like '$3.80/gal' not just the percentage change
+- stat values must never be words like 'Negative' or 'Moderate'
 - liveStats: exactly 3-4 stats
 - impactBullets: exactly 3-4 bullets`,
     }],
