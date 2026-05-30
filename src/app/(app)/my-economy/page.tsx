@@ -211,7 +211,7 @@ export default async function MyEconomyPage() {
               </div>
               <span className="self-start text-[10px] font-semibold px-2 py-1 rounded" style={{background:"#EFF6FF",color:"#1E40AF",fontFamily:"Inter,sans-serif"}}>{metroUnemployment.metro}</span>
               <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>The actual unemployment rate for your metro area — not the national average. This tells you how tight or loose the local job market really is where you live.</p>
-              <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{metroUnemployment.source}{metroUnemployment.period ? ` · ${metroUnemployment.period}` : ""}</p>
+              <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{metroUnemployment.source}{metroUnemployment.period ? ` · ${metroUnemployment.period}` : ""}{" — most recent available (BLS releases with 2-month lag)"}</p>
             </div>
           ) : null}
         </div>
@@ -226,13 +226,14 @@ export default async function MyEconomyPage() {
         <div className="flex gap-4 mb-4 flex-wrap">
           <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{background:"#1B4FD8"}}/><span className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>IMF</span></div>
           <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{background:"#0F6E56"}}/><span className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>World Bank</span></div>
+          <div className="flex items-center gap-1.5"><span className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>World Bank data typically lags 1-2 years — this is the most recent available.</span></div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {([
             { key: "GDP_GROWTH", name: "GDP Growth", accentColor: "#1B4FD8", explain: "How fast the total US economy is growing. Above 2% is healthy. Two consecutive negative quarters = recession.", deltaLabel: (v: string) => parseFloat(v) >= 2 ? "Healthy growth" : "Below target", deltaGood: (v: string) => parseFloat(v) >= 2 },
             { key: "GOVT_DEBT", name: "Gov. Debt / GDP", accentColor: "#1B4FD8", explain: "The US owes more than it produces in a year. High debt can crowd out spending on healthcare and infrastructure.", deltaLabel: (v: string) => parseFloat(v) > 100 ? "Above 100% — elevated" : "Below 100%", deltaGood: (v: string) => parseFloat(v) <= 100 },
             { key: "CURRENT_ACCOUNT", name: "Current Account", accentColor: "#1B4FD8", explain: "The US buys more from the world than it sells. This deficit is funded by foreign investment flowing into US assets.", deltaLabel: (v: string) => parseFloat(v) < 0 ? "Trade deficit" : "Trade surplus", deltaGood: (v: string) => parseFloat(v) >= 0 },
-            { key: "GDP_PER_CAPITA", name: "GDP Per Capita", accentColor: "#0F6E56", explain: "Total economic output divided by population — a rough measure of average living standards. Inequality means most earn far below this.", deltaLabel: () => "Among world's highest", deltaGood: () => true },
+            { key: "GDP_PER_CAPITA", name: "GDP Per Capita (US avg)", accentColor: "#0F6E56", explain: "The average economic output per American — not what most people earn. Because of inequality, most Americans earn significantly less than this. Think of it as a ceiling, not a typical salary.", deltaLabel: () => "US national average", deltaGood: () => true },
             { key: "GINI", name: "Income Inequality", accentColor: "#0F6E56", explain: "Scored 0–1. Zero means everyone earns the same. The US at ~0.49 is among the most unequal wealthy nations — Denmark is 0.29.", deltaLabel: (v: string) => parseFloat(v) > 0.4 ? "High inequality" : "Moderate", deltaGood: (v: string) => parseFloat(v) <= 0.4 },
             { key: "POVERTY_RATE", name: "Poverty Rate", accentColor: "#0F6E56", explain: "Share of Americans below the poverty line (~$30K/year for a family of 4). Does not capture cost-of-living differences between cities.", deltaLabel: (v: string) => parseFloat(v) > 15 ? "Above avg" : "Near average", deltaGood: (v: string) => parseFloat(v) <= 15 },
           ] as Array<{key: string; name: string; accentColor: string; explain: string; deltaLabel: (v: string) => string; deltaGood: (v: string) => boolean}>).map((meta) => {
@@ -248,7 +249,7 @@ export default async function MyEconomyPage() {
                 </div>
                 {formatted && <span className="self-start text-[10px] font-semibold px-2 py-1 rounded" style={{background: meta.deltaGood(rawValue!) ? "#F0FDF4" : "#FEF2F2", color: meta.deltaGood(rawValue!) ? "#166534" : "#991B1B", fontFamily:"Inter,sans-serif"}}>{meta.deltaLabel(rawValue!)}</span>}
                 <p className="text-xs leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>{meta.explain}</p>
-                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}</p>
+                <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}{year && parseInt(year) < 2025 ? " (latest available)" : ""}</p>
               </div>
             );
           })}
