@@ -65,6 +65,7 @@ STRICT RULES:
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getResearch(works: Awaited<ReturnType<typeof searchOpenAlex>>, topic: string): Promise<Awaited<ReturnType<typeof translateResearchToFindings>>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return translateResearchToFindings(works, topic, anthropic as any);
 }
 
