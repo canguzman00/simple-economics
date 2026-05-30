@@ -188,7 +188,7 @@ export async function getCachedNews(
       ...(tier === "REGIONAL" && region ? { region } : {}),
     },
     orderBy: { publishedAt: "desc" },
-    take: 10,
+    take: 20,
   });
 }
 
