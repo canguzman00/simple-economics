@@ -37,33 +37,35 @@ ${headlines.map((h, i) => `${i + 1}. ${h}`).join("\n")}
 Respond with ONLY a JSON object (no markdown, no preamble):
 {
   "index": <number 0-based>,
-  "topic": "<3-5 word plain English topic e.g. 'Prices rising faster'>",
+  "topic": "<3-5 word plain English topic>",
   "openAlexQuery": "<6-10 word academic search query>",
-  "happeningBody": "<3-4 sentences in plain English. Write like you are texting a smart friend who has never studied economics. No jargon whatsoever.>",
+  "happeningBody": "<3-4 sentences in plain English. Write like texting a smart friend who never studied economics. No jargon.>",
   "liveStats": [
-    { "label": "<plain English description of what this number means e.g. 'Prices rising compared to last year' NOT 'CPI YoY'>", "value": "<number only, no abbreviations>", "delta": "<plain English change e.g. 'Fastest rise in 3 years' NOT 'Up YoY'>", "deltaType": "up|down|neutral" }
+    { "label": "<plain English e.g. 'Prices rising compared to last year' NOT 'CPI YoY'>", "value": "<number only, no abbreviations>", "delta": "<plain English change>", "deltaType": "up|down|neutral" }
   ],
   "impactBullets": [
-    { "bold": "<3-5 word plain English header>", "text": "<1-2 sentences of specific impact for a typical American worker or renter>" }
+    { "bold": "<3-5 word plain English header>", "text": "<1-2 sentences of specific impact>" }
   ]
 }
 
-STRICT RULES — violations will confuse readers:
-- NEVER use abbreviations: no YoY, CPI, GDP, PCE, MoM, QoQ, Fed, FOMC, SPR, ETF, or any other acronym
-- NEVER use jargon: no 'real wages', 'monetary policy', 'fiscal', 'aggregate demand', 'yield curve', 'basis points'
-- Instead of 'real wage growth is negative' say 'your paycheck buys less than it did last year'
-- Instead of 'CPI rose 4.2% YoY' say 'Prices are 4.2% higher than they were a year ago'
-- Instead of 'Federal Reserve' use 'the Fed' or 'America's central bank'
-- stat labels must describe what the number means in plain English
-- stat values must be actual numbers or dollar amounts — never words like 'Negative' or 'Moderate'
+STRICT RULES:
+- NEVER use: YoY, CPI, GDP, PCE, MoM, QoQ, FOMC, SPR, ETF, or any acronym
+- NEVER use: real wages, monetary policy, fiscal, aggregate demand, yield curve, basis points
+- Say 'prices are 4% higher than last year' NOT 'CPI rose 4% YoY'
+- Say 'your paycheck buys less than it did last year' NOT 'real wage growth is negative'
+- stat values must be actual numbers — never words like 'Negative' or 'Moderate'
 - liveStats: exactly 3-4 stats
-- impactBullets: exactly 3-4 bullets
-- Choose the story with the MOST concrete financial impact on everyday people`,
+- impactBullets: exactly 3-4 bullets`,
     }],
   });
 
   const text = res.content[0]?.type === "text" ? res.content[0].text.trim() : "{}";
   return JSON.parse(text.replace(/^```json\n?|```$/g, "").trim());
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getResearch(works: Awaited<ReturnType<typeof searchOpenAlex>>, topic: string): Promise<Awaited<ReturnType<typeof translateResearchToFindings>>> {
+  return translateResearchToFindings(works, topic, anthropic as any);
 }
 
 export async function generateTodaysIssue(): Promise<string | null> {
@@ -93,11 +95,7 @@ export async function generateTodaysIssue(): Promise<string | null> {
   console.log(`[todays-issue] Top story: ${topStory.title}`);
 
   const works = await searchOpenAlex(ranked.openAlexQuery, 3);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const researchItems = works.length > 0
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? await translateResearchToFindings(works, ranked.topic, anthropic as any)
-    : [];
+  const researchItems = works.length > 0 ? await getResearch(works, ranked.topic) : [];
 
   const finalResearch = researchItems.length > 0 ? researchItems : [{
     source: "NBER Working Paper Series",
@@ -107,7 +105,6 @@ export async function generateTodaysIssue(): Promise<string | null> {
     url: "https://www.nber.org",
   }];
 
-  // Auto-approve — no manual review needed
   const issue = await prisma.todaysIssue.create({
     data: {
       date: today,
