@@ -138,7 +138,7 @@ export default async function MyEconomyPage() {
                     {unavailable ? "Data temporarily unavailable." : validRaw ? `Americans are feeling ${sentiment_word} about the economy right now. The index runs from 0 to 140 — the long-run average is 86. At ${raw.toFixed(1)}, consumers are ${diff} points ${direction} the historical average, which ${spending}` : meta.meaning(situation)}
                   </p>
                   <div>
-                   <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{indicator?.source ?? "IMF / World Bank"}{year ? ` · ${year}` : ""}{year && Number(year) < 2025 ? " (latest available)" : ""}</p>
+                  <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{meta.source} · {date}{cached && <span className="ml-1">(cached)</span>}</p>
                     <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>Historical average: ~86</p>
                   </div>
                 </div>
