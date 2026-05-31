@@ -11,6 +11,8 @@ interface NewsItem {
   contentType: string;
   publishedAt: string;
   impact: string;
+  fullExplanation?: string;
+}
 }
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -58,6 +60,14 @@ export function NewsCard(props: { item: NewsItem }) {
   const hostname = getHostname(item.url, item.source);
 
   useEffect(function() {
+    // Use pre-generated points if available
+    if (item.fullExplanation) {
+      try {
+        const pre = JSON.parse(item.fullExplanation) as string[];
+        if (pre.length > 0) { setPoints(pre); setLoading(false); return; }
+      } catch { /* fall through to API */ }
+    }
+
     let cancelled = false;
     fetch("/api/personalize", {
       method: "POST",
