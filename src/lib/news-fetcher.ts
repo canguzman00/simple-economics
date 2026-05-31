@@ -154,17 +154,39 @@ export async function getCachedNews(
   tier?: Tier,
   region?: string
 ): Promise<NewsCache[]> {
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const newsSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const researchSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  return prisma.newsCache.findMany({
-    where: {
-      publishedAt: { gte: since },
-      ...(tier ? { tier } : {}),
-      ...(tier === "REGIONAL" && region ? { region } : {}),
-    },
-    orderBy: { publishedAt: "desc" },
-    take: 20,
-  });
+  const [researchItems, newsItems] = await Promise.all([
+    prisma.newsCache.findMany({
+      where: { contentType: "Research Paper", publishedAt: { gte: researchSince } },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
+    prisma.newsCache.findMany({
+      where: {
+        contentType: { not: "Research Paper" },
+        publishedAt: { gte: newsSince },
+        ...(tier ? { tier } : {}),
+        ...(tier === "REGIONAL" && region ? { region } : {}),
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 20,
+    }),
+  ]);
+
+  // Interleave: 1 research paper every 3 news articles
+  const combined: NewsCache[] = [];
+  let ni = 0;
+  let ri = 0;
+  while (ni < newsItems.length || ri < researchItems.length) {
+    if (ni < newsItems.length) combined.push(newsItems[ni++]);
+    if (ni < newsItems.length) combined.push(newsItems[ni++]);
+    if (ni < newsItems.length) combined.push(newsItems[ni++]);
+    if (ri < researchItems.length) combined.push(researchItems[ri++]);
+  }
+
+  return combined.slice(0, 30);
 }
 
 export function isCacheStale(oldestCreatedAt: Date | null): boolean {
