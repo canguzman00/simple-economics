@@ -15,8 +15,17 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Clear old news but keep research papers under 30 days
   await prisma.newsCache.deleteMany({
-    where: { contentType: { not: "Research Paper" } },
+    where: {
+      contentType: { not: "Research Paper" },
+    },
+  });
+  await prisma.newsCache.deleteMany({
+    where: {
+      contentType: "Research Paper",
+      createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+    },
   });
 
   await fetchAndCacheNews();
