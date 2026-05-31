@@ -22,11 +22,6 @@ interface ClassifiedArticle {
   impact: Impact;
 }
 
-const ECONOMIC_KEYWORDS = [
-  "economy", "inflation", "recession", "GDP", "unemployment", "interest rate",
-  "Federal Reserve", "central bank", "trade", "tariff", "fiscal", "monetary",
-  "debt", "deficit", "budget", "market", "housing", "wages", "jobs", "growth",
-];
 
 async function classifyArticle(
   title: string,
