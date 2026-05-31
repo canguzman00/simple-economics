@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
-import type { Tier, NewsCache, Pillar, Impact } from "@prisma/client";
+import type { Pillar, Impact, Tier, NewsCache } from "@prisma/client";
 
 export const CACHE_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
@@ -26,14 +26,6 @@ const ECONOMIC_KEYWORDS = [
   "economy", "inflation", "recession", "GDP", "unemployment", "interest rate",
   "Federal Reserve", "central bank", "trade", "tariff", "fiscal", "monetary",
   "debt", "deficit", "budget", "market", "housing", "wages", "jobs", "growth",
-];
-
-const POLITICAL_EXCLUSION_KEYWORDS = [
-  "autopsy", "presidential campaign", "ballroom", "war powers", "– live",
-  "live blog", "latest updates", "live updates", "as it happened",
-  "democrats release", "republicans could", "election result",
-  "campaign trail", "senate vote", "house vote", "congress passes",
-  "white house says", "trump says", "biden says",
 ];
 
 async function classifyArticle(
@@ -84,8 +76,8 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
   const since = new Date(Date.now() - CACHE_TTL_MS).toISOString().split("T")[0];
 
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("q", "\"United States\" OR \"US economy\" OR \"Federal Reserve\" OR \"American workers\" OR \"US inflation\" OR \"US jobs\" OR \"US housing\" OR \"US wages\" OR \"US debt\" OR \"US tariffs\"");
-  url.searchParams.set("section", "us-news|business|money");
+  url.searchParams.set("q", "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing");
+  url.searchParams.set("section", "business|money|us-news|world");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
   url.searchParams.set("page-size", "20");
@@ -103,21 +95,10 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
 
     const scored = articles
       .map((a) => {
-        const titleLower = a.webTitle.toLowerCase();
         const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
-
-        // Exclude political non-economic articles
-        const isPolitical = POLITICAL_EXCLUSION_KEYWORDS.some((kw) =>
-          titleLower.includes(kw.toLowerCase())
-        );
-
-        const score = isPolitical
-          ? 0
-          : ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
-
+        const score = ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
         return { article: a, score };
       })
-      .filter((s) => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5)
       .map((s) => s.article);
@@ -169,20 +150,7 @@ export async function fetchAndCacheNews(): Promise<void> {
   await processGuardianArticles(articles);
 }
 
-export async function fetchAndCacheRegionalNews(region: string): Promise<void> {
-  const articles = await fetchGuardianArticles();
-  await processGuardianArticles(articles);
-  console.log(`[news] regional fetch complete for ${region}`);
-}
-
 export async function getCachedNews(
-  tier?: Tier,
-  region?: string
-): Promise<NewsCache[]> {
-  const newsSince = new Date(Date.now() - 48 * 60 * 60 * 1000);
-  const researchSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-  export async function getCachedNews(
   tier?: Tier,
   region?: string
 ): Promise<NewsCache[]> {
@@ -197,19 +165,6 @@ export async function getCachedNews(
     orderBy: { publishedAt: "desc" },
     take: 20,
   });
-}
-
-  // Interleave: roughly 1 research paper per 2 news items
-  const combined: NewsCache[] = [];
-  let ni = 0;
-  let ri = 0;
-  while (ni < newsItems.length || ri < researchItems.length) {
-    if (ni < newsItems.length) combined.push(newsItems[ni++]);
-    if (ni < newsItems.length) combined.push(newsItems[ni++]);
-    if (ri < researchItems.length) combined.push(researchItems[ri++]);
-  }
-
-  return combined.slice(0, 20);
 }
 
 export function isCacheStale(oldestCreatedAt: Date | null): boolean {
