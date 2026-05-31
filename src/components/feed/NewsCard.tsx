@@ -139,12 +139,12 @@ export function NewsCard({ item }: { item: NewsItem }) {
         </p>
 
         <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px" }}>
-          <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#F43F5E", marginBottom: "10px" }}>
-            What this means for you
-          </p>
+          {(loading || points.length > 0) && (
+            <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#F43F5E", marginBottom: "10px" }}>
+              What this means for you
+            </p>
+          )}
           {loading ? (
-            <div>
-              {[1, 2, 3].map((i) => (
                 <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
                   <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#E2E8F0", flexShrink: 0, marginTop: "8px" }} />
                   <div style={{ height: "16px", background: "#F1F5F9", borderRadius: "4px", flex: 1 }} />
