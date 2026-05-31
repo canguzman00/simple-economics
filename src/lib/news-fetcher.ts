@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
 import type { Pillar, Impact, Tier, NewsCache } from "@prisma/client";
 
-export const CACHE_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
+export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface GuardianArticle {
   id: string;
@@ -76,11 +76,11 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
   const since = new Date(Date.now() - CACHE_TTL_MS).toISOString().split("T")[0];
 
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("q", "economy OR inflation OR 'interest rate' OR unemployment OR 'Federal Reserve' OR trade OR GDP OR recession OR wages OR housing");
-  url.searchParams.set("section", "business|money|us-news|world");
+  url.searchParams.set("q", "economy OR inflation OR \"interest rate\" OR unemployment OR \"Federal Reserve\" OR trade OR GDP OR recession OR wages OR housing OR tariff OR \"cost of living\" OR jobs OR \"stock market\" OR debt OR mortgage OR rent OR \"consumer prices\" OR \"economic growth\"");
+  url.searchParams.set("section", "business|money|us-news|world|global-development");
   url.searchParams.set("from-date", since);
   url.searchParams.set("order-by", "newest");
-  url.searchParams.set("page-size", "20");
+  url.searchParams.set("page-size", "50");
   url.searchParams.set("show-fields", "trailText,bodyText");
   url.searchParams.set("api-key", apiKey);
 
