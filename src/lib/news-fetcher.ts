@@ -182,26 +182,22 @@ export async function getCachedNews(
   const newsSince = new Date(Date.now() - 48 * 60 * 60 * 1000);
   const researchSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [newsItems, researchItems] = await Promise.all([
-    prisma.newsCache.findMany({
-      where: {
-        ...(tier ? { tier } : {}),
-        ...(region ? { region } : {}),
-        contentType: { not: "Research Paper" },
-        publishedAt: { gte: newsSince },
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 15,
-    }),
-    prisma.newsCache.findMany({
-      where: {
-        contentType: "Research Paper",
-        publishedAt: { gte: researchSince },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    }),
-  ]);
+  export async function getCachedNews(
+  tier?: Tier,
+  region?: string
+): Promise<NewsCache[]> {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  return prisma.newsCache.findMany({
+    where: {
+      publishedAt: { gte: since },
+      ...(tier ? { tier } : {}),
+      ...(tier === "REGIONAL" && region ? { region } : {}),
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 20,
+  });
+}
 
   // Interleave: roughly 1 research paper per 2 news items
   const combined: NewsCache[] = [];
