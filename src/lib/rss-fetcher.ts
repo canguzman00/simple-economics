@@ -177,7 +177,7 @@ async function fetchRSSSource(source: RSSSource): Promise<void> {
 }
 
 export async function fetchAndCacheRSSFeeds(): Promise<void> {
-  const batchSize = 4;
+  const batchSize = 10;
   for (let i = 0; i < RSS_SOURCES.length; i += batchSize) {
     const batch = RSS_SOURCES.slice(i, i + batchSize);
     await Promise.all(batch.map(fetchRSSSource));
