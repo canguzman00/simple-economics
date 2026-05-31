@@ -5,3 +5,11 @@
   "installCommand": "npm install",
   "regions": ["iad1"]
 }
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-news",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
