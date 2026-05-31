@@ -160,9 +160,7 @@ export function NewsCard({ item }: { item: NewsItem }) {
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ fontSize: "14px", color: "#94A3B8" }}>Unable to load talking points.</p>
-          )}
+          ) : null}
         </div>
 
         <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px", marginTop: "14px" }}>
