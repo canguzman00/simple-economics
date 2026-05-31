@@ -13,7 +13,6 @@ interface NewsItem {
   impact: string;
   fullExplanation?: string;
 }
-}
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   "The Guardian": { bg: "#FFF1F2", text: "#BE123C", border: "#F43F5E" },
