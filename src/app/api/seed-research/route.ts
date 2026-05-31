@@ -57,11 +57,26 @@ Example: ["Point one.", "Point two.", "Point three."]`,
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getAuthSession();
   if (session?.user?.email !== process.env.ADMIN_EMAIL) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const batch = searchParams.get("batch");
+  const papers = batch === "2"
+    ? RESEARCH_PAPERS.slice(12)
+    : batch === "1"
+    ? RESEARCH_PAPERS.slice(0, 12)
+    : RESEARCH_PAPERS;
+
+  if (!batch) {
+    await prisma.newsCache.deleteMany({ where: { contentType: "Research Paper" } });
+  }
+
+  let saved = 0;
+  for (const paper of papers) {
 
   // Clear old research papers first
   await prisma.newsCache.deleteMany({ where: { contentType: "Research Paper" } });
