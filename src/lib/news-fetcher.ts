@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
-import type { Tier, NewsCache } from "@prisma/client";
+import type { Tier, NewsCache, Pillar, Impact } from "@prisma/client";
 
 export const CACHE_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
 
