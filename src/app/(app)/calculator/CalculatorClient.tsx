@@ -12,10 +12,6 @@ interface UserProfile {
   industry: string | null;
 }
 
-interface CalculatorClientProps {
-  profile: UserProfile;
-}
-
 interface ActionStep {
   step: string;
   urgency: "now" | "soon" | "consider";
@@ -58,14 +54,27 @@ const VERDICT_CONFIG = {
 };
 
 const URGENCY_CONFIG = {
-  now:      { bg: "#F43F5E", text: "#fff",     label: "Act Now" },
-  soon:     { bg: "#FEF3C7", text: "#92400E",  label: "Soon" },
-  consider: { bg: "#F1F5F9", text: "#475569",  label: "Consider" },
+  now:      { bg: "#F43F5E", text: "#fff",    label: "Act Now" },
+  soon:     { bg: "#FEF3C7", text: "#92400E", label: "Soon" },
+  consider: { bg: "#F1F5F9", text: "#475569", label: "Consider" },
 };
+
+function formatEnum(value: string | null): string {
+  if (!value) return "Not set";
+  return value
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatDebtTypes(types: string[]): string {
+  if (!types || types.length === 0) return "None";
+  return types.map((t) => formatEnum(t)).join(", ");
+}
 
 const S = { fontFamily: "Inter, sans-serif" };
 
-export default function CalculatorClient({ profile }: CalculatorClientProps) {
+export default function CalculatorClient({ profile }: { profile: UserProfile }) {
   const [policy, setPolicy] = useState("");
   const [financials, setFinancials] = useState({
     income: "", housingCost: "", homeValue: "",
@@ -98,273 +107,254 @@ export default function CalculatorClient({ profile }: CalculatorClientProps) {
 
   const vc = result ? VERDICT_CONFIG[result.verdict] : null;
 
+  const profileRows: [string, string][] = [
+    ["Housing", formatEnum(profile.situation)],
+    ["Employment", formatEnum(profile.employmentStatus)],
+    ["City", profile.city ? profile.city.charAt(0).toUpperCase() + profile.city.slice(1) : "Not set"],
+    ["Life stage", formatEnum(profile.lifeStage)],
+    ["Industry", formatEnum(profile.industry)],
+    ["Main concern", formatEnum(profile.concern)],
+    ["Debt", formatDebtTypes(profile.debtTypes)],
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: "#F8FAFC", ...S }}>
+    <div style={{ ...S }}>
 
-      <div>
-        {/* Page header */}
-        <div className="mb-10 pb-6" style={{ borderBottom: "1px solid #E2E8F0" }}>
-          <h1 className="font-bold mb-2" style={{ fontSize: "30px", color: "#0F172A", ...S }}>
-            Personal Impact Calculator
-          </h1>
-          <p className="text-sm" style={{ color: "#64748B", ...S }}>
-            Enter a policy or economic event. We analyze how it affects your specific situation.
-          </p>
-        </div>
+      <div className="mb-8 pb-6" style={{ borderBottom: "1px solid #E2E8F0" }}>
+        <h1 className="font-bold mb-2" style={{ fontSize: "28px", color: "#0F172A", ...S }}>
+          Personal Impact Calculator
+        </h1>
+        <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.6, ...S }}>
+          Enter any economic event or policy. We analyze how it affects your specific situation using your profile.
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
 
-          {/* LEFT — Inputs */}
-          <div className="space-y-5">
+        {/* LEFT */}
+        <div className="space-y-4">
 
-            {/* Policy input */}
-            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#94A3B8", ...S }}>
-                01 — Policy or Event
-              </div>
-              <textarea
-                value={policy}
-                onChange={(e) => setPolicy(e.target.value)}
-                placeholder="e.g. Federal Reserve raises interest rates by 0.25%"
-                className="w-full text-sm resize-none outline-none rounded-lg transition-colors"
-                style={{ border: "1.5px solid #E2E8F0", padding: "10px 12px", color: "#0F172A", ...S }}
-                rows={3}
-                onFocus={e => e.currentTarget.style.borderColor = "#F43F5E"}
-                onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
-              />
-              <div className="mt-3">
-                <div className="text-[11px] font-medium mb-2" style={{ color: "#CBD5E1", ...S }}>Quick select</div>
-                <div className="flex flex-wrap gap-2">
-                  {HOT_TOPICS.map((t) => (
-                    <button key={t} onClick={() => setPolicy(t)}
-                      className="text-[11px] px-2.5 py-1 rounded-lg transition-all"
-                      style={{ border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", ...S }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#F43F5E"; e.currentTarget.style.color = "#F43F5E"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#64748B"; }}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Policy input */}
+          <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8", marginBottom: "12px", ...S }}>
+              What economic event do you want to analyze?
             </div>
-
-            {/* Profile */}
-            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#94A3B8", ...S }}>
-                02 — Your Profile
-              </div>
-              <div className="space-y-2">
-                {([
-                  ["Housing", profile.situation],
-                  ["Employment", profile.employmentStatus],
-                  ["City", profile.city],
-                  ["Life Stage", profile.lifeStage],
-                  ["Industry", profile.industry],
-                  ["Concern", profile.concern],
-                  ["Debt Types", profile.debtTypes?.join(", ") || null],
-                ] as [string, string | null][]).map(([label, value]) => (
-                  <div key={label} className="flex justify-between items-center py-1.5" style={{ borderBottom: "1px solid #F8FAFC" }}>
-                    <span className="text-xs uppercase tracking-wider" style={{ color: "#94A3B8", ...S }}>{label}</span>
-                    <span className="text-xs font-medium text-right max-w-[180px]" style={{ color: value ? "#0F172A" : "#CBD5E1", fontStyle: value ? "normal" : "italic", ...S }}>
-                      {value || "Not set"}
-                    </span>
-                  </div>
+            <textarea
+              value={policy}
+              onChange={(e) => setPolicy(e.target.value)}
+              placeholder="e.g. Federal Reserve raises interest rates by 0.25%"
+              rows={3}
+              className="w-full text-sm resize-none outline-none rounded-lg"
+              style={{ border: "1.5px solid #E2E8F0", padding: "10px 12px", color: "#0F172A", fontSize: "13px", lineHeight: 1.6, ...S }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#F43F5E"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
+            />
+            <div className="mt-3">
+              <div style={{ fontSize: "11px", color: "#CBD5E1", marginBottom: "8px", ...S }}>Quick select a topic</div>
+              <div className="flex flex-wrap gap-2">
+                {HOT_TOPICS.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setPolicy(t)}
+                    style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "20px", border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", cursor: "pointer", ...S }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#F43F5E"; e.currentTarget.style.color = "#F43F5E"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#64748B"; }}
+                  >
+                    {t}
+                  </button>
                 ))}
               </div>
-              <a href="/onboarding" className="mt-3 inline-block text-xs font-medium" style={{ color: "#F43F5E", ...S }}>
-                Update profile →
-              </a>
             </div>
+          </div>
 
-            {/* Financial details */}
-            <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
-              <div className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#94A3B8", ...S }}>
-                03 — Financial Details
-              </div>
-              <div className="text-[11px] mb-4" style={{ color: "#CBD5E1", ...S }}>Optional — makes estimates more precise</div>
-              <div className="space-y-3">
-                {[
-                  { key: "income",       label: "Monthly take-home pay (after tax)",              placeholder: "5000"   },
-                  { key: "housingCost",  label: "Monthly rent or mortgage payment",               placeholder: "1800"   },
-                  ...(profile.situation?.toLowerCase().includes("own") ? [{ key: "homeValue", label: "Estimated home value (current market)", placeholder: "450000" }] : []),
-                  { key: "savings",      label: "Cash savings total balance (checking + savings)", placeholder: "15000"  },
-                  { key: "investments",  label: "Investment accounts total balance (401k, IRA, stocks)", placeholder: "40000" },
-                  { key: "debtPayments", label: "Total monthly debt payments (cards, loans)",     placeholder: "400"    },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-[11px] mb-1 uppercase tracking-wider" style={{ color: "#64748B", ...S }}>{label}</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#CBD5E1" }}>$</span>
+          {/* Profile */}
+          <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8", marginBottom: "12px", ...S }}>
+              Your profile
+            </div>
+            <div className="space-y-2">
+              {profileRows.map(([label, value]) => (
+                <div key={label} className="flex justify-between items-center py-1.5" style={{ borderBottom: "1px solid #F8FAFC" }}>
+                  <span style={{ fontSize: "12px", color: "#94A3B8", ...S }}>{label}</span>
+                  <span style={{ fontSize: "12px", fontWeight: 500, color: value === "Not set" ? "#CBD5E1" : "#0F172A", fontStyle: value === "Not set" ? "italic" : "normal", textAlign: "right" as const, maxWidth: "200px", ...S }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <a href="/onboarding" style={{ display: "inline-block", marginTop: "10px", fontSize: "11px", fontWeight: 500, color: "#F43F5E", ...S }}>
+              Update profile
+            </a>
+          </div>
+
+          {/* Financial details */}
+          <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8", marginBottom: "4px", ...S }}>
+              Financial details
+            </div>
+            <div style={{ fontSize: "11px", color: "#CBD5E1", marginBottom: "14px", ...S }}>Optional — makes the analysis more precise</div>
+            <div className="space-y-3">
+              {[
+                { key: "income",       label: "Monthly take-home pay (after tax)",         placeholder: "5000" },
+                { key: "housingCost",  label: "Monthly rent or mortgage payment",           placeholder: "1800" },
+                { key: "savings",      label: "Cash savings (checking + savings accounts)", placeholder: "15000" },
+                { key: "investments",  label: "Investment accounts (401k, IRA, stocks)",    placeholder: "40000" },
+                { key: "debtPayments", label: "Total monthly debt payments",                placeholder: "400" },
+              ].map(function(field) {
+                return (
+                  <div key={field.key}>
+                    <label style={{ display: "block", fontSize: "11px", color: "#64748B", marginBottom: "4px", ...S }}>{field.label}</label>
+                    <div style={{ position: "relative" as const }}>
+                      <span style={{ position: "absolute" as const, left: "10px", top: "50%", transform: "translateY(-50%)", color: "#CBD5E1", fontSize: "13px" }}>$</span>
                       <input
                         type="number"
-                        value={financials[key as keyof typeof financials]}
-                        onChange={(e) => setFinancials((f) => ({ ...f, [key]: e.target.value }))}
-                        placeholder={placeholder}
-                        className="w-full pl-7 pr-3 py-2 text-sm rounded-lg outline-none transition-colors font-mono"
-                        style={{ border: "1.5px solid #E2E8F0", color: "#0F172A" }}
-                        onFocus={e => e.currentTarget.style.borderColor = "#F43F5E"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
+                        value={financials[field.key as keyof typeof financials]}
+                        onChange={(e) => setFinancials((f) => ({ ...f, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        style={{ width: "100%", paddingLeft: "26px", paddingRight: "12px", paddingTop: "8px", paddingBottom: "8px", fontSize: "13px", border: "1.5px solid #E2E8F0", borderRadius: "8px", outline: "none", color: "#0F172A", fontFamily: "monospace" }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = "#F43F5E"; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
                       />
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-
-            {/* Submit button */}
-            <button
-              onClick={runCalculator}
-              disabled={loading || !policy.trim()}
-              className="w-full py-3.5 text-sm font-semibold rounded-xl transition-all"
-              style={{
-                background: loading || !policy.trim() ? "#E2E8F0" : "#F43F5E",
-                color: loading || !policy.trim() ? "#94A3B8" : "#fff",
-                cursor: loading || !policy.trim() ? "not-allowed" : "pointer",
-                ...S,
-              }}>
-              {loading ? "Analyzing..." : "Calculate My Impact →"}
-            </button>
           </div>
 
-          {/* RIGHT — Results */}
-          <div>
-            {!result && !loading && !error && (
-              <div className="rounded-xl flex flex-col items-center justify-center min-h-[400px] text-center p-10"
-                style={{ border: "1.5px dashed #E2E8F0", background: "#fff" }}>
-                <div className="text-5xl font-bold mb-4" style={{ color: "#E2E8F0" }}>?</div>
-                <p className="text-sm max-w-xs" style={{ color: "#CBD5E1", ...S }}>
-                  Choose a policy or event on the left, then hit Calculate to see your personalized impact.
-                </p>
+          {/* Submit */}
+          <button
+            onClick={runCalculator}
+            disabled={loading || !policy.trim()}
+            style={{
+              width: "100%",
+              padding: "14px",
+              fontSize: "13px",
+              fontWeight: 600,
+              borderRadius: "12px",
+              border: "none",
+              background: loading || !policy.trim() ? "#E2E8F0" : "#F43F5E",
+              color: loading || !policy.trim() ? "#94A3B8" : "#fff",
+              cursor: loading || !policy.trim() ? "not-allowed" : "pointer",
+              ...S,
+            }}
+          >
+            {loading ? "Analyzing your situation..." : "Calculate My Impact"}
+          </button>
+        </div>
+
+        {/* RIGHT — Results */}
+        <div>
+          {!result && !loading && !error && (
+            <div className="rounded-xl flex flex-col items-center justify-center text-center p-10"
+              style={{ border: "1.5px dashed #E2E8F0", background: "#fff", minHeight: "400px" }}>
+              <div style={{ fontSize: "48px", color: "#E2E8F0", marginBottom: "16px" }}>?</div>
+              <p style={{ fontSize: "13px", color: "#CBD5E1", maxWidth: "260px", lineHeight: 1.6, ...S }}>
+                Choose a policy or event on the left, then hit Calculate to see your personalized impact.
+              </p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="rounded-xl flex flex-col items-center justify-center p-10"
+              style={{ background: "#1E293B", border: "1px solid #334155", minHeight: "400px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#475569", marginBottom: "24px", ...S }}>
+                Analyzing your situation
               </div>
-            )}
-
-            {loading && (
-              <div className="rounded-xl flex flex-col items-center justify-center min-h-[400px] p-10"
-                style={{ background: "#1E293B", border: "1px solid #334155" }}>
-                <div className="text-xs font-medium uppercase tracking-widest mb-8" style={{ color: "#475569", ...S }}>
-                  Analyzing your situation
-                </div>
-                <div className="flex gap-2 mb-8">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="w-2.5 h-2.5 rounded-full"
-                      style={{ background: "#F43F5E", animation: "pulse 1.2s ease-in-out infinite", animationDelay: i * 0.2 + "s" }} />
-                  ))}
-                </div>
-                <style>{`@keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:1} }`}</style>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#F43F5E", animation: "pulse 1.2s ease-in-out infinite", animationDelay: i * 0.2 + "s" }} />
+                ))}
               </div>
-            )}
+              <style>{`@keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:1} }`}</style>
+            </div>
+          )}
 
-            {error && (
-              <div className="rounded-xl p-6" style={{ background: "#FFF1F2", border: "1px solid #FECDD3" }}>
-                <p className="text-sm" style={{ color: "#F43F5E", ...S }}>{error}</p>
-              </div>
-            )}
+          {error && (
+            <div className="rounded-xl p-6" style={{ background: "#FFF1F2", border: "1px solid #FECDD3" }}>
+              <p style={{ fontSize: "13px", color: "#F43F5E", ...S }}>{error}</p>
+            </div>
+          )}
 
-            {result && vc && (
-              <div className="space-y-4">
+          {result && vc && (
+            <div className="space-y-4">
 
-                {/* Verdict */}
-                <div className="rounded-xl p-6" style={{ background: vc.bg, border: "1px solid " + vc.border }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: vc.dot }} />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: vc.text, ...S }}>
-                      {vc.label}
-                    </span>
-                  </div>
-                  <p className="text-base font-bold leading-snug mb-2" style={{ color: vc.text, ...S }}>
-                    {result.headline}
-                  </p>
-                  <p className="text-sm leading-relaxed" style={{ color: vc.text, opacity: 0.8, ...S }}>
-                    {result.overall_summary}
-                  </p>
+              <div className="rounded-xl p-6" style={{ background: vc.bg, border: "1px solid " + vc.border }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: vc.dot, flexShrink: 0 }} />
+                  <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: vc.text, ...S }}>{vc.label}</span>
                 </div>
+                <p style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3, marginBottom: "8px", color: vc.text, ...S }}>{result.headline}</p>
+                <p style={{ fontSize: "13px", lineHeight: 1.7, color: vc.text, opacity: 0.8, ...S }}>{result.overall_summary}</p>
+              </div>
 
-                {/* Short / Long term */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[result.short_term, result.long_term].map((section, idx) => (
-                    <div key={idx} className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E" }}>
-                      <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#94A3B8", ...S }}>
-                        {section.label}
-                      </div>
-                      {section.dollar_estimate && (
-                        <div className="text-xl font-bold mb-3 font-mono" style={{ color: "#F43F5E" }}>
-                          {section.dollar_estimate}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[result.short_term, result.long_term].map((section, idx) => (
+                  <div key={idx} className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E" }}>
+                    <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8", marginBottom: "8px", ...S }}>{section.label}</div>
+                    {section.dollar_estimate && (
+                      <div style={{ fontSize: "20px", fontWeight: 700, color: "#F43F5E", marginBottom: "10px", fontFamily: "monospace" }}>{section.dollar_estimate}</div>
+                    )}
+                    <p style={{ fontSize: "12px", lineHeight: 1.7, color: "#64748B", marginBottom: "12px", ...S }}>{section.impact}</p>
+                    <div className="space-y-2">
+                      {section.key_points.map((pt, i) => (
+                        <div key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                          <span style={{ fontSize: "11px", color: "#F43F5E", flexShrink: 0, marginTop: "1px", fontWeight: 700 }}>▸</span>
+                          <span style={{ fontSize: "12px", lineHeight: 1.6, color: "#475569", ...S }}>{pt}</span>
                         </div>
-                      )}
-                      <p className="text-sm leading-relaxed mb-4" style={{ color: "#64748B", ...S }}>{section.impact}</p>
-                      <div className="space-y-2">
-                        {section.key_points.map((pt, i) => (
-                          <div key={i} className="flex gap-2 items-start">
-                            <span className="text-xs mt-0.5 flex-shrink-0 font-bold" style={{ color: "#F43F5E" }}>▸</span>
-                            <span className="text-xs leading-relaxed" style={{ color: "#475569", ...S }}>{pt}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Watch for */}
-                <div className="rounded-xl p-5" style={{ background: "#1E293B", border: "1px solid #334155" }}>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "#F43F5E", ...S }}>
-                    Watch For
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {result.watch_for.map((item, i) => (
-                      <div key={i} className="rounded-lg p-3" style={{ background: "#0F172A", border: "1px solid #334155" }}>
-                        <span className="text-xs leading-relaxed" style={{ color: "#94A3B8", ...S }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Action steps */}
-                <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "#94A3B8", ...S }}>
-                    Action Steps
-                  </div>
-                  <div className="space-y-3">
-                    {result.action_steps.map((action, i) => {
-                      const urg = URGENCY_CONFIG[action.urgency] || URGENCY_CONFIG.consider;
-                      return (
-                        <div key={i} className="flex gap-3 items-start">
-                          <span className="text-[10px] font-semibold px-2 py-1 rounded flex-shrink-0 mt-0.5"
-                            style={{ background: urg.bg, color: urg.text, ...S }}>
-                            {urg.label}
-                          </span>
-                          <span className="text-sm leading-relaxed" style={{ color: "#374151", ...S }}>{action.step}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Sources */}
-                {result.sources?.length > 0 && (
-                  <div className="rounded-xl p-4" style={{ border: "1px solid #F1F5F9", background: "#F8FAFC" }}>
-                    <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#CBD5E1", ...S }}>Sources</div>
-                    <div className="flex flex-wrap gap-2">
-                      {result.sources.map((src, i) => (
-                        <span key={i} className="text-[11px] px-2 py-1 rounded" style={{ color: "#64748B", background: "#fff", border: "1px solid #E2E8F0", ...S }}>
-                          {src}
-                        </span>
                       ))}
                     </div>
                   </div>
-                )}
-
-                {/* Reset */}
-                <button
-                  onClick={() => { setResult(null); setPolicy(""); }}
-                  className="w-full py-3 text-sm font-medium rounded-xl transition-all"
-                  style={{ border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", ...S }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#1E293B"; e.currentTarget.style.color = "#F8FAFC"; e.currentTarget.style.borderColor = "#1E293B"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#64748B"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
-                  New Analysis
-                </button>
+                ))}
               </div>
-            )}
-          </div>
+
+              <div className="rounded-xl p-5" style={{ background: "#1E293B", border: "1px solid #334155" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#F43F5E", marginBottom: "12px", ...S }}>Watch For</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {result.watch_for.map((item, i) => (
+                    <div key={i} className="rounded-lg p-3" style={{ background: "#0F172A", border: "1px solid #334155" }}>
+                      <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#94A3B8", ...S }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl p-5" style={{ background: "#fff", border: "1px solid #E2E8F0" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8", marginBottom: "14px", ...S }}>Action Steps</div>
+                <div className="space-y-3">
+                  {result.action_steps.map((action, i) => {
+                    const urg = URGENCY_CONFIG[action.urgency] || URGENCY_CONFIG.consider;
+                    return (
+                      <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <span style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "4px", background: urg.bg, color: urg.text, flexShrink: 0, marginTop: "2px", ...S }}>{urg.label}</span>
+                        <span style={{ fontSize: "13px", lineHeight: 1.6, color: "#374151", ...S }}>{action.step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {result.sources?.length > 0 && (
+                <div className="rounded-xl p-4" style={{ border: "1px solid #F1F5F9", background: "#F8FAFC" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#CBD5E1", marginBottom: "8px", ...S }}>Sources</div>
+                  <div className="flex flex-wrap gap-2">
+                    {result.sources.map((src, i) => (
+                      <span key={i} style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "4px", color: "#64748B", background: "#fff", border: "1px solid #E2E8F0", ...S }}>{src}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => { setResult(null); setPolicy(""); }}
+                style={{ width: "100%", padding: "12px", fontSize: "13px", fontWeight: 500, borderRadius: "12px", border: "1px solid #E2E8F0", color: "#64748B", background: "#fff", cursor: "pointer", ...S }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#1E293B"; e.currentTarget.style.color = "#F8FAFC"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#64748B"; }}
+              >
+                New Analysis
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
