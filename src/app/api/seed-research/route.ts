@@ -40,7 +40,7 @@ export async function GET() {
           url: paper.url + "?ref=" + paper.year + "-" + saved,
           source: paper.source,
           contentType: "Research Paper",
-          publishedAt: new Date(`${paper.year}-01-01`),
+          publishedAt: new Date(),
           pillar: paper.pillar as "PERSONAL_FINANCE" | "GLOBAL_ECONOMICS" | "DEVELOPMENT_POLICY" | "GEOPOLITICS_MONEY",
           impact: "MEDIUM",
           tier: "GLOBAL",
