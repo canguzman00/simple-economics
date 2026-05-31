@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 interface SignalAsset {
   name: string;
@@ -27,229 +27,321 @@ interface ImpactBullet {
   text: string;
 }
 
-interface SignalData {
-  id: string;
-  weekOf: string;
+interface SignalResult {
   eventTitle: string;
   eventSummary: string;
-  sourceUrl: string;
-  sourceLabel: string;
   signalsUp: SignalAsset[];
   signalsDown: SignalAsset[];
   historicalBars: HistoricalBar[];
   researchItems: ResearchItem[];
-  impactGeneric: ImpactBullet[];
+  impactBullets: ImpactBullet[];
   disclaimer: string;
 }
 
 type Tab = "signals" | "history" | "research" | "impact";
 
-function getStrengthColor(strength: string): string {
-  if (strength === "Strong") return "#4ADE80";
-  if (strength === "Moderate") return "#FCD34D";
-  return "#94A3B8";
+const HOT_EVENTS = [
+  "Oil price spike due to conflict",
+  "Federal Reserve raises interest rates",
+  "US tariffs and trade war escalation",
+  "Inflation surge above 4%",
+  "Recession signals and slowdown",
+  "Government tech grant announcement",
+  "Dollar strengthens significantly",
+  "Immigration policy restrictions",
+];
+
+function formatEnum(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.split("_").map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }).join(" ");
 }
 
-function ImpactTab(props: { signal: SignalData; userProfile?: { city?: string | null; situation?: string | null } | null }) {
-  const sitLabel = props.userProfile?.situation === "RENTER" ? "Renter"
-    : props.userProfile?.situation === "OWNER" ? "Homeowner"
-    : props.userProfile?.situation ?? null;
+type UserProfile = {
+  situation?: string | null;
+  city?: string | null;
+  industry?: string | null;
+  lifeStage?: string | null;
+  concern?: string | null;
+  debtTypes?: string[];
+} | null;
 
-  return (
-    <div>
-      {(sitLabel || props.userProfile?.city) && (
-        <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" as const }}>
-          {sitLabel && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "rgba(255,255,255,0.06)", color: "#94A3B8" }}>{sitLabel}</span>}
-          {props.userProfile?.city && <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "rgba(255,255,255,0.06)", color: "#94A3B8" }}>{props.userProfile.city}</span>}
-        </div>
-      )}
-      <div style={{ display: "flex", flexDirection: "column" as const, gap: "12px" }}>
-        {props.signal.impactGeneric.map(function(bullet, i) {
-          return (
-            <div key={i} style={{ display: "flex", gap: "10px" }}>
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", flexShrink: 0, marginTop: "6px", background: "#E63329", display: "block" }} />
-              <p style={{ fontSize: "12px", lineHeight: "1.65", color: "#94A3B8", margin: 0 }}>
-                <strong style={{ color: "#CBD5E1" }}>{bullet.bold}{": "}</strong>{bullet.text}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ marginTop: "16px", padding: "10px 12px", borderRadius: "8px", background: "rgba(245,200,0,0.08)", border: "1px solid rgba(245,200,0,0.2)" }}>
-        <p style={{ fontSize: "10px", color: "#A0844A", lineHeight: "1.5" }}>{props.signal.disclaimer}</p>
-      </div>
-    </div>
-  );
-}
-
-export function InvestmentSignalCard(props: {
-  userProfile?: { city?: string | null; situation?: string | null } | null
-}) {
-  const [signal, setSignal] = useState<SignalData | null>(null);
+export function InvestmentSignalCard(props: { userProfile?: UserProfile }) {
+  const [event, setEvent] = useState("");
+  const [result, setResult] = useState<SignalResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("signals");
-  const [loading, setLoading] = useState(true);
 
-  useEffect(function() {
-    fetch("/api/investment-signal")
-      .then(function(r) { return r.json() as Promise<SignalData | null>; })
-      .then(function(data) { setSignal(data); setLoading(false); })
-      .catch(function() { setLoading(false); });
-  }, []);
-
-  if (loading) {
-    return <div style={{ borderRadius: "16px", overflow: "hidden", marginBottom: "24px", background: "#1E293B", height: "200px" }} />;
+  async function analyze() {
+    if (!event.trim()) return;
+    setLoading(true); setError(null); setResult(null); setActiveTab("signals");
+    try {
+      const res = await fetch("/api/investment-signal/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event, profile: props.userProfile }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json() as SignalResult;
+      setResult(data);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (!signal) return null;
+  const F = { fontFamily: "Inter, sans-serif" };
+  const maxBar = result ? Math.max(...result.historicalBars.map(function(b) { return Math.abs(b.value); }), 1) : 1;
 
   const tabs: Array<{ id: Tab; label: string }> = [
-    { id: "signals", label: "Asset signals" },
-    { id: "history", label: "Historical data" },
-    { id: "research", label: "Research" },
-    { id: "impact", label: "Your impact" },
+    { id: "signals", label: "ASSET SIGNALS" },
+    { id: "history", label: "HISTORICAL DATA" },
+    { id: "research", label: "RESEARCH" },
+    { id: "impact", label: "YOUR IMPACT" },
   ];
 
-  const maxBar = Math.max(...signal.historicalBars.map(function(b) { return Math.abs(b.value); }), 1);
-
   return (
-    <div style={{ borderRadius: "16px", overflow: "hidden", marginBottom: "24px", background: "#0A0A0A", border: "1px solid #1E293B" }}>
+    <div style={{ ...F }}>
 
-      <div style={{ padding: "20px 20px 0", borderBottom: "1px solid #1E293B" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" as const }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "20px", background: "rgba(245,200,0,0.1)", border: "1px solid rgba(245,200,0,0.25)" }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", color: "#F5C800" }}>
-              {"Investment Context"}
-            </span>
-          </div>
-          <span style={{ fontSize: "10px", color: "#475569" }}>
-            {signal.sourceLabel}{" · Week of "}{signal.weekOf}
-          </span>
-        </div>
-
-        <h2 style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.35, marginBottom: "8px", color: "#F8FAFC" }}>
-          {signal.eventTitle}
-        </h2>
-        <p style={{ fontSize: "12px", color: "#64748B", lineHeight: 1.65, marginBottom: "12px" }}>
-          {signal.eventSummary}
+      {/* HEADER */}
+      <div style={{ background: "#0A0A0A", padding: "24px 28px", border: "2px solid #0A0A0A", borderBottom: "none" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#F5C800", marginBottom: "6px", ...F }}>
+          Investment Context
+        </h1>
+        <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.6, ...F }}>
+          Enter any economic event. See what history says about how asset classes respond — backed by research.
         </p>
+      </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid #1E293B" }}>
-          {tabs.map(function(tab) {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={function() { setActiveTab(tab.id); }}
-                style={{
-                  fontSize: "11px", fontWeight: 600, padding: "8px 12px",
-                  background: "transparent", border: "none",
-                  borderBottom: isActive ? "2px solid #F5C800" : "2px solid transparent",
-                  marginBottom: "-1px", cursor: "pointer",
-                  color: isActive ? "#F8FAFC" : "#475569",
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+      <div style={{ border: "2px solid #0A0A0A", borderTop: "none", padding: "24px 28px", background: "#fff" }}>
+
+        {/* INPUT */}
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "inline-block", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#0A0A0A", background: "#F5C800", padding: "3px 8px", marginBottom: "10px", ...F }}>
+            What economic event?
+          </div>
+          <textarea
+            value={event}
+            onChange={function(e) { setEvent(e.target.value); }}
+            placeholder="e.g. US-Iran conflict pushes oil above $120/barrel"
+            rows={2}
+            style={{ width: "100%", border: "2px solid #0A0A0A", padding: "10px 12px", fontSize: "14px", color: "#0A0A0A", fontFamily: "Inter, sans-serif", resize: "none" as const, outline: "none", display: "block", marginBottom: "10px" }}
+          />
+          <div style={{ fontSize: "11px", color: "#666", marginBottom: "8px", ...F }}>Quick select</div>
+          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "6px", marginBottom: "14px" }}>
+            {HOT_EVENTS.map(function(t) {
+              return (
+                <button
+                  key={t}
+                  onClick={function() { setEvent(t); }}
+                  style={{ fontSize: "11px", padding: "5px 12px", border: "2px solid #0A0A0A", background: event === t ? "#0A0A0A" : "#fff", color: event === t ? "#fff" : "#0A0A0A", cursor: "pointer", fontFamily: "Inter, sans-serif", fontWeight: 500 }}
+                  onMouseEnter={function(e) { if (event !== t) { e.currentTarget.style.background = "#0A0A0A"; e.currentTarget.style.color = "#fff"; } }}
+                  onMouseLeave={function(e) { if (event !== t) { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0A0A0A"; } }}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: "11px", color: "#888", background: "#FFFBEB", border: "1px solid #F5C800", padding: "8px 12px", marginBottom: "14px", ...F }}>
+            Educational only — not financial advice. Historical patterns do not guarantee future results. Consult a licensed financial advisor before making investment decisions.
+          </div>
+          <button
+            onClick={analyze}
+            disabled={loading || !event.trim()}
+            style={{
+              width: "100%", padding: "14px", fontSize: "14px", fontWeight: 700,
+              border: "2px solid #0A0A0A",
+              background: loading || !event.trim() ? "#E2E8F0" : "#0A0A0A",
+              color: loading || !event.trim() ? "#94A3B8" : "#fff",
+              cursor: loading || !event.trim() ? "not-allowed" : "pointer",
+              letterSpacing: "0.06em", fontFamily: "Inter, sans-serif",
+            }}
+          >
+            {loading ? "ANALYZING..." : "ANALYZE INVESTMENT CONTEXT"}
+          </button>
         </div>
-      </div>
 
-      <div style={{ padding: "16px 20px" }}>
+        {/* ERROR */}
+        {error && (
+          <div style={{ background: "#FFF1F2", border: "2px solid #E63329", padding: "14px", marginBottom: "16px" }}>
+            <p style={{ fontSize: "13px", color: "#7F1D1D", ...F }}>{error}</p>
+          </div>
+        )}
 
-        {activeTab === "signals" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <div>
-              <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#4ADE80", marginBottom: "8px" }}>
-                {"Historically benefits"}
-              </div>
-              {signal.signalsUp.map(function(asset, i) {
+        {/* LOADING */}
+        {loading && (
+          <div style={{ background: "#0A0A0A", border: "2px solid #0A0A0A", padding: "48px", display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", gap: "16px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#475569", ...F }}>
+              Analyzing historical patterns
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {[0, 1, 2, 3].map(function(i) {
+                return <div key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#F5C800", animation: "pulse 1.2s ease-in-out infinite", animationDelay: i * 0.2 + "s" }} />;
+              })}
+            </div>
+            <style>{`@keyframes pulse{0%,100%{opacity:0.2}50%{opacity:1}}`}</style>
+          </div>
+        )}
+
+        {/* RESULTS */}
+        {result && !loading && (
+          <div style={{ border: "2px solid #0A0A0A" }}>
+
+            {/* Result header */}
+            <div style={{ background: "#F5C800", borderBottom: "2px solid #0A0A0A", padding: "14px 18px" }}>
+              <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#0A0A0A", marginBottom: "4px", ...F }}>{result.eventTitle}</h2>
+              <p style={{ fontSize: "12px", color: "#444", lineHeight: 1.6, ...F }}>{result.eventSummary}</p>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: "flex", borderBottom: "2px solid #0A0A0A" }}>
+              {tabs.map(function(tab) {
+                const isActive = activeTab === tab.id;
                 return (
-                  <div key={i} style={{ background: "#1E293B", borderRadius: "8px", padding: "10px 12px", marginBottom: "6px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 500, color: "#CBD5E1" }}>{asset.name}</span>
-                      <span style={{ fontSize: "10px", fontWeight: 600, color: getStrengthColor(asset.strength) }}>{asset.strength}</span>
-                    </div>
-                    <p style={{ fontSize: "10px", color: "#475569", margin: 0, lineHeight: 1.4 }}>{asset.reason}</p>
-                  </div>
+                  <button
+                    key={tab.id}
+                    onClick={function() { setActiveTab(tab.id); }}
+                    style={{
+                      fontSize: "10px", fontWeight: 700, padding: "10px 14px",
+                      border: "none", borderRight: "1px solid #0A0A0A",
+                      background: isActive ? "#0A0A0A" : "#fff",
+                      color: isActive ? "#F5C800" : "#555",
+                      cursor: "pointer", letterSpacing: "0.08em",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                    onMouseEnter={function(e) { if (!isActive) { e.currentTarget.style.background = "#F5C800"; e.currentTarget.style.color = "#0A0A0A"; } }}
+                    onMouseLeave={function(e) { if (!isActive) { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#555"; } }}
+                  >
+                    {tab.label}
+                  </button>
                 );
               })}
             </div>
-            <div>
-              <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#F87171", marginBottom: "8px" }}>
-                {"Historically struggles"}
-              </div>
-              {signal.signalsDown.map(function(asset, i) {
-                return (
-                  <div key={i} style={{ background: "#1E293B", borderRadius: "8px", padding: "10px 12px", marginBottom: "6px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 500, color: "#CBD5E1" }}>{asset.name}</span>
-                      <span style={{ fontSize: "10px", fontWeight: 600, color: getStrengthColor(asset.strength) }}>{asset.strength}</span>
+
+            {/* Tab body */}
+            <div style={{ padding: "20px" }}>
+
+              {/* SIGNALS */}
+              {activeTab === "signals" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div>
+                    <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#166534", marginBottom: "10px", ...F }}>
+                      ▲ Historically Benefits
                     </div>
-                    <p style={{ fontSize: "10px", color: "#475569", margin: 0, lineHeight: 1.4 }}>{asset.reason}</p>
+                    {result.signalsUp.map(function(asset, i) {
+                      const isStrong = asset.strength === "Strong";
+                      return (
+                        <div key={i} style={{ border: "2px solid #0A0A0A", padding: "10px 12px", marginBottom: "8px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                            <span style={{ fontSize: "13px", fontWeight: 700, color: "#0A0A0A", ...F }}>{asset.name}</span>
+                            <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 6px", background: isStrong ? "#DCFCE7" : "#FEF3C7", color: isStrong ? "#166534" : "#92400E", ...F }}>
+                              {asset.strength}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: "11px", color: "#555", lineHeight: 1.4, ...F }}>{asset.reason}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "history" && (
-          <div>
-            <p style={{ fontSize: "11px", color: "#475569", marginBottom: "14px" }}>
-              {"Average returns in similar past episodes"}
-            </p>
-            {signal.historicalBars.map(function(bar, i) {
-              const pct = Math.abs(bar.value) / maxBar * 100;
-              const color = bar.direction === "up" ? "#4ADE80" : bar.direction === "down" ? "#F87171" : "#94A3B8";
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                  <span style={{ fontSize: "11px", color: "#64748B", width: "160px", flexShrink: 0 }}>{bar.label}</span>
-                  <div style={{ flex: 1, height: "8px", background: "#1E293B", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: pct + "%", background: color, borderRadius: "4px" }} />
+                  <div>
+                    <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#991B1B", marginBottom: "10px", ...F }}>
+                      ▼ Historically Struggles
+                    </div>
+                    {result.signalsDown.map(function(asset, i) {
+                      const isStrong = asset.strength === "Strong";
+                      return (
+                        <div key={i} style={{ border: "2px solid #0A0A0A", padding: "10px 12px", marginBottom: "8px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                            <span style={{ fontSize: "13px", fontWeight: 700, color: "#0A0A0A", ...F }}>{asset.name}</span>
+                            <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 6px", background: isStrong ? "#FEE2E2" : "#FEF3C7", color: isStrong ? "#991B1B" : "#92400E", ...F }}>
+                              {asset.strength}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: "11px", color: "#555", lineHeight: 1.4, ...F }}>{asset.reason}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span style={{ fontSize: "11px", fontFamily: "monospace", width: "52px", textAlign: "right" as const, color }}>
-                    {bar.direction === "down" ? "-" : "+"}{Math.abs(bar.value).toFixed(1)}{"% "}
-                  </span>
                 </div>
-              );
-            })}
-            <p style={{ fontSize: "10px", color: "#334155", marginTop: "12px" }}>
-              {"Based on historical episodes. Past performance does not guarantee future results."}
-            </p>
-          </div>
-        )}
+              )}
 
-        {activeTab === "research" && (
-          <div style={{ display: "flex", flexDirection: "column" as const, gap: "12px" }}>
-            {signal.researchItems.map(function(item, i) {
-              return (
-                <div key={i} style={{ borderRadius: "8px", padding: "12px 14px", background: "#1E293B", borderLeft: "3px solid #1B4FD8" }}>
-                  <div style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "6px", color: "#475569" }}>
-                    {item.journal}{" · "}{item.year}
-                  </div>
-                  <p style={{ fontSize: "12px", lineHeight: 1.65, marginBottom: "8px", color: "#94A3B8" }}>{item.finding}</p>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "10px", color: "#F5C800" }}>
-                    Read paper
-                  </a>
+              {/* HISTORY */}
+              {activeTab === "history" && (
+                <div>
+                  <p style={{ fontSize: "11px", color: "#666", marginBottom: "16px", ...F }}>
+                    Average returns in similar historical episodes
+                  </p>
+                  {result.historicalBars.map(function(bar, i) {
+                    const pct = Math.abs(bar.value) / maxBar * 100;
+                    const color = bar.direction === "up" ? "#166534" : bar.direction === "down" ? "#991B1B" : "#475569";
+                    const bg = bar.direction === "up" ? "#DCFCE7" : bar.direction === "down" ? "#FEE2E2" : "#F1F5F9";
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                        <span style={{ fontSize: "12px", color: "#333", width: "160px", flexShrink: 0, ...F }}>{bar.label}</span>
+                        <div style={{ flex: 1, height: "12px", background: "#F1F5F9", border: "1px solid #E2E8F0" }}>
+                          <div style={{ height: "100%", width: pct + "%", background: bg, borderRight: "2px solid " + color }} />
+                        </div>
+                        <span style={{ fontSize: "11px", fontFamily: "monospace", width: "54px", textAlign: "right" as const, color, fontWeight: 700 }}>
+                          {bar.direction === "down" ? "-" : "+"}{Math.abs(bar.value).toFixed(1)}{"% "}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <p style={{ fontSize: "10px", color: "#94A3B8", marginTop: "12px", ...F }}>
+                    Based on historical episodes. Past performance does not guarantee future results.
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
 
-        {activeTab === "impact" && (
-          <ImpactTab signal={signal} userProfile={props.userProfile} />
-        )}
+              {/* RESEARCH */}
+              {activeTab === "research" && (
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: "12px" }}>
+                  {result.researchItems.map(function(item, i) {
+                    return (
+                      <div key={i} style={{ border: "2px solid #0A0A0A", borderLeft: "4px solid #0A0A0A", padding: "12px 14px" }}>
+                        <div style={{ display: "inline-block", fontSize: "9px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "#0A0A0A", background: "#F5C800", padding: "2px 6px", marginBottom: "6px", ...F }}>
+                          {item.journal} · {item.year}
+                        </div>
+                        <p style={{ fontSize: "12px", color: "#222", lineHeight: 1.65, marginBottom: "8px", ...F }}>{item.finding}</p>
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "10px", color: "#0A0A0A", fontWeight: 700, textDecoration: "underline", ...F }}>
+                          Read paper
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-      </div>
-
-      <div style={{ padding: "0 20px 16px" }}>
-        <a href={signal.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", fontWeight: 500, color: "#F5C800" }}>
-          Read full story at {signal.sourceLabel}
-        </a>
-      </div>
-
-    </div>
-  );
-}
+              {/* YOUR IMPACT */}
+              {activeTab === "impact" && (
+                <div>
+                  {props.userProfile && (
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" as const, marginBottom: "14px" }}>
+                      {[
+                        formatEnum(props.userProfile.situation),
+                        props.userProfile.city,
+                        formatEnum(props.userProfile.industry),
+                        formatEnum(props.userProfile.lifeStage),
+                      ].filter(Boolean).map(function(tag, i) {
+                        return (
+                          <span key={i} style={{ fontSize: "10px", padding: "3px 8px", border: "1px solid #E2E8F0", background: "#F8FAFC", color: "#333", ...F }}>{tag}</span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column" as const, gap: "12px" }}>
+                    {result.impactBullets.map(function(bullet, i) {
+                      return (
+                        <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                          <div style={{ width: "8px", height: "8px", background: "#F5C800", border: "2px solid #0A0A0A", flexShrink: 0, marginTop: "4px" }} />
+                          <p style={{ fontSize: "13px", color: "#111", lineHeight: 1.65, ...F }}>
+                            <strong style={{ color: "#0A0A0A" }}>{bullet.bold}: </strong>
+                            {bullet.text}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: "16px", fontSize: "10px", color: "#888", background: "#FFFBEB", border: "1px solid #F5C800", padding: "8px 12px", lineHeight: 1.5, ...F }}>
