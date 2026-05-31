@@ -7,23 +7,25 @@ import { getAuthSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-async function runRefresh() {
-  await prisma.newsCache.deleteMany({});
-  // Guardian news — await this so we have something immediately
-  await fetchAndCacheNews();
-  // RSS feeds (IMF, World Bank, Fed, NBER etc) — fire in background
-  fetchAndCacheRSSFeeds().catch((e) => console.error("[refresh] RSS error:", e));
-  fetchAndCacheRecentResearch().catch((e) => console.error("[refresh] Research error:", e));
-}
+export const maxDuration = 300;
 
 export async function GET() {
   const session = await getAuthSession();
   if (session?.user?.email !== process.env.ADMIN_EMAIL) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  await runRefresh();
-  return NextResponse.json({ ok: true, message: "News cache refreshed" });
+
+  await prisma.newsCache.deleteMany({});
+
+  await fetchAndCacheNews();
+
+  await Promise.allSettled([
+    fetchAndCacheRSSFeeds(),
+    fetchAndCacheRecentResearch(),
+  ]);
+
+  const count = await prisma.newsCache.count();
+  return NextResponse.json({ ok: true, message: "News cache refreshed", count });
 }
 
 export async function POST() {
@@ -31,6 +33,14 @@ export async function POST() {
   if (session?.user?.email !== process.env.ADMIN_EMAIL) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  await runRefresh();
-  return NextResponse.json({ ok: true, message: "News cache refreshed" });
+
+  await prisma.newsCache.deleteMany({});
+  await fetchAndCacheNews();
+  await Promise.allSettled([
+    fetchAndCacheRSSFeeds(),
+    fetchAndCacheRecentResearch(),
+  ]);
+
+  const count = await prisma.newsCache.count();
+  return NextResponse.json({ ok: true, message: "News cache refreshed", count });
 }
