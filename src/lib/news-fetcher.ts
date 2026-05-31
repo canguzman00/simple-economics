@@ -88,7 +88,22 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
     const json = await res.json() as { response?: { results?: GuardianArticle[] } };
     const articles = json.response?.results ?? [];
 
-    return articles;
+    const ECON_KEYWORDS = [
+      "economy", "economic", "inflation", "recession", "GDP", "unemployment",
+      "interest rate", "federal reserve", "central bank", "trade", "tariff",
+      "fiscal", "monetary", "debt", "deficit", "budget", "stock", "market",
+      "housing", "wages", "jobs", "growth", "investment", "finance", "financial",
+      "banking", "mortgage", "tax", "poverty", "inequality", "cost of living",
+      "consumer", "spending", "savings", "retirement", "pension", "insurance",
+      "oil", "energy prices", "supply chain", "imports", "exports", "dollar",
+    ];
+
+    const filtered = articles.filter(function(a) {
+      const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
+      return ECON_KEYWORDS.some(function(kw) { return text.includes(kw); });
+    });
+
+    return filtered.slice(0, 20);
   } catch (err) {
     console.error("[news] Guardian fetch error:", err);
     return [];
