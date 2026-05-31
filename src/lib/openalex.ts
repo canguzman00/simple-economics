@@ -122,6 +122,13 @@ const RESEARCH_TOPICS = [
   "interest rates monetary policy households",
   "artificial intelligence labor displacement",
   "government debt fiscal policy",
+  "healthcare costs insurance coverage",
+  "climate change economic impact",
+  "minimum wage employment effects",
+  "student debt education costs",
+  "retirement savings pension",
+  "immigration labor market wages",
+  "grocery food prices household spending",
 ];
 
 export async function fetchAndCacheRecentResearch(): Promise<void> {
@@ -134,7 +141,7 @@ export async function fetchAndCacheRecentResearch(): Promise<void> {
       url.searchParams.set("search", topic);
       url.searchParams.set("filter", "primary_topic.field.id:F27,publication_year:>2023");
       url.searchParams.set("sort", "publication_date:desc");
-      url.searchParams.set("per_page", "2");
+      url.searchParams.set("per_page", "3");
       url.searchParams.set("select", "id,title,publication_year,abstract_inverted_index,primary_location,doi,cited_by_count");
       url.searchParams.set("mailto", "canguzman@gmail.com");
 
