@@ -15,7 +15,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await prisma.newsCache.deleteMany({});
+  await prisma.newsCache.deleteMany({
+    where: { contentType: { not: "Research Paper" } },
+  });
 
   await fetchAndCacheNews();
 
