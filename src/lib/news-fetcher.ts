@@ -93,17 +93,7 @@ async function fetchGuardianArticles(): Promise<GuardianArticle[]> {
     const json = await res.json() as { response?: { results?: GuardianArticle[] } };
     const articles = json.response?.results ?? [];
 
-    const scored = articles
-      .map((a) => {
-        const text = (a.webTitle + " " + (a.fields?.trailText ?? "")).toLowerCase();
-        const score = ECONOMIC_KEYWORDS.filter((kw) => text.includes(kw.toLowerCase())).length;
-        return { article: a, score };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map((s) => s.article);
-
-    return scored;
+    return articles;
   } catch (err) {
     console.error("[news] Guardian fetch error:", err);
     return [];
