@@ -60,7 +60,7 @@ interface Props {
   userState?: string | null;
 }
 
-export function FeedClient({ initialEvents, userCity, userState }: Props) {
+export function FeedClient({ initialEvents, userState }: Props) {
   const [tier, setTier] = useState<TierTab>("ALL");
   const [impact, setImpact] = useState<Impact | "ALL">("ALL");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
