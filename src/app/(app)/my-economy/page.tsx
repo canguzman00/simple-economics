@@ -2,9 +2,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Pillar } from "@prisma/client";
-import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { situationLabel } from "@/components/onboarding/data";
 import type { Situation } from "@/components/onboarding/data";
@@ -44,15 +43,23 @@ const PILLAR_LABEL: Record<Pillar, string> = {
 const NATIONAL_KEYS = ["CPI", "FEDFUNDS", "UNRATE", "CONSCONF", "PRIMERATE", "REALWAGES"];
 
 export default async function MyEconomyPage() {
-  const session = await getAuthSession();
-  if (!session?.user?.id) redirect("/signin");
-  const userId = session.user.id;
+  const cookieStore = cookies();
+  const guestId = cookieStore.get("se_user_id")?.value ?? null;
 
   const [user, topEvents, recentQuestions, savedEvents, liveIndicators, globalIndicators] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { situation: true, city: true, onboardingComplete: true } }),
+    guestId
+      ? prisma.user.findUnique({
+          where: { guestId },
+          select: { id: true, situation: true, city: true, onboardingComplete: true },
+        })
+      : null,
     prisma.econEvent.findMany({ where: { published: true, impact: "HIGH" }, orderBy: { publishedAt: "desc" }, take: 3, select: { id: true, slug: true, title: true, pillar: true, impact: true, summary: true, publishedAt: true } }),
-    prisma.userQuestion.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5, select: { id: true, question: true, answer: true, createdAt: true } }),
-    prisma.savedEvent.findMany({ where: { userId }, orderBy: { savedAt: "desc" }, take: 4, select: { id: true, savedAt: true, event: { select: { slug: true, title: true, pillar: true, publishedAt: true } } } }),
+    guestId
+      ? prisma.userQuestion.findMany({ where: { user: { guestId } }, orderBy: { createdAt: "desc" }, take: 5, select: { id: true, question: true, answer: true, createdAt: true } })
+      : [],
+    guestId
+      ? prisma.savedEvent.findMany({ where: { user: { guestId } }, orderBy: { savedAt: "desc" }, take: 4, select: { id: true, savedAt: true, event: { select: { slug: true, title: true, pillar: true, publishedAt: true } } } })
+      : [],
     fetchAllIndicators(),
     fetchGlobalIndicators(),
   ]);
@@ -60,6 +67,7 @@ export default async function MyEconomyPage() {
   const situation = user?.situation ?? null;
   const city = user?.city ?? null;
   const situationStr = situation ? situationLabel(situation as Situation) : null;
+
   const [metroUnemployment, fairMarketRent] = await Promise.all([
     fetchMetroUnemployment(city) as Promise<LocalIndicator>,
     fetchFairMarketRent(city) as Promise<RentIndicator>,
@@ -138,7 +146,7 @@ export default async function MyEconomyPage() {
                     {unavailable ? "Data temporarily unavailable." : validRaw ? `Americans are feeling ${sentiment_word} about the economy right now. The index runs from 0 to 140 — the long-run average is 86. At ${raw.toFixed(1)}, consumers are ${diff} points ${direction} the historical average, which ${spending}` : meta.meaning(situation)}
                   </p>
                   <div>
-                  <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{meta.source} · {date}{cached && <span className="ml-1">(cached)</span>}</p>
+                    <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>{meta.source} · {date}{cached && <span className="ml-1">(cached)</span>}</p>
                     <p className="text-[10px]" style={{color:"#94A3B8",fontFamily:"Inter,sans-serif"}}>Historical average: ~86</p>
                   </div>
                 </div>
@@ -296,7 +304,7 @@ export default async function MyEconomyPage() {
               <div key={q.id} className="px-5 py-4 transition-colors" style={{borderBottom:"1px solid #F1F5F9"}}>
                 <p className="text-sm font-semibold leading-snug" style={{color:"#0F172A",fontFamily:"Inter,sans-serif"}}>{q.question}</p>
                 <p className="mt-1.5 text-xs line-clamp-2 leading-relaxed" style={{color:"#64748B",fontFamily:"Inter,sans-serif"}}>
-                  {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "…" : ""); })()}
+                  {(() => { const c = q.answer.replace(/\*\*/g, "").replace(/\*/g, "").trim(); return c.slice(0, 160) + (c.length > 160 ? "..." : ""); })()}
                 </p>
                 <p className="mt-2 font-mono text-[10px]" style={{color:"#94A3B8"}}>{new Date(q.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
               </div>
