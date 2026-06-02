@@ -1,19 +1,25 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-import { getAuthSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { AskClient } from "@/components/ask/AskClient";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 
 export default async function AskPage() {
-  const session = await getAuthSession();
+  const cookieStore = cookies();
+  const guestId = cookieStore.get("se_user_id")?.value ?? null;
 
   let profile: UserProfile = {};
-  if (session?.user?.id) {
+
+  if (guestId) {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { situation: true, concern: true, city: true },
+      where: { guestId },
+      select: {
+        situation: true,
+        concern: true,
+        city: true,
+      },
     });
     if (user) {
       profile = {
@@ -24,5 +30,5 @@ export default async function AskPage() {
     }
   }
 
-  return <AskClient profile={profile} isAuthenticated={!!session?.user} />;
+  return <AskClient profile={profile} isAuthenticated={true} />;
 }
