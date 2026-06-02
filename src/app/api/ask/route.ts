@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
 import { buildSystemPrompt, type UserProfile } from "@/lib/ai/systemPrompt";
@@ -10,11 +9,10 @@ export const runtime = "nodejs";
 const DAILY_LIMIT = 5;
 
 export async function POST(req: NextRequest) {
-  const session = await getAuthSession();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guestId = req.cookies.get("se_user_id")?.value;
+  if (!guestId) {
+    return NextResponse.json({ error: "No session" }, { status: 401 });
   }
-  const userId = session.user.id;
 
   const body = await req.json();
   const { question, userProfile } = body as {
@@ -26,23 +24,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Question is required" }, { status: 400 });
   }
 
-  // Rate limit: free users get 5 questions per calendar day
+  // Look up user by guestId
   const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isPremium: true },
+    where: { guestId },
+    select: { id: true, isPremium: true },
   });
 
-  if (!user?.isPremium) {
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Rate limit: free users get 5 questions per calendar day
+  if (!user.isPremium) {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-
     const count = await prisma.userQuestion.count({
-      where: { userId, createdAt: { gte: startOfDay } },
+      where: { userId: user.id, createdAt: { gte: startOfDay } },
     });
-
     if (count >= DAILY_LIMIT) {
       return NextResponse.json(
-        { error: "You've reached your daily limit." },
+        { error: "You've reached your daily limit of 5 questions." },
         { status: 429 }
       );
     }
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
         await stream.finalMessage();
 
         await prisma.userQuestion.create({
-          data: { userId, question: question.trim(), answer: fullAnswer },
+          data: { userId: user.id, question: question.trim(), answer: fullAnswer },
         });
 
         controller.close();
