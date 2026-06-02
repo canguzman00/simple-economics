@@ -4,12 +4,8 @@ export const runtime = "nodejs";
 
 import Link from "next/link";
 import Image from "next/image";
-import { getAuthSession } from "@/lib/auth";
 
 export default async function HomePage() {
-  const session = await getAuthSession();
-  const isAuthed = !!session?.user;
-
   return (
     <div style={{ background: "#F8FAFC", fontFamily: "Inter, sans-serif", minHeight: "100vh" }}>
 
@@ -27,11 +23,9 @@ export default async function HomePage() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <Link href="/feed" style={{ fontSize: "12px", color: "#94A3B8", textDecoration: "none" }}>Feed</Link>
-            {isAuthed ? (
-              <Link href="/feed" style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "8px", background: "#F43F5E", color: "#fff", textDecoration: "none" }}>Go to Feed</Link>
-            ) : (
-              <Link href="/signin" style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "8px", background: "#F43F5E", color: "#fff", textDecoration: "none" }}>Sign in</Link>
-            )}
+            <Link href="/onboarding" style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "8px", background: "#F43F5E", color: "#fff", textDecoration: "none" }}>
+              Get Started
+            </Link>
           </div>
         </div>
       </nav>
@@ -77,13 +71,15 @@ export default async function HomePage() {
                   { label: "World Population", value: "8.12B", source: "UN 2026" },
                   { label: "Global Debt", value: "$251T", source: "IMF 2024" },
                   { label: "Poverty Rate", value: "8.5%", source: "World Bank" },
-                ].map(({ label, value, source }) => (
-                  <div key={label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", padding: "12px", borderRadius: "8px" }}>
-                    <div style={{ fontSize: "8px", fontWeight: 600, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>{label}</div>
-                    <div style={{ fontSize: "18px", fontWeight: 700, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
-                    <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", marginTop: "4px" }}>{source}</div>
-                  </div>
-                ))}
+                ].map(function({ label, value, source }) {
+                  return (
+                    <div key={label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", padding: "12px", borderRadius: "8px" }}>
+                      <div style={{ fontSize: "8px", fontWeight: 600, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>{label}</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
+                      <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", marginTop: "4px" }}>{source}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -99,13 +95,15 @@ export default async function HomePage() {
               { step: "01", color: "#F43F5E", title: "Tell us your situation", body: "Renter, homeowner, employed, student. One quick question set. 60 seconds." },
               { step: "02", color: "#3B82F6", title: "Get your personalized feed", body: "Economic events translated into what they mean for your life - not for a hedge fund manager." },
               { step: "03", color: "#8B5CF6", title: "Ask anything", body: "Ask the Simple Economist answers your questions with real data, named sources, and a clear bottom line." },
-            ].map(({ step, color, title, body }) => (
-              <div key={step} style={{ background: "#0F172A", border: "1px solid #334155", borderRadius: "12px", padding: "28px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 700, color: "#fff" }}>{step}</div>
-                <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#F8FAFC", lineHeight: 1.4 }}>{title}</h3>
-                <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.6 }}>{body}</p>
-              </div>
-            ))}
+            ].map(function({ step, color, title, body }) {
+              return (
+                <div key={step} style={{ background: "#0F172A", border: "1px solid #334155", borderRadius: "12px", padding: "28px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 700, color: "#fff" }}>{step}</div>
+                  <h3 style={{ fontSize: "15px", fontWeight: 600, color: "#F8FAFC", lineHeight: 1.4 }}>{title}</h3>
+                  <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.6 }}>{body}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -118,14 +116,16 @@ export default async function HomePage() {
             {[
               { label: "Problem 1", title: "The Translation Gap", body: "Economic news is written for economists, traders, and policymakers - not people. The jargon is dense, the implications are never spelled out, and the question what does this mean for me is never answered.", cta: "We translate it." },
               { label: "Problem 2", title: "One Size Fits Nobody", body: "Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people do not. The same interest rate hike means something completely different to a renter than to a homeowner.", cta: "Every answer is filtered through your real situation." },
-            ].map(({ label, title, body, cta }) => (
-              <div key={label} style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E", borderRadius: "12px", padding: "32px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#F43F5E" }}>{label}</span>
-                <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>{title}</h3>
-                <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.65 }}>{body}</p>
-                <p style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", marginTop: "auto" }}>{cta}</p>
-              </div>
-            ))}
+            ].map(function({ label, title, body, cta }) {
+              return (
+                <div key={label} style={{ background: "#fff", border: "1px solid #E2E8F0", borderTop: "3px solid #F43F5E", borderRadius: "12px", padding: "32px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#F43F5E" }}>{label}</span>
+                  <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#0F172A", lineHeight: 1.3 }}>{title}</h3>
+                  <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.65 }}>{body}</p>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", marginTop: "auto" }}>{cta}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -135,9 +135,11 @@ export default async function HomePage() {
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "0 1.5rem" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", color: "#64748B", marginBottom: "40px" }}>Built on evidence</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "40px" }}>
-            {["Federal Reserve", "Bureau of Labor Statistics", "International Monetary Fund", "World Bank", "NBER Working Papers", "Brookings Institution", "Congressional Budget Office", "Peer-reviewed journals"].map((s) => (
-              <span key={s} style={{ fontSize: "11px", fontWeight: 500, padding: "6px 12px", borderRadius: "8px", background: "#0F172A", color: "#94A3B8", border: "1px solid #334155" }}>{s}</span>
-            ))}
+            {["Federal Reserve", "Bureau of Labor Statistics", "International Monetary Fund", "World Bank", "NBER Working Papers", "Brookings Institution", "Congressional Budget Office", "Peer-reviewed journals"].map(function(s) {
+              return (
+                <span key={s} style={{ fontSize: "11px", fontWeight: 500, padding: "6px 12px", borderRadius: "8px", background: "#0F172A", color: "#94A3B8", border: "1px solid #334155" }}>{s}</span>
+              );
+            })}
           </div>
           <div style={{ background: "#0F172A", border: "1px solid #334155", borderRadius: "12px", padding: "24px", maxWidth: "480px", marginBottom: "48px" }}>
             <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.7 }}>
@@ -159,9 +161,16 @@ export default async function HomePage() {
               <span style={{ fontSize: "14px", fontWeight: 700, color: "#F8FAFC" }}>Simple Economics</span>
             </div>
             <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-              {[{ label: "Feed", href: "/feed" }, { label: "Ask the Simple Economist", href: "/ask" }, { label: "My Economy", href: "/my-economy" }, { label: "Sign in", href: "/signin" }].map(({ label, href }) => (
-                <Link key={href} href={href} style={{ fontSize: "12px", color: "#475569", textDecoration: "none" }}>{label}</Link>
-              ))}
+              {[
+                { label: "Feed", href: "/feed" },
+                { label: "Ask the Economist", href: "/ask" },
+                { label: "My Economy", href: "/my-economy" },
+                { label: "Get Started", href: "/onboarding" },
+              ].map(function({ label, href }) {
+                return (
+                  <Link key={href} href={href} style={{ fontSize: "12px", color: "#475569", textDecoration: "none" }}>{label}</Link>
+                );
+              })}
             </div>
           </div>
         </div>
