@@ -2,24 +2,30 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { prisma } from "@/lib/prisma";
-import { getAuthSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { FeedClient } from "@/components/feed/FeedClient";
 import { TodaysIssueCard } from "@/components/feed/TodaysIssueCard";
 import type { SerializedEvent } from "@/components/feed/FeedClient";
 import { cityToStateName } from "@/lib/city-state";
 
 export default async function FeedPage() {
-  const session = await getAuthSession();
+  const cookieStore = cookies();
+  const guestId = cookieStore.get("se_user_id")?.value ?? null;
 
   const [events, userProfile] = await Promise.all([
     prisma.econEvent.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
     }),
-    session?.user?.id
+    guestId
       ? prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: { city: true, onboardingComplete: true, situation: true, industry: true },
+          where: { guestId },
+          select: {
+            city: true,
+            onboardingComplete: true,
+            situation: true,
+            industry: true,
+          },
         })
       : null,
   ]);
@@ -49,10 +55,10 @@ export default async function FeedPage() {
     <>
       <TodaysIssueCard userProfile={userProfile} />
       <FeedClient
-      initialEvents={initialEvents}
-      userCity={userCity}
-      userState={userState}
-    />
+        initialEvents={initialEvents}
+        userCity={userCity}
+        userState={userState}
+      />
     </>
   );
 }
