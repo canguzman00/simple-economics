@@ -10,8 +10,7 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const { YahooFinance } = require('yahoo-finance2/dist/esm/src/index-without-node-dependencies.js') as any
-    const yahooFinance = new YahooFinance()
+    const yahooFinance = require('yahoo-finance2').default
 
     const [quote, summary] = await Promise.all([
       yahooFinance.quote(ticker),
