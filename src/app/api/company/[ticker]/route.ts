@@ -1,6 +1,6 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
-import yahooFinance from 'yahoo-finance2'
 
 export async function GET(
   request: NextRequest,
@@ -9,16 +9,13 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const yf = yahooFinance as any
+    const yf = await import('yahoo-finance2')
+    const yahooFinance = (yf.default || yf) as any
 
     const [quote, summary] = await Promise.all([
-      yf.quote(ticker),
-      yf.quoteSummary(ticker, {
-        modules: [
-          'assetProfile',
-          'financialData',
-          'defaultKeyStatistics',
-        ],
+      yahooFinance.quote(ticker),
+      yahooFinance.quoteSummary(ticker, {
+        modules: ['assetProfile', 'financialData', 'defaultKeyStatistics'],
       }),
     ])
 
