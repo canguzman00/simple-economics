@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { NextRequest, NextResponse } from 'next/server'
-const yahooFinance = require('yahoo-finance2').default
+const yahooFinance = require('yahoo-finance2/dist/esm/src/index.js').default
 
 export async function GET(
   request: NextRequest,
