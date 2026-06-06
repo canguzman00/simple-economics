@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-require-imports */
 import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
+
+const FMP_KEY = process.env.FMP_API_KEY
+const BASE = 'https://financialmodelingprep.com/api/v3'
 
 export async function GET(
   request: NextRequest,
@@ -11,68 +13,62 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    let yahooFinance: any
-    try {
-      yahooFinance = require('yahoo-finance2').default
-    } catch (requireError: any) {
-      return NextResponse.json({ error: 'require failed', detail: requireError.message }, { status: 500 })
-    }
-
-    if (!yahooFinance || typeof yahooFinance.quote !== 'function') {
-      return NextResponse.json({ 
-        error: 'yahoo-finance2 loaded but quote not a function',
-        type: typeof yahooFinance,
-        keys: yahooFinance ? Object.keys(yahooFinance).slice(0, 10) : []
-      }, { status: 500 })
-    }
-
-    const [quote, summary] = await Promise.all([
-      yahooFinance.quote(ticker),
-      yahooFinance.quoteSummary(ticker, {
-        modules: ['assetProfile', 'financialData', 'defaultKeyStatistics'],
-      }),
+    const [profileRes, quoteRes, metricsRes] = await Promise.all([
+      fetch(`${BASE}/profile/${ticker}?apikey=${FMP_KEY}`),
+      fetch(`${BASE}/quote/${ticker}?apikey=${FMP_KEY}`),
+      fetch(`${BASE}/key-metrics-ttm/${ticker}?apikey=${FMP_KEY}`),
     ])
+
+    const [profileData, quoteData, metricsData] = await Promise.all([
+      profileRes.json(),
+      quoteRes.json(),
+      metricsRes.json(),
+    ])
+
+    const profile = profileData?.[0]
+    const quote = quoteData?.[0]
+    const metrics = metricsData?.[0]
+
+    if (!profile || !quote) {
+      return NextResponse.json({ error: 'Ticker not found: ' + ticker }, { status: 404 })
+    }
 
     return NextResponse.json({
       ticker,
       quote: {
-        name: quote.longName || quote.shortName,
-        price: quote.regularMarketPrice,
-        change: quote.regularMarketChange,
-        changePct: quote.regularMarketChangePercent,
-        marketCap: quote.marketCap,
-        exchange: quote.fullExchangeName,
-        fiftyTwoWeekLow: quote.fiftyTwoWeekLow,
-        fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
+        name: profile.companyName,
+        price: quote.price,
+        change: quote.change,
+        changePct: quote.changesPercentage,
+        marketCap: profile.mktCap,
+        exchange: profile.exchangeShortName,
+        fiftyTwoWeekLow: quote.yearLow,
+        fiftyTwoWeekHigh: quote.yearHigh,
       },
       profile: {
-        sector: summary.assetProfile?.sector,
-        industry: summary.assetProfile?.industry,
-        employees: summary.assetProfile?.fullTimeEmployees,
-        description: summary.assetProfile?.longBusinessSummary,
-        executives: summary.assetProfile?.companyOfficers?.slice(0, 4).map(function(e: any) {
-          return { name: e.name, title: e.title }
-        }),
+        sector: profile.sector,
+        industry: profile.industry,
+        employees: profile.fullTimeEmployees,
+        description: profile.description,
+        website: profile.website,
+        executives: [],
       },
       financials: {
-        peRatio: summary.defaultKeyStatistics?.forwardPE,
-        pegRatio: summary.defaultKeyStatistics?.pegRatio,
-        revenueGrowth: summary.financialData?.revenueGrowth,
-        profitMargins: summary.financialData?.profitMargins,
-        grossMargins: summary.financialData?.grossMargins,
-        totalCash: summary.financialData?.totalCash,
-        totalDebt: summary.financialData?.totalDebt,
-        freeCashflow: summary.financialData?.freeCashflow,
-        returnOnEquity: summary.financialData?.returnOnEquity,
-        dividendYield: summary.defaultKeyStatistics?.trailingAnnualDividendYield,
-        beta: summary.defaultKeyStatistics?.beta,
+        peRatio: quote.pe,
+        pegRatio: metrics?.pegRatioTTM,
+        revenueGrowth: metrics?.revenueGrowthTTM,
+        profitMargins: profile.profitMargin ? parseFloat(profile.profitMargin) / 100 : null,
+        grossMargins: metrics?.grossProfitMarginTTM,
+        totalCash: metrics?.cashPerShareTTM ? metrics.cashPerShareTTM * quote.sharesOutstanding : null,
+        totalDebt: metrics?.debtToEquityTTM,
+        freeCashflow: metrics?.freeCashFlowPerShareTTM ? metrics.freeCashFlowPerShareTTM * quote.sharesOutstanding : null,
+        returnOnEquity: metrics?.roeTTM,
+        dividendYield: profile.lastDiv ? profile.lastDiv / quote.price : null,
+        beta: profile.beta,
       },
     })
   } catch (error: any) {
-    return NextResponse.json({ 
-      error: 'catch block', 
-      message: error.message,
-      stack: error.stack?.split('\n').slice(0, 3).join(' | ')
-    }, { status: 500 })
+    console.error('FMP error:', error)
+    return NextResponse.json({ error: 'Could not fetch data for: ' + ticker, detail: error.message }, { status: 500 })
   }
 }
