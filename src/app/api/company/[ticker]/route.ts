@@ -13,62 +13,16 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const [profileRes, quoteRes, metricsRes] = await Promise.all([
-      fetch(`${BASE}/profile/${ticker}?apikey=${FMP_KEY}`),
-      fetch(`${BASE}/quote/${ticker}?apikey=${FMP_KEY}`),
-      fetch(`${BASE}/key-metrics-ttm/${ticker}?apikey=${FMP_KEY}`),
-    ])
-
-    const [profileData, quoteData, metricsData] = await Promise.all([
-      profileRes.json(),
-      quoteRes.json(),
-      metricsRes.json(),
-    ])
-
-    const profile = profileData?.[0]
-    const quote = quoteData?.[0]
-    const metrics = metricsData?.[0]
-
-    if (!profile || !quote) {
-      return NextResponse.json({ error: 'Ticker not found: ' + ticker }, { status: 404 })
-    }
-
-    return NextResponse.json({
-      ticker,
-      quote: {
-        name: profile.companyName,
-        price: quote.price,
-        change: quote.change,
-        changePct: quote.changesPercentage,
-        marketCap: profile.mktCap,
-        exchange: profile.exchangeShortName,
-        fiftyTwoWeekLow: quote.yearLow,
-        fiftyTwoWeekHigh: quote.yearHigh,
-      },
-      profile: {
-        sector: profile.sector,
-        industry: profile.industry,
-        employees: profile.fullTimeEmployees,
-        description: profile.description,
-        website: profile.website,
-        executives: [],
-      },
-      financials: {
-        peRatio: quote.pe,
-        pegRatio: metrics?.pegRatioTTM,
-        revenueGrowth: metrics?.revenueGrowthTTM,
-        profitMargins: profile.profitMargin ? parseFloat(profile.profitMargin) / 100 : null,
-        grossMargins: metrics?.grossProfitMarginTTM,
-        totalCash: metrics?.cashPerShareTTM ? metrics.cashPerShareTTM * quote.sharesOutstanding : null,
-        totalDebt: metrics?.debtToEquityTTM,
-        freeCashflow: metrics?.freeCashFlowPerShareTTM ? metrics.freeCashFlowPerShareTTM * quote.sharesOutstanding : null,
-        returnOnEquity: metrics?.roeTTM,
-        dividendYield: profile.lastDiv ? profile.lastDiv / quote.price : null,
-        beta: profile.beta,
-      },
+    const profileRes = await fetch(`${BASE}/profile/${ticker}?apikey=${FMP_KEY}`)
+    const text = await profileRes.text()
+    
+    return NextResponse.json({ 
+      status: profileRes.status,
+      keyPresent: !!FMP_KEY,
+      keyPrefix: FMP_KEY ? FMP_KEY.slice(0, 6) + '...' : 'missing',
+      rawResponse: text.slice(0, 300)
     })
   } catch (error: any) {
-    console.error('FMP error:', error)
-    return NextResponse.json({ error: 'Could not fetch data for: ' + ticker, detail: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message })
   }
 }
