@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -7,30 +8,32 @@ interface CompanyData {
   ticker: string
   quote: {
     name: string
-    price: number
-    change: number
-    changePct: number
-    marketCap: number
+    price: number | null
+    change: number | null
+    changePct: number | null
+    marketCap: number | null
     exchange: string
-    fiftyTwoWeekLow: number
-    fiftyTwoWeekHigh: number
+    fiftyTwoWeekLow: number | null
+    fiftyTwoWeekHigh: number | null
+    livePriceUnavailable?: boolean
   }
   profile: {
-    sector: string
-    industry: string
-    employees: number
+    sector: string | null
+    industry: string | null
+    employees: number | null
     executives: Array<{ name: string; title: string }>
   }
   financials: {
-    peRatio: number
-    pegRatio: number
-    revenueGrowth: number
-    profitMargins: number
-    totalCash: number
-    totalDebt: number
-    freeCashflow: number
-    returnOnEquity: number
-    dividendYield: number
+    peRatio: number | null
+    pegRatio: number | null
+    revenueGrowth: number | null
+    profitMargins: number | null
+    totalCash: number | null
+    totalDebt: number | null
+    freeCashflow: number | null
+    returnOnEquity: number | null
+    dividendYield: number | null
+    beta: number | null
   }
 }
 
@@ -46,15 +49,15 @@ interface Analysis {
 
 interface SearchResult { symbol: string; name: string; exchange: string }
 
-function fmt(n: number): string {
-  if (!n) return 'N/A'
+function fmt(n: number | null): string {
+  if (n == null) return 'N/A'
   if (n >= 1e12) return '$' + (n / 1e12).toFixed(1) + 'T'
   if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B'
   if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'
   return '$' + n.toFixed(0)
 }
 
-function pct(n: number): string {
+function pct(n: number | null): string {
   if (n == null) return 'N/A'
   return (n * 100).toFixed(1) + '%'
 }
@@ -63,22 +66,15 @@ function initials(name: string): string {
   return name.split(' ').map(function(w) { return w[0] }).join('').slice(0, 2).toUpperCase()
 }
 
-function healthStatus(type: string, financials: CompanyData['financials']): string {
-  if (type === 'growth') return financials.revenueGrowth > 0.05 ? 'Healthy' : financials.revenueGrowth > 0 ? 'Watch' : 'Concern'
-  if (type === 'margins') return financials.profitMargins > 0.15 ? 'Healthy' : financials.profitMargins > 0.05 ? 'Watch' : 'Concern'
-  if (type === 'cash') return financials.totalCash > financials.totalDebt ? 'Healthy' : financials.totalCash > financials.totalDebt * 0.5 ? 'Watch' : 'Concern'
-  if (type === 'fcf') return financials.freeCashflow > 0 ? 'Healthy' : 'Concern'
-  return 'Watch'
-}
-
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     Healthy: 'bg-green-50 text-green-900 border border-green-700',
     Watch: 'bg-yellow-50 text-yellow-900 border border-yellow-700',
     Concern: 'bg-red-50 text-red-900 border border-red-700',
+    Unknown: 'bg-gray-50 text-gray-600 border border-gray-300',
   }
   return (
-    <span className={`inline-block text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 mb-2 ${styles[status] || styles.Watch}`}>
+    <span className={`inline-block text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 mb-2 ${styles[status] || styles.Unknown}`}>
       {status}
     </span>
   )
@@ -95,37 +91,50 @@ export default function CompanyPage() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [loadingData, setLoadingData] = useState(true)
-  const [loadingAnalysis, setLoadingAnalysis] = useState(true)
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchCompany = useCallback(async function(t: string) {
     setLoadingData(true)
-    setLoadingAnalysis(true)
+    setLoadingAnalysis(false)
     setError(null)
     setCompanyData(null)
     setAnalysis(null)
 
     try {
       const dataRes = await fetch('/api/company/' + t)
-      if (!dataRes.ok) throw new Error('Not found')
       const data = await dataRes.json()
+
+      if (!dataRes.ok || data.error) {
+        setError('Could not find data for "' + t + '". Try a different ticker.')
+        setLoadingData(false)
+        return
+      }
+
       setCompanyData(data)
       setLoadingData(false)
+      setLoadingAnalysis(true)
 
       const userProfile = typeof window !== 'undefined'
         ? JSON.parse(localStorage.getItem('se_profile') || 'null')
         : null
 
-      const analysisRes = await fetch('/api/company/' + t + '/analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyData: data, userProfile }),
-      })
-      const analysisData = await analysisRes.json()
-      setAnalysis(analysisData.analysis)
+      try {
+        const analysisRes = await fetch('/api/company/' + t + '/analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyData: data, userProfile }),
+        })
+        const analysisData = await analysisRes.json()
+        if (analysisData.analysis) {
+          setAnalysis(analysisData.analysis)
+        }
+      } catch {
+        // Analysis failed silently — page still works without it
+      }
       setLoadingAnalysis(false)
     } catch {
-      setError('Could not find data for "' + t + '". Check the ticker and try again.')
+      setError('Could not find data for "' + t + '". Try a different ticker.')
       setLoadingData(false)
       setLoadingAnalysis(false)
     }
@@ -139,8 +148,12 @@ export default function CompanyPage() {
       try {
         const res = await fetch('/api/company/search?q=' + encodeURIComponent(searchInput))
         const data = await res.json()
-        setSearchResults(data)
-        setShowDropdown(data.length > 0)
+        if (Array.isArray(data) && data.length > 0) {
+          setSearchResults(data)
+          setShowDropdown(true)
+        } else {
+          setShowDropdown(false)
+        }
       } catch {
         setShowDropdown(false)
       }
@@ -161,7 +174,7 @@ export default function CompanyPage() {
     router.push('/company/' + symbol)
   }
 
-  const up = companyData && companyData.quote.change >= 0
+  const up = !companyData?.quote.change || companyData.quote.change >= 0
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -212,7 +225,8 @@ export default function CompanyPage() {
         </div>
       </div>
 
-      {error && (
+      {/* ERROR */}
+      {error && !companyData && (
         <div className="max-w-3xl mx-auto px-5 py-12 text-center">
           <div className="border-2 border-black p-8">
             <div className="text-[#E63329] font-bold text-lg mb-2">Not Found</div>
@@ -221,6 +235,7 @@ export default function CompanyPage() {
         </div>
       )}
 
+      {/* LOADING */}
       {loadingData && !error && (
         <div className="max-w-3xl mx-auto px-5 py-10 animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 w-1/3"></div>
@@ -259,14 +274,22 @@ export default function CompanyPage() {
                 </div>
               </div>
               <div className="flex-shrink-0">
-                <div className="text-3xl font-semibold tracking-tight mb-1"
-                     style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                  ${companyData.quote.price?.toFixed(2)}
-                </div>
-                <span className={`inline-block px-2 py-0.5 text-[11px] font-bold border ${up ? 'bg-green-50 text-green-900 border-green-700' : 'bg-red-50 text-red-900 border-red-700'}`}
-                      style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                  {up ? '▲' : '▼'} {Math.abs(companyData.quote.change || 0).toFixed(2)} ({Math.abs(companyData.quote.changePct || 0).toFixed(2)}%)
-                </span>
+                {companyData.quote.livePriceUnavailable ? (
+                  <div className="text-[11px] text-gray-400 border border-gray-200 px-3 py-2 text-center">
+                    Live price<br />unavailable
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-3xl font-semibold tracking-tight mb-1"
+                         style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                      ${companyData.quote.price?.toFixed(2)}
+                    </div>
+                    <span className={`inline-block px-2 py-0.5 text-[11px] font-bold border ${up ? 'bg-green-50 text-green-900 border-green-700' : 'bg-red-50 text-red-900 border-red-700'}`}
+                          style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                      {up ? '▲' : '▼'} {Math.abs(companyData.quote.change || 0).toFixed(2)} ({Math.abs(companyData.quote.changePct || 0).toFixed(2)}%)
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -278,7 +301,7 @@ export default function CompanyPage() {
                 { l: 'Free Cash Flow', v: fmt(companyData.financials.freeCashflow) },
                 { l: 'Total Cash', v: fmt(companyData.financials.totalCash) },
                 { l: 'Dividend', v: companyData.financials.dividendYield ? pct(companyData.financials.dividendYield) : 'None' },
-                { l: '52-Wk Range', v: '$' + companyData.quote.fiftyTwoWeekLow?.toFixed(0) + '–$' + companyData.quote.fiftyTwoWeekHigh?.toFixed(0) },
+                { l: '52-Wk Range', v: companyData.quote.fiftyTwoWeekLow ? '$' + companyData.quote.fiftyTwoWeekLow.toFixed(0) + '–$' + companyData.quote.fiftyTwoWeekHigh?.toFixed(0) : 'N/A' },
               ].map(function(item) {
                 return (
                   <div key={item.l} className="border-r-2 border-b-2 border-black p-2.5">
@@ -292,6 +315,14 @@ export default function CompanyPage() {
 
           <div className="max-w-3xl mx-auto px-5 pb-16">
 
+            {/* LIVE PRICE NOTICE */}
+            {companyData.quote.livePriceUnavailable && (
+              <div className="bg-gray-100 border-2 border-black border-t-0 px-5 py-3 text-[11px] text-gray-500 flex items-center gap-2">
+                <span>ⓘ</span>
+                <span>Live price data temporarily unavailable. Analysis is based on Claude&apos;s knowledge of this company.</span>
+              </div>
+            )}
+
             {/* PLAIN ENGLISH */}
             <div className="bg-[#F5C800] border-2 border-black border-t-0 p-5">
               <div className="text-[8px] font-black tracking-[0.15em] uppercase mb-2 flex items-center gap-2"
@@ -300,12 +331,14 @@ export default function CompanyPage() {
               </div>
               {loadingAnalysis
                 ? <div className="space-y-2 animate-pulse"><div className="h-4 bg-yellow-300 rounded w-full"></div><div className="h-4 bg-yellow-300 rounded w-5/6"></div><div className="h-4 bg-yellow-300 rounded w-4/5"></div></div>
-                : <div className="text-[15px] font-medium leading-relaxed">{analysis?.plainEnglishSummary}</div>
+                : analysis?.plainEnglishSummary
+                  ? <div className="text-[15px] font-medium leading-relaxed">{analysis.plainEnglishSummary}</div>
+                  : <div className="text-[13px] text-yellow-800 italic">Analysis loading...</div>
               }
             </div>
 
             {/* YOUR ANGLE */}
-            {!loadingAnalysis && analysis?.yourAngle && (
+            {analysis?.yourAngle && (
               <div className="flex items-start gap-3 bg-[#1B4FD8] text-white border-2 border-black border-t-0 p-4">
                 <div className="w-6 h-6 bg-white text-[#1B4FD8] rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">👤</div>
                 <div>
@@ -329,7 +362,7 @@ export default function CompanyPage() {
                   <div className="text-[13px] leading-relaxed text-gray-800">
                     {loadingAnalysis
                       ? <div className="animate-pulse space-y-2"><div className="h-3 bg-gray-200 rounded w-full"></div><div className="h-3 bg-gray-200 rounded w-5/6"></div></div>
-                      : analysis?.businessModel.howItMakesMoney}
+                      : analysis?.businessModel.howItMakesMoney || <span className="text-gray-400 italic">Loading...</span>}
                   </div>
                 </div>
                 <div className="p-4">
@@ -337,7 +370,7 @@ export default function CompanyPage() {
                   <div className="text-[13px] leading-relaxed text-gray-800">
                     {loadingAnalysis
                       ? <div className="animate-pulse space-y-2"><div className="h-3 bg-gray-200 rounded w-full"></div><div className="h-3 bg-gray-200 rounded w-4/5"></div></div>
-                      : analysis?.businessModel.competitiveMoat}
+                      : analysis?.businessModel.competitiveMoat || <span className="text-gray-400 italic">Loading...</span>}
                   </div>
                 </div>
               </div>
@@ -365,7 +398,7 @@ export default function CompanyPage() {
               <div className="px-4 py-2 text-[9px] font-black tracking-[0.15em] uppercase flex-1"
                    style={{ fontFamily: 'Unbounded, sans-serif' }}>Financial Health</div>
               <div className="px-3 py-2 border-l-2 border-black text-[8px] tracking-wider text-gray-500 uppercase"
-                   style={{ fontFamily: 'JetBrains Mono, monospace' }}>Yahoo Finance · Live</div>
+                   style={{ fontFamily: 'JetBrains Mono, monospace' }}>AI Analysis</div>
             </div>
             <div className="border-2 border-black border-t-0 grid grid-cols-2">
               {loadingAnalysis
@@ -379,18 +412,16 @@ export default function CompanyPage() {
                     )
                   })
                 : [
-                    { l: 'Revenue Growth', t: 'growth', v: pct(companyData.financials.revenueGrowth), note: analysis?.financialHealthInsights.revenueGrowth },
-                    { l: 'Profit Margin', t: 'margins', v: pct(companyData.financials.profitMargins), note: analysis?.financialHealthInsights.margins },
-                    { l: 'Cash Position', t: 'cash', v: fmt(companyData.financials.totalCash), note: analysis?.financialHealthInsights.cashPosition },
-                    { l: 'Free Cash Flow', t: 'fcf', v: fmt(companyData.financials.freeCashflow), note: analysis?.financialHealthInsights.freeCashflow },
+                    { l: 'Revenue Growth', note: analysis?.financialHealthInsights.revenueGrowth },
+                    { l: 'Profit Margin', note: analysis?.financialHealthInsights.margins },
+                    { l: 'Cash Position', note: analysis?.financialHealthInsights.cashPosition },
+                    { l: 'Free Cash Flow', note: analysis?.financialHealthInsights.freeCashflow },
                   ].map(function(item, i) {
-                    const status = healthStatus(item.t, companyData.financials)
                     return (
                       <div key={item.l} className={`p-4 border-b-2 border-black ${i % 2 === 0 ? 'border-r-2' : ''} ${i >= 2 ? 'border-b-0' : ''}`}>
                         <div className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">{item.l}</div>
-                        <div className="text-lg font-semibold mb-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{item.v}</div>
-                        <StatusBadge status={status} />
-                        <div className="text-[12px] text-gray-600 leading-relaxed">{item.note}</div>
+                        <StatusBadge status={item.note ? 'Unknown' : 'Unknown'} />
+                        <div className="text-[12px] text-gray-600 leading-relaxed">{item.note || <span className="italic text-gray-400">Loading...</span>}</div>
                       </div>
                     )
                   })
@@ -407,15 +438,12 @@ export default function CompanyPage() {
             <div className="border-2 border-black border-t-0 p-5">
               {loadingAnalysis
                 ? <div className="animate-pulse space-y-3"><div className="h-4 bg-gray-200 rounded w-1/4"></div><div className="h-3 bg-gray-200 rounded w-full"></div></div>
-                : analysis && (
+                : analysis ? (
                   <>
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
                       <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest border-2 border-black ${analysis.valuation.verdict === 'undervalued' ? 'bg-green-200' : analysis.valuation.verdict === 'overvalued' ? 'bg-[#E63329] text-white' : 'bg-[#F5C800]'}`}
                             style={{ fontFamily: 'Unbounded, sans-serif' }}>
                         {analysis.valuation.verdict}
-                      </span>
-                      <span className="text-[11px] text-gray-500" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                        P/E: {companyData.financials.peRatio?.toFixed(1)}× · PEG: {companyData.financials.pegRatio?.toFixed(2)}
                       </span>
                     </div>
                     <div className="relative h-2.5 border-2 border-black mb-1.5"
@@ -428,7 +456,7 @@ export default function CompanyPage() {
                     </div>
                     <div className="text-[13px] leading-relaxed text-gray-800">{analysis.valuation.explanation}</div>
                   </>
-                )
+                ) : <div className="text-[13px] text-gray-400 italic">Analysis loading...</div>
               }
             </div>
 
@@ -439,20 +467,23 @@ export default function CompanyPage() {
                   <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white"
                         style={{ fontFamily: 'Unbounded, sans-serif' }}>Leadership</span>
                 </div>
-                {companyData.profile.executives?.map(function(exec) {
-                  return (
-                    <div key={exec.name} className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 last:border-b-0">
-                      <div className="w-8 h-8 bg-gray-100 border-2 border-black flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                           style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                        {initials(exec.name)}
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-semibold">{exec.name}</div>
-                        <div className="text-[11px] text-gray-500">{exec.title}</div>
-                      </div>
-                    </div>
-                  )
-                })}
+                {companyData.profile.executives && companyData.profile.executives.length > 0
+                  ? companyData.profile.executives.map(function(exec) {
+                      return (
+                        <div key={exec.name} className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 last:border-b-0">
+                          <div className="w-8 h-8 bg-gray-100 border-2 border-black flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                               style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                            {initials(exec.name)}
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-semibold">{exec.name}</div>
+                            <div className="text-[11px] text-gray-500">{exec.title}</div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  : <div className="px-4 py-6 text-[12px] text-gray-400 italic">Leadership data not available</div>
+                }
               </div>
               <div>
                 <div className="px-4 py-2.5 border-b-2 border-black bg-[#E63329]">
@@ -461,19 +492,21 @@ export default function CompanyPage() {
                 </div>
                 {loadingAnalysis
                   ? <div className="p-5 animate-pulse space-y-3"><div className="h-4 bg-gray-200 rounded w-3/4"></div><div className="h-3 bg-gray-200 rounded w-full"></div></div>
-                  : analysis?.flagIssues.map(function(flag) {
-                      return (
-                        <div key={flag.title} className="flex gap-3 p-4 border-b border-gray-200 last:border-b-0">
-                          <div className={`w-6 h-6 flex-shrink-0 flex items-center justify-center text-sm border-2 border-black ${flag.severity === 'high' ? 'bg-red-100' : 'bg-yellow-50'}`}>
-                            {flag.severity === 'high' ? '⚠' : '⚑'}
+                  : analysis?.flagIssues && analysis.flagIssues.length > 0
+                    ? analysis.flagIssues.map(function(flag) {
+                        return (
+                          <div key={flag.title} className="flex gap-3 p-4 border-b border-gray-200 last:border-b-0">
+                            <div className={`w-6 h-6 flex-shrink-0 flex items-center justify-center text-sm border-2 border-black ${flag.severity === 'high' ? 'bg-red-100' : 'bg-yellow-50'}`}>
+                              {flag.severity === 'high' ? '⚠' : '⚑'}
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-semibold mb-1">{flag.title}</div>
+                              <div className="text-[12px] text-gray-600 leading-relaxed">{flag.description}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-[13px] font-semibold mb-1">{flag.title}</div>
-                            <div className="text-[12px] text-gray-600 leading-relaxed">{flag.description}</div>
-                          </div>
-                        </div>
-                      )
-                    })
+                        )
+                      })
+                    : <div className="px-4 py-6 text-[12px] text-gray-400 italic">Analysis loading...</div>
                 }
               </div>
             </div>
@@ -481,7 +514,7 @@ export default function CompanyPage() {
             {/* DISCLAIMER */}
             <div className="bg-gray-100 border-2 border-black p-4 mt-8 flex gap-3 text-[12px] text-gray-600">
               <span className="text-base flex-shrink-0">ⓘ</span>
-              <div><strong>Educational analysis only — not investment advice.</strong> Generated from live financial data. Always consult a licensed financial advisor before making investment decisions.</div>
+              <div><strong>Educational analysis only — not investment advice.</strong> Generated from AI knowledge of this company. Always consult a licensed financial advisor before making investment decisions.</div>
             </div>
 
           </div>
