@@ -32,13 +32,14 @@ export default async function HomePage() {
 
       {/* Hero */}
       <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "0 1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", minHeight: "calc(100vh - 3.5rem)", gap: "3rem" }}>
-          <div style={{ padding: "5rem 0" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-12 py-16 md:min-h-[calc(100vh-3.5rem)]">
+
+          <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "999px", background: "#FFF1F2", border: "1px solid #FECDD3", marginBottom: "24px" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#F43F5E" }} />
               <span style={{ fontSize: "12px", fontWeight: 500, color: "#F43F5E" }}>Economic education for real life</span>
             </div>
-            <h1 style={{ fontSize: "clamp(40px, 5vw, 60px)", fontWeight: 700, color: "#0F172A", lineHeight: 1.1, marginBottom: "24px" }}>
+            <h1 style={{ fontSize: "clamp(36px, 5vw, 60px)", fontWeight: 700, color: "#0F172A", lineHeight: 1.1, marginBottom: "24px" }}>
               Big ideas.<br />Simple terms.<br /><span style={{ color: "#F43F5E" }}>Smarter you.</span>
             </h1>
             <p style={{ fontSize: "16px", color: "#64748B", lineHeight: 1.7, maxWidth: "400px", marginBottom: "40px" }}>
@@ -55,12 +56,12 @@ export default async function HomePage() {
             <p style={{ marginTop: "16px", fontSize: "12px", color: "#94A3B8" }}>No credit card. No paywall to start.</p>
           </div>
 
-          <div style={{ position: "relative", height: "calc(100vh - 3.5rem)", borderRadius: "16px", overflow: "hidden", border: "1px solid #E2E8F0" }}>
+          <div className="relative h-80 md:h-[calc(100vh-3.5rem)] rounded-2xl overflow-hidden border border-gray-200">
             <Image src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&q=80&auto=format&fit=crop" alt="Global economic network" fill style={{ objectFit: "cover" }} />
             <div style={{ position: "absolute", inset: 0, background: "rgba(10,10,10,0.65)" }} />
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px" }}>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px" }}>
               <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginBottom: "12px" }}>Live Global Indicators</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { label: "World GDP", value: "$123T", source: "IMF 2026" },
                   { label: "Global Growth", value: "3.1%", source: "IMF WEO" },
@@ -68,14 +69,11 @@ export default async function HomePage() {
                   { label: "Oil Price", value: "$82/bbl", source: "IMF Apr 2026" },
                   { label: "World Trade", value: "3.0%", source: "WTO 2026" },
                   { label: "Unemployment", value: "5.1%", source: "ILO 2026" },
-                  { label: "World Population", value: "8.12B", source: "UN 2026" },
-                  { label: "Global Debt", value: "$251T", source: "IMF 2024" },
-                  { label: "Poverty Rate", value: "8.5%", source: "World Bank" },
                 ].map(function({ label, value, source }) {
                   return (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", padding: "12px", borderRadius: "8px" }}>
+                    <div key={label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", padding: "10px", borderRadius: "8px" }}>
                       <div style={{ fontSize: "8px", fontWeight: 600, textTransform: "uppercase", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>{label}</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#FAFAFA", marginTop: "4px", lineHeight: 1 }}>{value}</div>
                       <div style={{ fontSize: "8px", color: "rgba(255,255,255,0.25)", marginTop: "4px" }}>{source}</div>
                     </div>
                   );
@@ -83,6 +81,7 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -90,7 +89,7 @@ export default async function HomePage() {
       <div id="how-it-works" style={{ background: "#1E293B", padding: "80px 0" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "0 1.5rem" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", color: "#64748B", marginBottom: "48px" }}>How it works</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { step: "01", color: "#F43F5E", title: "Tell us your situation", body: "Renter, homeowner, employed, student. One quick question set. 60 seconds." },
               { step: "02", color: "#3B82F6", title: "Get your personalized feed", body: "Economic events translated into what they mean for your life - not for a hedge fund manager." },
@@ -112,7 +111,7 @@ export default async function HomePage() {
       <div style={{ background: "#F8FAFC", padding: "80px 0" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "0 1.5rem" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", color: "#94A3B8", marginBottom: "48px" }}>Two problems, one solution</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { label: "Problem 1", title: "The Translation Gap", body: "Economic news is written for economists, traders, and policymakers - not people. The jargon is dense, the implications are never spelled out, and the question what does this mean for me is never answered.", cta: "We translate it." },
               { label: "Problem 2", title: "One Size Fits Nobody", body: "Generic economic advice assumes you own a home, have a retirement account, and earn a six-figure salary. Most people do not. The same interest rate hike means something completely different to a renter than to a homeowner.", cta: "Every answer is filtered through your real situation." },
@@ -174,7 +173,7 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-        <div style={{ maxWidth: "72rem", margin: "32px auto 0", padding: "0 1.5rem", borderTop: "1px solid #1E293B", paddingTop: "24px", display: "flex", justifyContent: "space-between" }}>
+        <div style={{ maxWidth: "72rem", margin: "32px auto 0", padding: "0 1.5rem", borderTop: "1px solid #1E293B", paddingTop: "24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
           <p style={{ fontSize: "10px", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {new Date().getFullYear()} Simple Economics
           </p>
