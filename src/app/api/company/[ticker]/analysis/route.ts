@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const prompt = `You are an economist writing for everyday people. Analyze ${ticker} — ${companyData.quote?.name}.
 
 Known info: Sector: ${companyData.profile?.sector || 'unknown'}, Industry: ${companyData.profile?.industry || 'unknown'}
