@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
-const FMP_KEY = process.env.FMP_API_KEY
-const BASE = 'https://financialmodelingprep.com/api/v3'
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { ticker: string } }
@@ -13,16 +10,64 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const profileRes = await fetch(`${BASE}/profile/${ticker}?apikey=${FMP_KEY}`)
-    const text = await profileRes.text()
-    
-    return NextResponse.json({ 
-      status: profileRes.status,
-      keyPresent: !!FMP_KEY,
-      keyPrefix: FMP_KEY ? FMP_KEY.slice(0, 6) + '...' : 'missing',
-      rawResponse: text.slice(0, 300)
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+      'Referer': 'https://finance.yahoo.com',
+    }
+
+    const quoteRes = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`,
+      { headers }
+    )
+
+    if (!quoteRes.ok) {
+      return NextResponse.json({ error: 'Ticker not found: ' + ticker }, { status: 404 })
+    }
+
+    const quoteData = await quoteRes.json()
+    const meta = quoteData?.chart?.result?.[0]?.meta
+
+    if (!meta) {
+      return NextResponse.json({ error: 'Ticker not found: ' + ticker }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      ticker,
+      quote: {
+        name: meta.longName || meta.shortName || ticker,
+        price: meta.regularMarketPrice,
+        change: meta.regularMarketPrice - meta.chartPreviousClose,
+        changePct: ((meta.regularMarketPrice - meta.chartPreviousClose) / meta.chartPreviousClose) * 100,
+        marketCap: meta.marketCap || null,
+        exchange: meta.exchangeName,
+        fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
+        fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
+        currency: meta.currency,
+      },
+      profile: {
+        sector: null,
+        industry: null,
+        employees: null,
+        description: null,
+        executives: [],
+      },
+      financials: {
+        peRatio: null,
+        pegRatio: null,
+        revenueGrowth: null,
+        profitMargins: null,
+        grossMargins: null,
+        totalCash: null,
+        totalDebt: null,
+        freeCashflow: null,
+        returnOnEquity: null,
+        dividendYield: null,
+        beta: null,
+      },
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message })
+    console.error('Quote error:', error)
+    return NextResponse.json({ error: 'Could not fetch data for: ' + ticker, detail: error.message }, { status: 500 })
   }
 }
