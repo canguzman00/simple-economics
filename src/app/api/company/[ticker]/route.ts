@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
