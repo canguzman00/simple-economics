@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import yahooFinance from 'yahoo-finance2'
 
@@ -9,9 +9,11 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
+    const yf = yahooFinance as any
+
     const [quote, summary] = await Promise.all([
-      yahooFinance.quote(ticker),
-      yahooFinance.quoteSummary(ticker, {
+      yf.quote(ticker),
+      yf.quoteSummary(ticker, {
         modules: [
           'assetProfile',
           'financialData',
@@ -37,7 +39,7 @@ export async function GET(
         industry: summary.assetProfile?.industry,
         employees: summary.assetProfile?.fullTimeEmployees,
         description: summary.assetProfile?.longBusinessSummary,
-        executives: summary.assetProfile?.companyOfficers?.slice(0, 4).map(function(e) {
+        executives: summary.assetProfile?.companyOfficers?.slice(0, 4).map(function(e: any) {
           return { name: e.name, title: e.title, yearBorn: e.yearBorn }
         }),
       },
