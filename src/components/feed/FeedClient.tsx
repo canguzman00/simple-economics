@@ -106,14 +106,38 @@ export function FeedClient({ initialEvents, userState }: Props) {
     .filter(function(e) { return impact === "ALL" || e.impact === impact; })
     .sort(function(a, b) { return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(); });
 
-  // Split into pairs for magazine grid
   const featured = filtered[0] ?? null;
   const rest = filtered.slice(1);
 
   return (
     <div style={{ fontFamily: "Inter, sans-serif" }}>
 
-      {/* Tier tabs — Bauhaus style */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .news-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .skeleton-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        @media (max-width: 640px) {
+          .news-grid {
+            grid-template-columns: 1fr;
+          }
+          .skeleton-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}} />
+
+      {/* Tier tabs */}
       <div style={{ display: "flex", marginBottom: "16px", border: "2px solid #0A0A0A" }}>
         {TIER_TABS.map(function(tab, i) {
           const isActive = tier === tab.value;
@@ -142,11 +166,11 @@ export function FeedClient({ initialEvents, userState }: Props) {
       </div>
 
       {/* Impact filter */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
         <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#94A3B8" }}>
           IMPACT:
         </span>
-        <div style={{ display: "flex", gap: "6px" }}>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {IMPACT_TABS.map(function(tab) {
             const isActive = impact === tab.value;
             return (
@@ -191,21 +215,19 @@ export function FeedClient({ initialEvents, userState }: Props) {
 
       {/* News grid */}
       {newsLoading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+        <div className="skeleton-grid">
           {[1, 2, 3, 4, 5, 6].map(function(i) {
             return (
               <div
                 key={i}
                 style={{
-                  height: i === 1 ? "200px" : "140px",
-                  gridColumn: i === 1 ? "span 2" : "span 1",
+                  height: "140px",
                   background: "#F1F5F9",
                   animation: "pulse 1.5s ease-in-out infinite",
                 }}
               />
             );
           })}
-          <style dangerouslySetInnerHTML={{ __html: "@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}" }} />
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ background: "#fff", border: "2px solid #0A0A0A", padding: "48px", textAlign: "center" as const }}>
@@ -214,14 +236,12 @@ export function FeedClient({ initialEvents, userState }: Props) {
         </div>
       ) : (
         <div>
-          {/* Featured card — full width */}
           {featured && (
             <div style={{ marginBottom: "8px" }}>
               <NewsCard item={featured} featured={true} />
             </div>
           )}
-          {/* Grid of remaining cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <div className="news-grid">
             {rest.map(function(item) {
               return <NewsCard key={item.id} item={item} featured={false} />;
             })}
