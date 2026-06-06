@@ -45,6 +45,7 @@ interface Analysis {
   flagIssues: Array<{ title: string; severity: string; description: string }>
   yourAngle: string
   revenueBreakdown: Array<{ segment: string; amount: string; pct: number }>
+  executives?: Array<{ name: string; title: string }>
 }
 
 interface SearchResult { symbol: string; name: string; exchange: string }
@@ -130,7 +131,7 @@ export default function CompanyPage() {
           setAnalysis(analysisData.analysis)
         }
       } catch {
-        // Analysis failed silently — page still works without it
+        // Analysis failed silently
       }
       setLoadingAnalysis(false)
     } catch {
@@ -420,7 +421,7 @@ export default function CompanyPage() {
                     return (
                       <div key={item.l} className={`p-4 border-b-2 border-black ${i % 2 === 0 ? 'border-r-2' : ''} ${i >= 2 ? 'border-b-0' : ''}`}>
                         <div className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">{item.l}</div>
-                        <StatusBadge status={item.note ? 'Unknown' : 'Unknown'} />
+                        <StatusBadge status="Unknown" />
                         <div className="text-[12px] text-gray-600 leading-relaxed">{item.note || <span className="italic text-gray-400">Loading...</span>}</div>
                       </div>
                     )
@@ -467,22 +468,24 @@ export default function CompanyPage() {
                   <span className="text-[9px] font-black tracking-[0.15em] uppercase text-white"
                         style={{ fontFamily: 'Unbounded, sans-serif' }}>Leadership</span>
                 </div>
-                {companyData.profile.executives && companyData.profile.executives.length > 0
-                  ? companyData.profile.executives.map(function(exec) {
-                      return (
-                        <div key={exec.name} className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 last:border-b-0">
-                          <div className="w-8 h-8 bg-gray-100 border-2 border-black flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                               style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                            {initials(exec.name)}
+                {loadingAnalysis
+                  ? <div className="p-5 animate-pulse space-y-3"><div className="h-4 bg-gray-200 rounded w-3/4"></div><div className="h-3 bg-gray-200 rounded w-full"></div></div>
+                  : analysis?.executives && analysis.executives.length > 0
+                    ? analysis.executives.map(function(exec) {
+                        return (
+                          <div key={exec.name} className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 last:border-b-0">
+                            <div className="w-8 h-8 bg-gray-100 border-2 border-black flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                                 style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                              {initials(exec.name)}
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-semibold">{exec.name}</div>
+                              <div className="text-[11px] text-gray-500">{exec.title}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-[13px] font-semibold">{exec.name}</div>
-                            <div className="text-[11px] text-gray-500">{exec.title}</div>
-                          </div>
-                        </div>
-                      )
-                    })
-                  : <div className="px-4 py-6 text-[12px] text-gray-400 italic">Leadership data not available</div>
+                        )
+                      })
+                    : <div className="px-4 py-6 text-[12px] text-gray-400 italic">Leadership data not available</div>
                 }
               </div>
               <div>
