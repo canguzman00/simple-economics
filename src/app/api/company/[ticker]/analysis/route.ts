@@ -1,6 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const prompt = `You are an economist writing for everyday people. Analyze ${ticker} — ${companyData.quote?.name}.
+import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+
+const client = new Anthropic()
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { ticker: string } }
+) {
+  const ticker = params.ticker.toUpperCase()
+  const body = await request.json()
+  const { companyData, userProfile } = body
+
+  const personalization = userProfile ? `
+The user has this profile:
+- Housing: ${userProfile.situation || 'unknown'}
+- Employment: ${userProfile.employmentStatus || 'unknown'}
+- Industry: ${userProfile.industry || 'unknown'}
+- Life stage: ${userProfile.lifeStage || 'unknown'}
+- Primary concern: ${userProfile.concern || 'unknown'}
+- City: ${userProfile.city || 'unknown'}
+Tailor the yourAngle field specifically for this person.
+` : 'No user profile — write a general relevance statement for yourAngle.'
+
+  const analysisPrompt = `You are an economist writing for everyday people. Analyze ${ticker} — ${companyData.quote?.name}.
 
 Known info: Sector: ${companyData.profile?.sector || 'unknown'}, Industry: ${companyData.profile?.industry || 'unknown'}
 
@@ -41,4 +65,26 @@ Rules:
 2. 2-4 flag issues
 3. verdict must be exactly: undervalued, fair, or overvalued
 4. Never tell anyone to buy or sell
-5. executives: list the 4 most senior current executives you know for this company. If unsure, list whoever you know.`
+5. executives: list the 4 most senior current executives you know for this company`
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: analysisPrompt }],
+    })
+
+    const rawText = message.content
+      .filter(function(block) { return block.type === 'text' })
+      .map(function(block) { return block.type === 'text' ? block.text : '' })
+      .join('')
+
+    const clean = rawText.replace(/```json|```/g, '').trim()
+    const analysis = JSON.parse(clean)
+
+    return NextResponse.json({ ticker, analysis })
+  } catch (error: any) {
+    console.error('Analysis error:', error)
+    return NextResponse.json({ error: 'Failed to generate analysis', detail: error.message }, { status: 500 })
+  }
+}
