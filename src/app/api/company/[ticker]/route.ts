@@ -11,7 +11,20 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const yahooFinance = require('yahoo-finance2').default
+    let yahooFinance: any
+    try {
+      yahooFinance = require('yahoo-finance2').default
+    } catch (requireError: any) {
+      return NextResponse.json({ error: 'require failed', detail: requireError.message }, { status: 500 })
+    }
+
+    if (!yahooFinance || typeof yahooFinance.quote !== 'function') {
+      return NextResponse.json({ 
+        error: 'yahoo-finance2 loaded but quote not a function',
+        type: typeof yahooFinance,
+        keys: yahooFinance ? Object.keys(yahooFinance).slice(0, 10) : []
+      }, { status: 500 })
+    }
 
     const [quote, summary] = await Promise.all([
       yahooFinance.quote(ticker),
@@ -55,8 +68,11 @@ export async function GET(
         beta: summary.defaultKeyStatistics?.beta,
       },
     })
-  } catch (error) {
-    console.error('Yahoo Finance error:', error)
-    return NextResponse.json({ error: 'Could not fetch data for: ' + ticker }, { status: 404 })
+  } catch (error: any) {
+    return NextResponse.json({ 
+      error: 'catch block', 
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 3).join(' | ')
+    }, { status: 500 })
   }
 }
