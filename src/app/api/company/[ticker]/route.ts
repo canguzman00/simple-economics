@@ -1,6 +1,8 @@
-
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
+
+export const runtime = 'nodejs'
 
 export async function GET(
   request: NextRequest,
@@ -9,8 +11,7 @@ export async function GET(
   const ticker = params.ticker.toUpperCase()
 
   try {
-    const yf = await import('yahoo-finance2')
-    const yahooFinance = (yf.default || yf) as any
+    const yahooFinance = require('yahoo-finance2').default
 
     const [quote, summary] = await Promise.all([
       yahooFinance.quote(ticker),
