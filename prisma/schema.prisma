@@ -84,8 +84,9 @@ enum Tier {
 
 model User {
   id                 String            @id @default(cuid())
-  guestId   String?  @unique
+  guestId            String?           @unique
   email              String            @unique
+  password           String?
   name               String?
   image              String?
   emailVerified      DateTime?
