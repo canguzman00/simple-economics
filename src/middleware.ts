@@ -1,26 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
+const publicPaths = ['/', '/signin', '/signup']
+
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
-  })
+  const { pathname } = req.nextUrl
 
-  const isAuth = !!token
-  const isAuthPage = req.nextUrl.pathname.startsWith('/signin') || 
-                     req.nextUrl.pathname.startsWith('/signup')
-
-  if (isAuthPage) {
-    if (isAuth) {
-      return NextResponse.redirect(new URL('/feed', req.url))
-    }
+  // Allow public paths
+  if (publicPaths.some(function(p) { return pathname === p })) {
     return NextResponse.next()
   }
 
-  if (!isAuth) {
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET
+  })
+
+  if (!token) {
     const signInUrl = new URL('/signin', req.url)
-    signInUrl.searchParams.set('callbackUrl', req.nextUrl.pathname)
+    signInUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(signInUrl)
   }
 
@@ -29,16 +27,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/feed/:path*',
-    '/ask/:path*',
-    '/my-economy/:path*',
-    '/company/:path*',
-    '/investment-context/:path*',
-    '/calculator/:path*',
-    '/profile/:path*',
-    '/onboarding/:path*',
-    '/admin/:path*',
-    '/signin',
-    '/signup',
+    '/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|api/auth).*)',
   ],
 }
+
