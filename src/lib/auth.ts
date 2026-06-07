@@ -1,11 +1,16 @@
 import { NextAuthOptions, getServerSession } from "next-auth";
 import { useSession as useNextAuthSession } from "next-auth/react";
+import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -39,9 +44,17 @@ export const authOptions: NextAuthOptions = {
     signIn: "/signin",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
+      }
+      if (account?.provider === "google") {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email! },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+        }
       }
       return token;
     },
@@ -54,6 +67,29 @@ export const authOptions: NextAuthOptions = {
         console.error("[auth] session callback error:", err);
       }
       return session;
+    },
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        try {
+          const existing = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
+          if (!existing) {
+            await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name,
+                image: user.image,
+                emailVerified: new Date(),
+              },
+            });
+          }
+        } catch (err) {
+          console.error("[auth] Google signIn error:", err);
+          return false;
+        }
+      }
+      return true;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
