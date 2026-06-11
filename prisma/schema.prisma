@@ -246,3 +246,4 @@ model InvestmentSignal {
   generatedAt    DateTime  @default(now())
   approvedAt     DateTime?
 }
+
