@@ -80,7 +80,6 @@ function SignInContent() {
             </p>
           </div>
 
-          {/* GOOGLE */}
           <button
             onClick={handleGoogle}
             disabled={googleLoading}
@@ -94,7 +93,6 @@ function SignInContent() {
             {googleLoading ? 'Redirecting...' : 'Continue with Google'}
           </button>
 
-          {/* DIVIDER */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <div style={{ flex: 1, height: '1px', background: '#1E293B' }} />
             <span style={{ fontSize: '11px', color: '#334155' }}>or sign in with email</span>
