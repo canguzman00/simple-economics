@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { anthropic } from "@/lib/anthropic";
 import { buildSystemPrompt, type UserProfile } from "@/lib/ai/systemPrompt";
@@ -9,8 +11,9 @@ export const runtime = "nodejs";
 const DAILY_LIMIT = 5;
 
 export async function POST(req: NextRequest) {
-  const guestId = req.cookies.get("se_user_id")?.value;
-  if (!guestId) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "No session" }, { status: 401 });
   }
 
@@ -24,9 +27,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Question is required" }, { status: 400 });
   }
 
-  // Look up user by guestId
   const user = await prisma.user.findUnique({
-    where: { guestId },
+    where: { id: session.user.id },
     select: { id: true, isPremium: true },
   });
 
@@ -34,7 +36,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Rate limit: free users get 5 questions per calendar day
   if (!user.isPremium) {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -61,18 +62,14 @@ export async function POST(req: NextRequest) {
           system: systemPrompt,
           messages: [{ role: "user", content: question.trim() }],
         });
-
         stream.on("text", (text: string) => {
           fullAnswer += text;
           controller.enqueue(new TextEncoder().encode(text));
         });
-
         await stream.finalMessage();
-
         await prisma.userQuestion.create({
           data: { userId: user.id, question: question.trim(), answer: fullAnswer },
         });
-
         controller.close();
       } catch (err) {
         console.error("[ask] stream error:", err);
