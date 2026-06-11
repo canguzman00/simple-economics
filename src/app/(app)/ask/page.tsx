@@ -1,12 +1,13 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-import { getAuthSession } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AskClient } from "@/components/ask/AskClient";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 
 export default async function AskPage() {
-  const session = await getAuthSession();
+  const session = await getServerSession(authOptions);
   let profile: UserProfile = {};
 
   if (session?.user?.id) {
