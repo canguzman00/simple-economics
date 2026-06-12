@@ -153,7 +153,7 @@ export default function OnboardingPage() {
       body: JSON.stringify({
         housingStatus,
         employmentStatus,
-        concerns,
+        concern: concerns[0] ?? null,
         city: city.trim() || undefined,
         lifeStage,
         debtTypes,
