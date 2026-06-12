@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json();
   const {
-    situation, housingStatus, employmentStatus, concerns, city,
+    situation, housingStatus, employmentStatus, city,
     lifeStage, debtTypes, industry,
     onboardingComplete,
   } = body;
