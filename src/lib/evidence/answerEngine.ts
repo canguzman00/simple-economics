@@ -118,6 +118,69 @@ function validate(envelope: AnswerEnvelope): AnswerEnvelope {
   return { classification, cardIds, answer: envelope.answer };
 }
 
+// --- Verification pass -----------------------------------------------------
+// A valid, real card ID does not prove the drafted answer is actually
+// supported by that card — the drafting model could cite SE-002 correctly
+// and still slip in "so you should buy in December" right next to it. The
+// mechanical ID check above catches a fabricated/missing citation; it does
+// NOT catch a real citation attached to unsupported content. This pass
+// re-checks the drafted answer, independently, against only the text of the
+// cards it cited — nothing else — and is the only thing standing between a
+// correctly-cited answer and a well-disguised unsupported recommendation.
+
+const VERIFY_TOOL = {
+  name: "submit_verification",
+  description: "Report whether the drafted answer is fully supported by the cited cards' actual content.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      supported: {
+        type: "boolean" as const,
+        description: "true only if every claim in the answer is directly supported by the cited cards' claim/finding/mechanism — false if it contains anything the cards don't establish.",
+      },
+      violation: {
+        type: "string" as const,
+        description: "If supported is false, the specific sentence or claim that goes beyond the cited cards (e.g. a recommendation, a number, a claim past the answer boundary). Empty if supported.",
+      },
+    },
+    required: ["supported", "violation"],
+  },
+};
+
+function formatCitedCardsForVerification(cardIds: string[]): string {
+  return cardIds
+    .map((id) => getCardById(id))
+    .filter((c): c is NonNullable<ReturnType<typeof getCardById>> => !!c)
+    .map((c) => `[${c.id}] Claim: ${c.claim}\nFinding: ${c.finding}\nMechanism: ${c.mechanism}\nAnswer boundary (what this card does NOT establish): ${c.answerBoundary}`)
+    .join("\n\n");
+}
+
+async function verifyAnswer(answer: string, cardIds: string[]): Promise<{ supported: boolean; violation: string }> {
+  const cited = formatCitedCardsForVerification(cardIds);
+
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 300,
+    system: `You are a strict, adversarial reviewer. You will be shown an answer and the ONLY evidence cards it cited. Citing a real card does not mean every sentence in the answer is supported by it — your job is to check the actual content, not the citation.
+
+Flag supported=false if the answer contains: a personal recommendation (buy/wait/sell/refinance/invest, even hedged or implied), a specific number/date/forecast the cards don't state, any claim beyond what the cited cards' Claim/Finding/Mechanism establish, or anything the cards' answer boundary explicitly says is NOT established. Otherwise supported=true.`,
+    tools: [VERIFY_TOOL],
+    tool_choice: { type: "tool", name: "submit_verification" },
+    messages: [
+      {
+        role: "user",
+        content: `CITED CARDS:\n${cited || "(none)"}\n\nANSWER TO CHECK:\n${answer}`,
+      },
+    ],
+  });
+
+  const toolUse = message.content.find(
+    (block): block is Extract<typeof message.content[number], { type: "tool_use" }> => block.type === "tool_use"
+  );
+  if (!toolUse) return { supported: false, violation: "verification call returned no result" };
+  return toolUse.input as { supported: boolean; violation: string };
+}
+
 export async function answerQuestion(question: string, profile: UserProfile): Promise<AnswerEnvelope> {
   const system = buildSystemPrompt(profile);
 
@@ -139,7 +202,27 @@ export async function answerQuestion(question: string, profile: UserProfile): Pr
   }
 
   const input = toolUse.input as { classification: Classification; cardIds: string[]; answer: string };
-  return validate(input);
+  const validated = validate(input);
+
+  if (validated.classification === "not_covered") {
+    return validated;
+  }
+
+  // Independent second pass — see comment above. Any failure here, or any
+  // error running it, refuses rather than risks an unsupported claim riding
+  // in on a legitimate citation.
+  try {
+    const verification = await verifyAnswer(validated.answer, validated.cardIds);
+    if (!verification.supported) {
+      console.warn("[ask] verification rejected an answer:", verification.violation);
+      return fallbackNotCovered();
+    }
+  } catch (err) {
+    console.error("[ask] verification pass failed:", err);
+    return fallbackNotCovered();
+  }
+
+  return validated;
 }
 
 export function citationsFor(cardIds: string[]) {
