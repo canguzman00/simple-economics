@@ -155,7 +155,14 @@ function formatCitedCardsForVerification(cardIds: string[]): string {
     .join("\n\n");
 }
 
-async function verifyAnswer(answer: string, cardIds: string[]): Promise<{ supported: boolean; violation: string }> {
+// Exported (not just internal) so it can be tested directly against
+// hand-crafted inputs — see scripts/test-verifier.ts. Testing this by
+// disabling it and hoping the drafting model produces an unsupported
+// answer on its own is not reliable: the drafting model may refuse
+// correctly by itself, which would make the regression test pass for the
+// wrong reason. Calling this function directly with a deliberately
+// unsupported answer + valid card IDs is the actual test.
+export async function verifyAnswer(answer: string, cardIds: string[]): Promise<{ supported: boolean; violation: string }> {
   const cited = formatCitedCardsForVerification(cardIds);
 
   const message = await anthropic.messages.create({
