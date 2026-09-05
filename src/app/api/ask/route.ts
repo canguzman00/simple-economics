@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { anthropic } from "@/lib/anthropic";
-import { buildSystemPrompt, type UserProfile } from "@/lib/ai/systemPrompt";
+import type { UserProfile } from "@/lib/ai/systemPrompt";
+import { answerQuestion, citationsFor } from "@/lib/evidence/answerEngine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -50,38 +50,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const systemPrompt = buildSystemPrompt(userProfile ?? {});
-  let fullAnswer = "";
+  try {
+    const trimmed = question.trim();
+    const envelope = await answerQuestion(trimmed, userProfile ?? {});
+    const citations = citationsFor(envelope.cardIds);
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        const stream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 600,
-          system: systemPrompt,
-          messages: [{ role: "user", content: question.trim() }],
-        });
-        stream.on("text", (text: string) => {
-          fullAnswer += text;
-          controller.enqueue(new TextEncoder().encode(text));
-        });
-        await stream.finalMessage();
-        await prisma.userQuestion.create({
-          data: { userId: user.id, question: question.trim(), answer: fullAnswer },
-        });
-        controller.close();
-      } catch (err) {
-        console.error("[ask] stream error:", err);
-        controller.error(err);
-      }
-    },
-  });
+    await prisma.userQuestion.create({
+      data: {
+        userId: user.id,
+        question: trimmed,
+        answer: envelope.answer,
+        classification: envelope.classification,
+        cardIds: envelope.cardIds,
+        needsReview: envelope.classification !== "covered",
+      },
+    });
 
-  return new Response(readable, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+    return NextResponse.json({
+      classification: envelope.classification,
+      answer: envelope.answer,
+      citations,
+    });
+  } catch (err) {
+    console.error("[ask] answer engine error:", err);
+    return NextResponse.json(
+      { error: "Something went wrong. Please try again." },
+      { status: 500 }
+    );
+  }
 }
