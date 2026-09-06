@@ -7,12 +7,7 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const NAV_LINKS = [
-  { label: "Feed",              href: "/feed" },
-  { label: "Ask",               href: "/ask" },
-  { label: "My Economy",        href: "/my-economy" },
-  { label: "Investment Context", href: "/investment-context" },
-  { label: "My Impact",         href: "/calculator" },
-  { label: "Saved",             href: "/saved" },
+  { label: "My Economist",      href: "/my-economist" },
 ];
 
 function NavLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {

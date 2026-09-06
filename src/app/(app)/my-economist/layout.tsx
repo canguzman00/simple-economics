@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
-export default function InvestmentContextLayout({ children }: { children: React.ReactNode }) {
+export default function MyEconomistLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

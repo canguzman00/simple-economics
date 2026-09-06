@@ -3,10 +3,10 @@ export const runtime = "nodejs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { AskClient } from "@/components/ask/AskClient";
+import { MyEconomistClient } from "@/components/my-economist/MyEconomistClient";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 
-export default async function AskPage() {
+export default async function MyEconomistPage() {
   const session = await getServerSession(authOptions);
   let profile: UserProfile = {};
 
@@ -38,5 +38,5 @@ export default async function AskPage() {
     }
   }
 
-  return <AskClient profile={profile} isAuthenticated={!!session?.user} />;
+  return <MyEconomistClient profile={profile} isAuthenticated={!!session?.user} />;
 }

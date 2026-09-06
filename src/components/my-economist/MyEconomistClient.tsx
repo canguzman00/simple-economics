@@ -56,7 +56,7 @@ interface Props {
   isAuthenticated: boolean;
 }
 
-export function AskClient({ profile, isAuthenticated }: Props) {
+export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   const [question, setQuestion] = useState("");
   const [result, setResult]     = useState<AnswerResult | null>(null);
   const [loading, setLoading]   = useState(false);
@@ -265,10 +265,10 @@ function PageHeader() {
         </span>
       </div>
       <h1 className="font-bold leading-tight" style={{ fontSize: "36px", color: "#0F172A", fontFamily: "Inter, sans-serif" }}>
-        Ask the Simple Economist
+        My Economist
       </h1>
       <p className="mt-3 text-base leading-relaxed" style={{ color: "#64748B", fontFamily: "Inter, sans-serif" }}>
-        Answers come from our economist-reviewed evidence library. If it doesn&apos;t cover your question, we&apos;ll say so.
+        Ask anything. Answers come from our economist-reviewed evidence library, personalized to your situation. If it doesn&apos;t cover your question, we&apos;ll say so.
       </p>
     </div>
   );

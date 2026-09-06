@@ -16,9 +16,7 @@ export function Footer() {
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
               {[
-                { label: "Feed",             href: "/feed" },
-                { label: "Ask the Economist", href: "/ask" },
-                { label: "My Economy",       href: "/my-economy" },
+                { label: "My Economist",     href: "/my-economist" },
                 { label: "Sign in",          href: "/signin" },
               ].map(({ label, href }) => (
                 <Link

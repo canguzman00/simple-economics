@@ -161,7 +161,7 @@ export default function OnboardingPage() {
         onboardingComplete: true,
       }),
     });
-    router.push("/feed");
+    router.push("/my-economist");
   }
 
   const btnCls = (enabled: boolean) =>
