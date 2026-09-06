@@ -287,11 +287,22 @@ const VERIFY_TOOL = {
   },
 };
 
+// IMPORTANT: this must include everything the drafting model was actually
+// given for this card (see formatLibraryForPrompt above) — caveats
+// included. Leaving caveats out here caused real false-positive rejections:
+// e.g. SE-002's own caveats say "Anticipated policy changes may already be
+// reflected in rates," but a drafting answer correctly citing that content
+// was flagged as unsupported because the verifier was never shown the
+// caveats it came from. The verifier must judge against the same card
+// content the drafting model saw, not a stripped-down subset of it.
 function formatCitedCardsForVerification(cardIds: string[]): string {
   return cardIds
     .map((id) => getCardById(id))
     .filter((c): c is NonNullable<ReturnType<typeof getCardById>> => !!c)
-    .map((c) => `[${c.id}] Claim: ${c.claim}\nFinding: ${c.finding}\nMechanism: ${c.mechanism}\nAnswer boundary (what this card does NOT establish): ${c.answerBoundary}`)
+    .map((c) => {
+      const caveats = c.caveats.map((x) => `  - ${x}`).join("\n");
+      return `[${c.id}] Claim: ${c.claim}\nFinding: ${c.finding}\nMechanism: ${c.mechanism}\nCaveats:\n${caveats}\nAnswer boundary (what this card does NOT establish): ${c.answerBoundary}`;
+    })
     .join("\n\n");
 }
 
@@ -310,7 +321,9 @@ export async function verifyAnswer(answer: string, cardIds: string[]): Promise<{
     max_tokens: 300,
     system: `You are a strict, adversarial reviewer. You will be shown an answer and the ONLY evidence cards it cited. Citing a real card does not mean every sentence in the answer is supported by it — your job is to check the actual content, not the citation.
 
-Flag supported=false if the answer contains: a personal recommendation (buy/wait/sell/refinance/invest, even hedged or implied), a specific number/date/forecast the cards don't state, any claim beyond what the cited cards' Claim/Finding/Mechanism establish, or anything the cards' answer boundary explicitly says is NOT established. Otherwise supported=true.`,
+A card's Claim, Finding, Mechanism, AND Caveats are all part of what it establishes — a caveat is real card content, not a disclaimer to ignore. Before flagging a sentence as unsupported, check it against the caveats too, not just the Claim/Finding/Mechanism lines: a sentence that restates or closely paraphrases a caveat (e.g. a caveat about anticipated changes already being priced in) IS supported, even if it isn't in those three fields.
+
+Flag supported=false only if the answer contains: a personal recommendation (buy/wait/sell/refinance/invest, even hedged or implied), a specific number/date/forecast the cards don't state, any claim beyond what the cited cards' Claim/Finding/Mechanism/Caveats establish, or anything the cards' answer boundary explicitly says is NOT established. Otherwise supported=true.`,
     tools: [VERIFY_TOOL],
     tool_choice: { type: "tool", name: "submit_verification" },
     messages: [
