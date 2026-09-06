@@ -3,12 +3,32 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
+import type { ConversationTurn } from "@/lib/evidence/types";
 import { answerQuestion, citationsFor } from "@/lib/evidence/answerEngine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const DAILY_LIMIT = 5;
+
+// Defensive cap independent of the engine's own trimming — a client should
+// never be able to force an unbounded prompt by sending a huge history
+// array, whatever the reason.
+const MAX_HISTORY_TURNS = 8;
+
+function sanitizeHistory(raw: unknown): ConversationTurn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (t): t is ConversationTurn =>
+        !!t &&
+        typeof t === "object" &&
+        (t.role === "user" || t.role === "assistant") &&
+        typeof t.content === "string" &&
+        t.content.trim().length > 0
+    )
+    .slice(-MAX_HISTORY_TURNS);
+}
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -18,14 +38,17 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { question, userProfile } = body as {
+  const { question, userProfile, history } = body as {
     question: string;
     userProfile?: UserProfile;
+    history?: unknown;
   };
 
   if (!question?.trim()) {
     return NextResponse.json({ error: "Question is required" }, { status: 400 });
   }
+
+  const conversationHistory = sanitizeHistory(history);
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -52,7 +75,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const trimmed = question.trim();
-    const envelope = await answerQuestion(trimmed, userProfile ?? {});
+    const envelope = await answerQuestion(trimmed, userProfile ?? {}, conversationHistory);
     const citations = citationsFor(envelope.cardIds);
 
     // "error" means the engine never actually completed an attempt on this
@@ -77,7 +100,8 @@ export async function POST(req: NextRequest) {
       answer: envelope.answer,
       why: envelope.why,
       decisionRelevance: envelope.decisionRelevance,
-      limits: envelope.limits,
+      essentialLimitation: envelope.essentialLimitation,
+      clarify: envelope.clarify,
       suggestions: envelope.suggestions,
       citations,
     });
