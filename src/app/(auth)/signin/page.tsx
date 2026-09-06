@@ -10,7 +10,7 @@ import Link from 'next/link'
 function SignInContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/feed'
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/my-economist'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -41,7 +41,7 @@ function SignInContent() {
 
   async function handleGoogle() {
     setGoogleLoading(true)
-    await signIn('google', { callbackUrl: '/feed' })
+    await signIn('google', { callbackUrl: '/my-economist' })
   }
 
   return (

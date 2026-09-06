@@ -6,7 +6,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await getAuthSession();
 
   if (!session?.user) redirect("/signin");
-  if (session.user.email !== process.env.ADMIN_EMAIL) redirect("/feed");
+  if (session.user.email !== process.env.ADMIN_EMAIL) redirect("/my-economist");
 
   return (
     <div className="min-h-screen bg-[#1A1208]">
@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex items-center gap-4">
             <span className="font-sans text-xs text-[#4A3D2A]">{session.user.email}</span>
             <Link
-              href="/feed"
+              href="/my-economist"
               className="font-sans text-xs text-[#7A6A52] hover:text-[#C49A52] transition-colors"
             >
               ← Back to site

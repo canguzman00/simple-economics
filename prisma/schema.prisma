@@ -184,12 +184,20 @@ model NewsCache {
 }
 
 model UserQuestion {
-  id        String   @id @default(cuid())
-  userId    String
-  question  String
-  answer    String
-  flagged   Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  question       String
+  answer         String
+  flagged        Boolean  @default(false)
+  // Evidence Engine fields (added for the evidence-backed "Ask the Economist"):
+  // classification is "covered" | "partial" | "not_covered"; cardIds are the
+  // Evidence Card IDs (e.g. "SE-002") actually cited. needsReview flags
+  // anything other than a fully covered answer for Carlos's review queue —
+  // query `WHERE needsReview = true` to see it.
+  classification String?
+  cardIds        String[] @default([])
+  needsReview    Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

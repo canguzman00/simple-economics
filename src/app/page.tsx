@@ -92,8 +92,8 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { step: "01", color: "#F43F5E", title: "Tell us your situation", body: "Renter, homeowner, employed, student. One quick question set. 60 seconds." },
-              { step: "02", color: "#3B82F6", title: "Get your personalized feed", body: "Economic events translated into what they mean for your life - not for a hedge fund manager." },
-              { step: "03", color: "#8B5CF6", title: "Ask anything", body: "Ask the Simple Economist answers your questions with real data, named sources, and a clear bottom line." },
+              { step: "02", color: "#3B82F6", title: "Ask anything", body: "Ask My Economist a question about the economy or your money, in plain language." },
+              { step: "03", color: "#8B5CF6", title: "Get a grounded answer", body: "A personalized answer built from real data, named sources, and a clear bottom line - not generic advice." },
             ].map(function({ step, color, title, body }) {
               return (
                 <div key={step} style={{ background: "#0F172A", border: "1px solid #334155", borderRadius: "12px", padding: "28px", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -161,9 +161,7 @@ export default async function HomePage() {
             </div>
             <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
               {[
-                { label: "Feed", href: "/feed" },
-                { label: "Ask the Economist", href: "/ask" },
-                { label: "My Economy", href: "/my-economy" },
+                { label: "My Economist", href: "/my-economist" },
                 { label: "Get Started", href: "/signup" },
               ].map(function({ label, href }) {
                 return (
