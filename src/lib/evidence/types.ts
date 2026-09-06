@@ -50,10 +50,22 @@ export interface EvidenceCard {
   publishedDate: string; // ISO date
 }
 
-export type Classification = "covered" | "partial" | "not_covered";
+// "covered"/"partial"/"not_covered" are the drafting model's own classification.
+// "unsupported" and "error" are engine-level outcomes added after that call:
+// "unsupported" means the model answered but the independent verification
+// pass found content the cited cards don't establish (a real system catch,
+// not "no evidence exists" on the topic). "error" means a technical failure
+// (an API call itself threw, even after retrying) prevented producing or
+// checking an answer at all — this should read as "try again", never as a
+// coverage judgment.
+export type Classification = "covered" | "partial" | "not_covered" | "unsupported" | "error";
 
 export interface AnswerEnvelope {
   classification: Classification;
-  cardIds: string[]; // Published card IDs actually cited — empty for not_covered
-  answer: string; // the plain-language answer shown to the user
+  cardIds: string[]; // Published card IDs actually cited — empty for not_covered/unsupported/error
+  answer: string; // the short, direct answer / headline — for not_covered/unsupported, the plain refusal message (suggestions are separate, see `suggestions`); for error, the technical-failure message
+  why: string; // plain-language explanation of the mechanism/reasoning behind the answer — empty outside covered/partial
+  decisionRelevance: string; // how this bears on a decision the user might face, only when genuinely supported — empty when not applicable
+  limits: string; // "What this can't tell you" — drawn from the cited cards' answer boundaries/caveats — empty outside covered/partial
+  suggestions: string[]; // alternative questions the library CAN answer, for not_covered/unsupported only — always excludes the question just asked; empty for covered/partial/error
 }

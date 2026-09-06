@@ -55,20 +55,30 @@ export async function POST(req: NextRequest) {
     const envelope = await answerQuestion(trimmed, userProfile ?? {});
     const citations = citationsFor(envelope.cardIds);
 
-    await prisma.userQuestion.create({
-      data: {
-        userId: user.id,
-        question: trimmed,
-        answer: envelope.answer,
-        classification: envelope.classification,
-        cardIds: envelope.cardIds,
-        needsReview: envelope.classification !== "covered",
-      },
-    });
+    // "error" means the engine never actually completed an attempt on this
+    // question (a technical failure, not a coverage judgment) — it doesn't
+    // count against the daily question limit and isn't logged as a real
+    // answer needing review, since there's no answer to review.
+    if (envelope.classification !== "error") {
+      await prisma.userQuestion.create({
+        data: {
+          userId: user.id,
+          question: trimmed,
+          answer: envelope.answer,
+          classification: envelope.classification,
+          cardIds: envelope.cardIds,
+          needsReview: envelope.classification !== "covered",
+        },
+      });
+    }
 
     return NextResponse.json({
       classification: envelope.classification,
       answer: envelope.answer,
+      why: envelope.why,
+      decisionRelevance: envelope.decisionRelevance,
+      limits: envelope.limits,
+      suggestions: envelope.suggestions,
       citations,
     });
   } catch (err) {
