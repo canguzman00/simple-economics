@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp } from "lucide-react";
+import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 import { STARTER_QUESTIONS } from "@/lib/evidence/cards";
 
@@ -20,6 +20,16 @@ const COLOR = {
   accentSoft: "#FAF0EE",     // pale coral — identity badge background
   border: "#E7DDDD",
   userBubble: "#F1E9E4",     // soft warm tint — user message bubble
+};
+
+// Research mode (2026-09-06) gets its own, deliberately different accent —
+// never coral — so a research answer is visually unmistakable from a
+// reviewed one at a glance, not just via its text label. See
+// claude/answer-contract.md §8.
+const RESEARCH_COLOR = {
+  bg: "#FBF6EC",       // pale amber — research answer background
+  border: "#E7DBB8",
+  label: "#8A6D2E",    // amber-brown — badge text/icon
 };
 
 const FONT_VAR = "var(--font-source-sans), 'Source Sans 3', sans-serif";
@@ -55,6 +65,24 @@ const INTERACTIVE_STYLES = `
   .se-btn-primary:hover:not(:disabled) { background: #9E3542; }
   .se-btn-primary:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
   .se-btn-primary:disabled { background: #D9B6BB; color: #FFFFFF; cursor: not-allowed; }
+
+  .se-btn-secondary {
+    display: inline-block; background: none; color: ${COLOR.text}; border: 1.5px solid ${COLOR.border};
+    border-radius: 8px; font-size: 14px; font-weight: 600; padding: 9px 22px;
+    cursor: pointer; transition: border-color 120ms, background-color 120ms;
+  }
+  .se-btn-secondary:hover:not(:disabled) { border-color: ${COLOR.text}; background: ${COLOR.accentSoft}; }
+  .se-btn-secondary:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+  .se-btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .se-chip-neutral {
+    font-size: 13.5px; font-weight: 600; color: ${RESEARCH_COLOR.label}; background: ${COLOR.surface};
+    border: 1.5px solid ${RESEARCH_COLOR.border}; border-radius: 99px; padding: 8px 15px; cursor: pointer;
+    transition: background-color 120ms, color 120ms;
+  }
+  .se-chip-neutral:hover:not(:disabled) { background: ${RESEARCH_COLOR.label}; color: #fff; border-color: ${RESEARCH_COLOR.label}; }
+  .se-chip-neutral:focus-visible { outline: 2px solid ${RESEARCH_COLOR.label}; outline-offset: 2px; }
+  .se-chip-neutral:disabled { opacity: 0.55; cursor: not-allowed; }
 
   .se-btn-starter {
     text-align: left; font-size: 14px; line-height: 1.4; border-radius: 8px; padding: 12px 14px;
@@ -173,11 +201,38 @@ interface ConversationTurn {
   content: string;
 }
 
+// --- Optional Research mode (2026-09-06) ------------------------------------
+// Offered only after a "not_covered" reviewed-path result, only once the
+// user explicitly clicks "Explore the research". See
+// claude/answer-contract.md §8 for the full design and safety rationale.
+type ResearchClassification = "research" | "declined" | "error";
+
+interface ResearchSource {
+  title: string;
+  url: string;
+}
+
+interface ResearchResult {
+  classification: ResearchClassification;
+  answer: string;
+  limitations: string;
+  sources: ResearchSource[];
+  clarify: ClarifyPrompt | null;
+}
+
+interface ResearchState {
+  status: "loading" | "done";
+  data: ResearchResult | null;
+  fetchError: string | null; // technical fetch/network failure, distinct from classification "error"
+}
+
 interface Exchange {
   id: string;
   question: string;
   result: AnswerResult | null; // null while in flight
   fetchError: string | null; // set only on a technical fetch/network failure, distinct from classification "error"
+  research?: ResearchState; // present once the user has clicked "Explore the research" for this exchange
+  showReviewedSuggestions?: boolean; // true once the user has clicked "Stay with reviewed topics"
 }
 
 interface Props {
@@ -196,6 +251,18 @@ function summarizeForHistory(result: AnswerResult): string {
     parts.push(`(I then asked: "${result.clarify.question}" — options offered: ${result.clarify.options.join(", ")})`);
   }
   return parts.join(" ");
+}
+
+// A compact summary of a completed research-mode exchange, for the SAME
+// reason summarizeForHistory exists above: give later reviewed-path
+// questions enough context to resolve a reference ("that study," "the one
+// you found") without ever implying the research itself was reviewed or
+// approved — the label is baked into the summary text itself, not left
+// implicit, since this text becomes assistant history the reviewed-path
+// model sees with no other framing around it.
+function summarizeResearchForHistory(data: ResearchResult): string {
+  if (data.classification !== "research") return "";
+  return `(I also explored general research on this, not reviewed or approved by Simple Economics: ${data.answer})`;
 }
 
 let idCounter = 0;
@@ -228,6 +295,10 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
       if (!ex.result) continue;
       turns.push({ role: "user", content: ex.question });
       turns.push({ role: "assistant", content: summarizeForHistory(ex.result) });
+      if (ex.research?.data) {
+        const researchSummary = summarizeResearchForHistory(ex.research.data);
+        if (researchSummary) turns.push({ role: "assistant", content: researchSummary });
+      }
     }
     return turns;
   }
@@ -287,6 +358,63 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     }
   }
 
+  // Research mode is only ever entered by explicit click, per exchange, on a
+  // "not_covered" reviewed-path result — never automatically. `exIndex` is
+  // needed so the same conversation history the exchange itself was asked
+  // with (not including the not_covered exchange) is what research mode
+  // sees too.
+  async function exploreResearch(exId: string, exIndex: number) {
+    const ex = exchanges[exIndex];
+    if (!ex || loading) return;
+
+    setExchanges((prev) =>
+      prev.map((e) => (e.id === exId ? { ...e, research: { status: "loading", data: null, fetchError: null } } : e))
+    );
+
+    const history = buildHistory(exIndex);
+
+    try {
+      const res = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: ex.question, userProfile: profile, history }),
+      });
+
+      if (res.status === 429) {
+        setLimitReached(true);
+        setExchanges((prev) =>
+          prev.map((e) =>
+            e.id === exId
+              ? { ...e, research: { status: "done", data: null, fetchError: "You've reached your daily limit of 5 questions. Check back tomorrow." } }
+              : e
+          )
+        );
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setExchanges((prev) =>
+          prev.map((e) =>
+            e.id === exId
+              ? { ...e, research: { status: "done", data: null, fetchError: data.error ?? "Something went wrong. Please try again." } }
+              : e
+          )
+        );
+        return;
+      }
+      const data = (await res.json()) as ResearchResult;
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, research: { status: "done", data, fetchError: null } } : e)));
+    } catch {
+      setExchanges((prev) =>
+        prev.map((e) => (e.id === exId ? { ...e, research: { status: "done", data: null, fetchError: "Connection lost. Please try again." } } : e))
+      );
+    }
+  }
+
+  function stayWithReviewed(exId: string) {
+    setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, showReviewedSuggestions: true } : e)));
+  }
+
   function startOver() {
     setExchanges([]);
     setDraft("");
@@ -340,7 +468,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
       {/* Conversation thread */}
       {hasThread && (
         <div style={{ display: "flex", flexDirection: "column", gap: "22px", marginBottom: "26px" }}>
-          {exchanges.map((ex) => (
+          {exchanges.map((ex, exIndex) => (
             <div key={ex.id} className="se-enter" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <UserBubble text={ex.question} />
               {ex.fetchError ? (
@@ -353,6 +481,10 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
                   onQuickReply={(label) => send(label)}
                   onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
                   disabled={loading}
+                  research={ex.research}
+                  showReviewedSuggestions={ex.showReviewedSuggestions}
+                  onExploreResearch={() => exploreResearch(ex.id, exIndex)}
+                  onStayReviewed={() => stayWithReviewed(ex.id)}
                 />
               ) : (
                 <TypingIndicator />
@@ -479,10 +611,10 @@ function IdentityMark() {
   );
 }
 
-function TypingIndicator() {
+function TypingIndicator({ hideIdentity }: { hideIdentity?: boolean } = {}) {
   return (
     <div>
-      <IdentityMark />
+      {!hideIdentity && <IdentityMark />}
       <div
         style={{
           display: "inline-flex",
@@ -521,6 +653,10 @@ function EconomistReply({
   onQuickReply,
   onRetry,
   disabled,
+  research,
+  showReviewedSuggestions,
+  onExploreResearch,
+  onStayReviewed,
 }: {
   result: AnswerResult;
   expanded: { evidence?: boolean; explain?: boolean };
@@ -528,15 +664,22 @@ function EconomistReply({
   onQuickReply: (label: string) => void;
   onRetry: () => void;
   disabled: boolean;
+  research?: ResearchState;
+  showReviewedSuggestions?: boolean;
+  onExploreResearch: () => void;
+  onStayReviewed: () => void;
 }) {
-  const isRefusal = result.classification === "not_covered" || result.classification === "unsupported";
   const isError = result.classification === "error";
 
   if (isError) {
     return <TechnicalErrorReply message={result.answer} onRetry={onRetry} />;
   }
 
-  if (isRefusal) {
+  // "unsupported": the library likely DOES cover this topic, but this
+  // specific drafted answer failed the accuracy check — Research mode isn't
+  // offered here (the "hasn't yet reviewed the evidence" copy would be
+  // factually wrong), just the existing reviewed-alternatives treatment.
+  if (result.classification === "unsupported") {
     return (
       <div>
         <IdentityMark />
@@ -552,6 +695,67 @@ function EconomistReply({
               ))}
             </div>
           </div>
+        )}
+      </div>
+    );
+  }
+
+  // "not_covered": no Published card matches this topic at all. This is
+  // where the optional Research mode offer appears — see
+  // claude/answer-contract.md §8. Research only ever starts on explicit
+  // click; nothing here calls /api/research on its own.
+  if (result.classification === "not_covered") {
+    const hasChosen = !!research || showReviewedSuggestions;
+    return (
+      <div>
+        <IdentityMark />
+        <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>
+          Simple Economics hasn&apos;t yet reviewed the evidence on this topic.
+        </div>
+        <div style={{ fontSize: "15px", lineHeight: 1.55, color: COLOR.textSecondary, marginTop: "8px" }}>
+          In the meantime, we can explore scientific research and official sources, with findings and limitations
+          clearly explained. This answer has not been reviewed or approved by Simple Economics.
+        </div>
+
+        {!hasChosen && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" }}>
+            <button onClick={onExploreResearch} className="se-btn-primary" disabled={disabled}>
+              Explore the research
+            </button>
+            <button onClick={onStayReviewed} className="se-btn-secondary" disabled={disabled}>
+              Stay with reviewed topics
+            </button>
+          </div>
+        )}
+
+        {showReviewedSuggestions && result.suggestions.length > 0 && (
+          <div style={{ marginTop: "16px" }}>
+            <p style={smallLabelStyle()}>Questions our library can answer</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+              {result.suggestions.map((s) => (
+                <button key={s} onClick={() => onQuickReply(s)} className="se-btn-starter" disabled={disabled}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {research?.status === "loading" && (
+          <div style={{ marginTop: "14px" }}>
+            <TypingIndicator hideIdentity />
+          </div>
+        )}
+        {research?.fetchError && (
+          <div style={{ marginTop: "14px" }}>
+            <div style={{ fontSize: "14px", color: COLOR.text }}>{research.fetchError}</div>
+            <button onClick={onExploreResearch} className="se-btn-primary" style={{ marginTop: "10px" }}>
+              Try again
+            </button>
+          </div>
+        )}
+        {research?.status === "done" && research.data && (
+          <ResearchAnswerBlock data={research.data} onQuickReply={onQuickReply} disabled={disabled} />
         )}
       </div>
     );
@@ -692,6 +896,105 @@ function EconomistReply({
               {renderWithLinks(result.why)}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The one required, always-visible label for any research-mode answer — see
+// claude/answer-contract.md §8. Deliberately its own pale-amber pill, never
+// the coral identity mark used for reviewed answers, so the two are
+// unmistakable at a glance, not just by reading the text.
+function ResearchLabel() {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        marginBottom: "10px",
+        padding: "4px 10px",
+        borderRadius: "99px",
+        background: COLOR.surface,
+        border: `1px solid ${RESEARCH_COLOR.border}`,
+      }}
+    >
+      <Search size={12} color={RESEARCH_COLOR.label} />
+      <span style={{ fontSize: "12px", fontWeight: 700, color: RESEARCH_COLOR.label }}>
+        Research answer · not reviewed or approved by Simple Economics
+      </span>
+    </div>
+  );
+}
+
+function ResearchAnswerBlock({
+  data,
+  onQuickReply,
+  disabled,
+}: {
+  data: ResearchResult;
+  onQuickReply: (label: string) => void;
+  disabled: boolean;
+}) {
+  // "declined"/"error" already have their own distinct copy in data.answer
+  // (see researchEngine.ts) — show it plainly, no amber panel, no sources,
+  // since there's nothing real to attach that treatment to.
+  if (data.classification !== "research") {
+    return (
+      <div style={{ marginTop: "14px", fontSize: "15px", lineHeight: 1.6, color: COLOR.text }}>{data.answer}</div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: "14px",
+        background: RESEARCH_COLOR.bg,
+        border: `1px solid ${RESEARCH_COLOR.border}`,
+        borderRadius: "10px",
+        padding: "16px 18px",
+      }}
+    >
+      <ResearchLabel />
+      <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>{renderWithLinks(data.answer)}</div>
+
+      {data.limitations && (
+        <div style={{ marginTop: "12px" }}>
+          <p style={smallLabelStyle()}>Limitations</p>
+          <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.textSecondary, marginTop: "4px" }}>
+            {data.limitations}
+          </p>
+        </div>
+      )}
+
+      {data.sources.length > 0 && (
+        <div style={{ marginTop: "12px" }}>
+          <p style={smallLabelStyle()}>Sources</p>
+          <ul style={{ margin: "6px 0 0", paddingLeft: "18px" }}>
+            {data.sources.map((s) => (
+              <li key={s.url} style={{ fontSize: "13px", marginTop: "3px" }}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="se-link">
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.clarify && (
+        <div style={{ marginTop: "14px" }}>
+          <p style={{ fontSize: "14px", fontWeight: 600, color: COLOR.text, marginBottom: "10px" }}>
+            {data.clarify.question}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {data.clarify.options.map((opt) => (
+              <button key={opt} onClick={() => onQuickReply(opt)} className="se-chip-neutral" disabled={disabled}>
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
