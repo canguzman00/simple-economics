@@ -293,6 +293,19 @@ function nextId(): string {
   return `ex-${Date.now()}-${idCounter}`;
 }
 
+// Both engines' prompts explicitly tell the model a clarify option may be "a
+// neutral, commitment-free option such as 'Something else' or 'Not sure
+// yet'" (see answerEngine.ts's clarify rules, mirrored in researchEngine.ts)
+// — the whole point being the user isn't forced into one of the specific
+// supported angles. Clicking a SPECIFIC option (e.g. "How Fed rate cuts
+// affect mortgage rates") is meant to resend that label as a real follow-up
+// question, which works fine. But resending one of these neutral labels
+// literally is nonsensical — the model then has to answer the question
+// "Something else" as if it were a genuine question, which is exactly the
+// confusing non-answer Carlos hit live. So a click matching this pattern
+// focuses the composer for free text instead of sending anything.
+const NEUTRAL_QUICKREPLY_RE = /^(something else|something different|not sure( yet)?|none of these|none of the above|other)\.?$/i;
+
 export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   const [draft, setDraft] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -301,6 +314,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   const [showAllQuestions, setShowAllQuestions] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, { evidence?: boolean; explain?: boolean }>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -435,6 +449,31 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
 
   function stayWithReviewed(exId: string) {
     setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, showReviewedSuggestions: true } : e)));
+  }
+
+  function focusComposer() {
+    textareaRef.current?.focus();
+    textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // Wraps a clarify/suggestion chip click: a neutral option (see
+  // NEUTRAL_QUICKREPLY_RE above) focuses the composer instead of being sent
+  // as a literal question. Everything else is resent as a real follow-up,
+  // same as before.
+  function handleQuickReply(label: string) {
+    if (NEUTRAL_QUICKREPLY_RE.test(label.trim())) {
+      focusComposer();
+      return;
+    }
+    send(label);
+  }
+
+  function handleResearchQuickReply(label: string, sourceExIndex: number) {
+    if (NEUTRAL_QUICKREPLY_RE.test(label.trim())) {
+      focusComposer();
+      return;
+    }
+    sendResearchFollowup(label, sourceExIndex);
   }
 
   // Continuing a research-mode conversation, directly — skips the reviewed
@@ -576,8 +615,8 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
                   result={ex.result}
                   expanded={expanded[ex.id] ?? {}}
                   onToggle={(key) => toggle(ex.id, key)}
-                  onQuickReply={(label) => send(label)}
-                  onResearchQuickReply={(label) => sendResearchFollowup(label, exIndex)}
+                  onQuickReply={(label) => handleQuickReply(label)}
+                  onResearchQuickReply={(label) => handleResearchQuickReply(label, exIndex)}
                   onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
                   onRetryResearchFollowup={() => exploreResearch(ex.id, exIndex)}
                   disabled={loading}
@@ -616,6 +655,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
         <div style={{ position: "relative" }}>
           <textarea
             id="question"
+            ref={textareaRef}
             className="se-textarea"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
