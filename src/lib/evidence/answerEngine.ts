@@ -2,6 +2,14 @@ import { anthropic } from "@/lib/anthropic";
 import { EVIDENCE_CARDS, getCardById } from "./cards";
 import type { AnswerEnvelope, Classification, ClarifyPrompt, ConversationTurn } from "./types";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
+import {
+  housingContext,
+  employmentContext,
+  concernContext,
+  lifeStageContext,
+  debtContext,
+  industryContext,
+} from "@/lib/ai/systemPrompt";
 
 // How many prior turns (user + assistant messages combined) to send back to
 // the model for reference resolution. Bounded so a long conversation doesn't
@@ -46,13 +54,32 @@ ${caveats}${wwca}`;
   }).join("\n\n");
 }
 
+// Onboarding collects 7 fields (housing, employment, concern, city, life
+// stage, debt types, industry) — see the 7-step flow. Until this fix, this
+// function only ever read 3 of them; the other 4 were fetched from the DB,
+// sent in every request, and then silently dropped before reaching the
+// model. housingContext/employmentContext/concernContext/lifeStageContext/
+// debtContext/industryContext are the same per-value descriptions
+// systemPrompt.ts already wrote (originally for the pre-Evidence-Card
+// "Ask the Economist" prompt) — reused here rather than rewritten, so this
+// stays consistent with researchEngine.ts's own personalizationHint below.
 function personalizationHint(profile: UserProfile): string {
   const bits: string[] = [];
-  if (profile.housingStatus) bits.push(`housing status: ${profile.housingStatus}`);
-  if (profile.employmentStatus) bits.push(`employment: ${profile.employmentStatus}`);
-  if (profile.concern) bits.push(`stated concern: ${profile.concern}`);
-  if (!bits.length) return "";
-  return `\n\nUSER CONTEXT (for phrasing and choosing which relevant card to lead with ONLY — never as a basis for a new claim, prediction, or recommendation): ${bits.join(", ")}.`;
+  if (profile.housingStatus || profile.situation) {
+    bits.push(`they are ${housingContext(profile.housingStatus, profile.situation)}`);
+  }
+  const employment = employmentContext(profile.employmentStatus, profile.situation);
+  if (employment) bits.push(employment);
+  if (profile.city) bits.push(`based in ${profile.city}`);
+  if (profile.concern) bits.push(`their stated top financial concern is ${concernContext(profile.concern)}`);
+
+  const extra = [lifeStageContext(profile.lifeStage), debtContext(profile.debtTypes), industryContext(profile.industry)]
+    .filter((x): x is string => Boolean(x));
+
+  if (!bits.length && !extra.length) return "";
+  const bitsLine = bits.length ? `${bits.join(", ")}.` : "";
+  const extraLine = extra.length ? ` ${extra.join(" ")}` : "";
+  return `\n\nUSER CONTEXT (for phrasing and choosing which relevant card to lead with ONLY — never as a basis for a new claim, prediction, or recommendation): ${bitsLine}${extraLine}`;
 }
 
 function buildSystemPrompt(profile: UserProfile): string {
