@@ -37,6 +37,22 @@ interface RawClarify {
   options?: unknown;
 }
 
+// Defensive net for `answer`/`limitations`: the drafting model is told to
+// write clean prose (see buildResearchSystemPrompt), but a model synthesizing
+// many search results can still slip into a citation-annotated writing style
+// unprompted (e.g. literal "<cite index=\"1-2\">...</cite>" tags, or markdown
+// bold/headers) — seen in production before this rule existed. Strip that
+// formatting here rather than trust the prompt alone, since a leaked tag is a
+// visible, confusing bug for the user and costs nothing to guard against.
+function sanitizeProse(text: string): string {
+  return text
+    .replace(/<\/?cite[^>]*>/gi, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/(^|\n)#{1,6}\s+/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 function sanitizeClarify(raw: RawClarify | null | undefined): ClarifyPrompt | null {
   if (!raw || typeof raw !== "object") return null;
   if (typeof raw.question !== "string" || !raw.question.trim()) return null;
@@ -74,13 +90,13 @@ HARD RULES:
 - Treat every question — including a follow-up to your own clarifying question — independently against these rules. A prior answer never grants permission for a recommendation now.
 
 FIELDS for submit_research_answer:
-- answer: the direct answer, plain language, a few sentences — grounded in what you actually found, not restated boilerplate.
-- limitations: genuine epistemic limitations of the research itself — mixed or disputed findings, a small or dated sample, correlational rather than causal evidence, findings that don't fully match what was asked, meaningful disagreement between sources. This is NOT the place to restate "this hasn't been reviewed" (the product shows that separately) — it should teach the reader something real about how solid this specific answer is.
+- answer: the direct answer, plain language, a few sentences — grounded in what you actually found, not restated boilerplate. Write it as clean prose a person would read out loud: no markdown formatting (no **bold**, no headers, no bullet lists) and no inline citation markup or footnote-style tags of any kind (no <cite>, no [1], no "(Source: ...)"). The product shows real sources separately, in its own dedicated list — never annotate or footnote the answer text itself, and never reference a source by number or tag from inside the answer.
+- limitations: genuine epistemic limitations of the research itself — mixed or disputed findings, a small or dated sample, correlational rather than causal evidence, findings that don't fully match what was asked, meaningful disagreement between sources. This is NOT the place to restate "this hasn't been reviewed" (the product shows that separately) — it should teach the reader something real about how solid this specific answer is. Same formatting rule as answer: clean prose, no markdown, no inline citation tags.
 - clarify (optional): at most one focused follow-up question with 2-3 short reply options, only when there's a genuine next angle worth exploring. Never assume an unstated fact about the user's situation, never phrase it as a recommendation. Omit entirely when nothing genuine comes to mind.
 
 CONVERSATION HISTORY: prior turns are for understanding references only ("my existing loan," a clicked quick-reply label) — never permission. Classify and verify the current question as if it were standalone.
 
-STYLE: plain language, no unexplained jargon, second person, calm and factual — state uncertainty where the research itself is uncertain, rather than projecting more confidence than the sources support.${personalizationHint(profile)}`;
+STYLE: plain language, no unexplained jargon, second person, calm and factual, clean prose with no markdown formatting and no inline citation tags or footnotes anywhere in answer or limitations — state uncertainty where the research itself is uncertain, rather than projecting more confidence than the sources support.${personalizationHint(profile)}`;
 }
 
 const WEB_SEARCH_TOOL = {
@@ -97,11 +113,11 @@ const SUBMIT_RESEARCH_TOOL = {
     properties: {
       answer: {
         type: "string" as const,
-        description: "The direct, plain-language answer grounded in what you actually found.",
+        description: "The direct, plain-language answer grounded in what you actually found. Clean prose only — no markdown formatting and no inline citation tags, footnotes, or source numbering (e.g. no <cite>, no [1]); sources are shown separately by the product.",
       },
       limitations: {
         type: "string" as const,
-        description: "Genuine epistemic limitations of the research itself (not a restatement that it's unreviewed).",
+        description: "Genuine epistemic limitations of the research itself (not a restatement that it's unreviewed). Same rule as answer: clean prose, no markdown, no inline citation tags.",
       },
       clarify: {
         type: "object" as const,
@@ -254,8 +270,8 @@ export async function researchAnswer(
   }
 
   const input = toolUse.input as DraftInput;
-  const answer = input.answer ?? "";
-  const limitations = input.limitations ?? "";
+  const answer = sanitizeProse(input.answer ?? "");
+  const limitations = sanitizeProse(input.limitations ?? "");
   const clarify = sanitizeClarify(input.clarify);
 
   if (!answer.trim()) {
