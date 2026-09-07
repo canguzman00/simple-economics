@@ -1,40 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 import { STARTER_QUESTIONS } from "@/lib/evidence/cards";
 
-// --- Design tokens (My Economist page only — see the design-refresh brief) ---
+// --- Design tokens (My Economist page only) --------------------------------
+// Conversational redesign, 2026-09-06: same navy/coral/porcelain identity as
+// the previous single-answer layout, applied to a running thread instead of
+// a page that resets on every question. See claude/answer-contract.md for
+// the underlying answer-engine contract this renders.
 const COLOR = {
-  bg: "#FBF7F5",            // warm porcelain page background
-  surface: "#FFFFFF",       // card/input surfaces
-  text: "#202B3B",          // navy — primary text
-  textSecondary: "#62616B", // secondary text
-  accent: "#B9404F",        // dark coral — buttons, links
+  bg: "#FBF7F5",             // warm porcelain page background
+  surface: "#FFFFFF",        // card/input/panel surfaces
+  text: "#202B3B",           // navy — primary text
+  textSecondary: "#62616B",  // secondary text
+  accent: "#B9404F",         // coral — actions, identity mark, limitation rule
+  accentSoft: "#FAF0EE",     // pale coral — identity badge background
   border: "#E7DDDD",
-  limitsBg: "#FAF0EE",      // pale coral inset for "what this can't tell you"
+  userBubble: "#F1E9E4",     // soft warm tint — user message bubble
 };
 
 const FONT_VAR = "var(--font-source-sans), 'Source Sans 3', sans-serif";
 
 // Interactive states (hover/focus-visible/disabled) live in real CSS, not
-// inline styles, because inline `style` can't express pseudo-classes and
-// would otherwise out-specificity any stylesheet rule. Colors are still the
-// exact tokens above — this block is the only place they're duplicated as
-// literal CSS.
+// inline styles, because inline `style` can't express pseudo-classes.
 const INTERACTIVE_STYLES = `
   .se-root { font-family: ${FONT_VAR}; }
   .se-root button, .se-root textarea, .se-root input { font-family: inherit; }
 
   .se-textarea {
-    width: 100%; box-sizing: border-box; outline: none; resize: vertical;
-    border-radius: 8px; background: ${COLOR.surface}; border: 1.5px solid ${COLOR.border};
-    color: ${COLOR.text}; font-size: 15px; padding: 12px 14px; transition: border-color 120ms;
+    width: 100%; box-sizing: border-box; outline: none; resize: none;
+    border-radius: 10px; background: ${COLOR.surface}; border: 1.5px solid ${COLOR.border};
+    color: ${COLOR.text}; font-size: 16px; line-height: 1.5; padding: 12px 50px 12px 16px; transition: border-color 120ms;
   }
   .se-textarea:focus-visible { border-color: ${COLOR.accent}; }
   .se-textarea:disabled { opacity: 0.6; }
+
+  .se-send {
+    position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%;
+    background: ${COLOR.accent}; color: #FFFFFF; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background-color 120ms;
+  }
+  .se-send:hover:not(:disabled) { background: #9E3542; }
+  .se-send:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+  .se-send:disabled { background: #D9B6BB; cursor: not-allowed; }
 
   .se-btn-primary {
     display: inline-block; background: ${COLOR.accent}; color: #FFFFFF; border: none;
@@ -50,25 +61,44 @@ const INTERACTIVE_STYLES = `
     background: ${COLOR.surface}; border: 1px solid ${COLOR.border}; color: ${COLOR.text};
     cursor: pointer; transition: border-color 120ms, background-color 120ms;
   }
-  .se-btn-starter:hover { border-color: ${COLOR.accent}; background: ${COLOR.limitsBg}; }
+  .se-btn-starter:hover { border-color: ${COLOR.accent}; background: ${COLOR.accentSoft}; }
   .se-btn-starter:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+
+  .se-chip {
+    font-size: 13.5px; font-weight: 600; color: ${COLOR.accent}; background: ${COLOR.surface};
+    border: 1.5px solid ${COLOR.accent}; border-radius: 99px; padding: 8px 15px; cursor: pointer;
+    transition: background-color 120ms, color 120ms;
+  }
+  .se-chip:hover:not(:disabled) { background: ${COLOR.accent}; color: #fff; }
+  .se-chip:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+  .se-chip:disabled { opacity: 0.55; cursor: not-allowed; }
 
   .se-btn-link {
     font-size: 13px; font-weight: 600; color: ${COLOR.accent}; background: none; border: none;
-    padding: 0; cursor: pointer;
+    padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
   }
   .se-btn-link:hover { text-decoration: underline; }
   .se-btn-link:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; border-radius: 3px; }
 
-  .se-btn-disclosure {
-    display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
-    color: ${COLOR.text}; background: none; border: none; padding: 0; cursor: pointer;
+  .se-disclosure {
+    display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600;
+    color: ${COLOR.textSecondary}; background: none; border: none; padding: 0; cursor: pointer;
   }
-  .se-btn-disclosure:hover { color: ${COLOR.accent}; }
-  .se-btn-disclosure:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; border-radius: 3px; }
+  .se-disclosure:hover { color: ${COLOR.accent}; }
+  .se-disclosure:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; border-radius: 3px; }
 
   .se-link { color: ${COLOR.accent}; text-decoration: underline; }
   .se-link:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+
+  @keyframes se-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .se-enter { animation: se-fade-up 220ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .se-enter { animation: none; } }
+
+  @keyframes se-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3px); opacity: 1; } }
+  .se-dot { width: 6px; height: 6px; border-radius: 50%; background: ${COLOR.textSecondary}; animation: se-bounce 1.1s infinite ease-in-out; }
+  .se-dot:nth-child(2) { animation-delay: .15s; }
+  .se-dot:nth-child(3) { animation-delay: .3s; }
+  @media (prefers-reduced-motion: reduce) { .se-dot { animation: none; opacity: .8; } }
 `;
 
 const URL_REGEX = /https?:\/\/[^\s]+/g;
@@ -122,14 +152,32 @@ interface Citation {
 
 type Classification = "covered" | "partial" | "not_covered" | "unsupported" | "error";
 
+interface ClarifyPrompt {
+  question: string;
+  options: string[];
+}
+
 interface AnswerResult {
   classification: Classification;
   answer: string;
   why: string;
   decisionRelevance: string;
-  limits: string;
+  essentialLimitation: string;
+  clarify: ClarifyPrompt | null;
   suggestions: string[];
   citations: Citation[];
+}
+
+interface ConversationTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface Exchange {
+  id: string;
+  question: string;
+  result: AnswerResult | null; // null while in flight
+  fetchError: string | null; // set only on a technical fetch/network failure, distinct from classification "error"
 }
 
 interface Props {
@@ -137,61 +185,112 @@ interface Props {
   isAuthenticated: boolean;
 }
 
+// A compact, faithful plain-text summary of what the user actually saw for
+// one exchange — this is what goes back as "assistant" conversation history,
+// never internal reasoning or hidden fields. Keeping it short bounds prompt
+// growth across a long conversation.
+function summarizeForHistory(result: AnswerResult): string {
+  const parts = [result.answer];
+  if (result.essentialLimitation) parts.push(`(Does not establish: ${result.essentialLimitation})`);
+  if (result.clarify) {
+    parts.push(`(I then asked: "${result.clarify.question}" — options offered: ${result.clarify.options.join(", ")})`);
+  }
+  return parts.join(" ");
+}
+
+let idCounter = 0;
+function nextId(): string {
+  idCounter += 1;
+  return `ex-${Date.now()}-${idCounter}`;
+}
+
 export function MyEconomistClient({ profile, isAuthenticated }: Props) {
-  const [question, setQuestion] = useState("");
-  const [lastQuestion, setLastQuestion] = useState("");
-  const [result, setResult] = useState<AnswerResult | null>(null);
+  const [draft, setDraft] = useState("");
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
-  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, { evidence?: boolean; explain?: boolean }>>({});
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  async function handleSubmit(q = question) {
-    const trimmed = q.trim();
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [exchanges.length, loading]);
+
+  function toggle(exId: string, key: "evidence" | "explain") {
+    setExpanded((prev) => ({ ...prev, [exId]: { ...prev[exId], [key]: !prev[exId]?.[key] } }));
+  }
+
+  function buildHistory(upToIndex: number): ConversationTurn[] {
+    const turns: ConversationTurn[] = [];
+    for (let i = 0; i < upToIndex; i++) {
+      const ex = exchanges[i];
+      if (!ex.result) continue;
+      turns.push({ role: "user", content: ex.question });
+      turns.push({ role: "assistant", content: summarizeForHistory(ex.result) });
+    }
+    return turns;
+  }
+
+  async function send(text: string, opts?: { retryExchangeId?: string }) {
+    const trimmed = text.trim();
     if (!trimmed || loading) return;
-    setResult(null);
-    setFetchError(null);
     setLimitReached(false);
-    setSourcesOpen(false);
+
+    let exId: string;
+    let historyEndIndex: number;
+
+    if (opts?.retryExchangeId) {
+      exId = opts.retryExchangeId;
+      const idx = exchanges.findIndex((e) => e.id === exId);
+      historyEndIndex = idx === -1 ? exchanges.length : idx;
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, result: null, fetchError: null } : e)));
+    } else {
+      exId = nextId();
+      historyEndIndex = exchanges.length;
+      setExchanges((prev) => [...prev, { id: exId, question: trimmed, result: null, fetchError: null }]);
+      setDraft("");
+    }
+
+    const history = buildHistory(historyEndIndex);
     setLoading(true);
-    setLastQuestion(trimmed);
+
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, userProfile: profile }),
+        body: JSON.stringify({ question: trimmed, userProfile: profile, history }),
       });
+
       if (res.status === 429) {
         setLimitReached(true);
+        setExchanges((prev) =>
+          prev.map((e) => (e.id === exId ? { ...e, fetchError: "You've reached your daily limit of 5 questions. Check back tomorrow." } : e))
+        );
         setLoading(false);
         return;
       }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setFetchError(data.error ?? "Something went wrong. Please try again.");
+        setExchanges((prev) =>
+          prev.map((e) => (e.id === exId ? { ...e, fetchError: data.error ?? "Something went wrong. Please try again." } : e))
+        );
         setLoading(false);
         return;
       }
       const data = (await res.json()) as AnswerResult;
-      setResult(data);
-      setQuestion("");
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, result: data, fetchError: null } : e)));
     } catch {
-      setFetchError("Connection lost. Please try again.");
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, fetchError: "Connection lost. Please try again." } : e)));
     } finally {
       setLoading(false);
     }
   }
 
-  function handleSuggested(s: string) {
-    setQuestion(s);
-    handleSubmit(s);
-  }
-
-  function reset() {
-    setResult(null);
-    setQuestion("");
-    setFetchError(null);
+  function startOver() {
+    setExchanges([]);
+    setDraft("");
+    setExpanded({});
   }
 
   if (!isAuthenticated) {
@@ -220,60 +319,105 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     );
   }
 
+  const hasThread = exchanges.length > 0;
   const visibleStarterQuestions = showAllQuestions ? STARTER_QUESTIONS : STARTER_QUESTIONS.slice(0, 3);
+  const composerDisabled = loading || limitReached;
 
   return (
     <div className="se-root" style={{ maxWidth: "720px", color: COLOR.text }}>
       <style>{INTERACTIVE_STYLES}</style>
-      <PageHeader />
 
-      {/* Composer — kept above the starter questions per design spec */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
+        <PageHeader compact={hasThread} />
+        {hasThread && (
+          <button onClick={startOver} className="se-btn-link" style={{ marginBottom: "28px", flexShrink: 0 }}>
+            <RotateCcw size={13} />
+            Start over
+          </button>
+        )}
+      </div>
+
+      {/* Conversation thread */}
+      {hasThread && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "22px", marginBottom: "26px" }}>
+          {exchanges.map((ex) => (
+            <div key={ex.id} className="se-enter" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <UserBubble text={ex.question} />
+              {ex.fetchError ? (
+                <TechnicalErrorReply message={ex.fetchError} onRetry={() => send(ex.question, { retryExchangeId: ex.id })} />
+              ) : ex.result ? (
+                <EconomistReply
+                  result={ex.result}
+                  expanded={expanded[ex.id] ?? {}}
+                  onToggle={(key) => toggle(ex.id, key)}
+                  onQuickReply={(label) => send(label)}
+                  onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
+                  disabled={loading}
+                />
+              ) : (
+                <TypingIndicator />
+              )}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* Composer */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          handleSubmit();
+          send(draft);
         }}
-        style={{ marginTop: "8px" }}
       >
-        <label htmlFor="question" style={{ fontSize: "15px", fontWeight: 600, color: COLOR.text, display: "block" }}>
-          What&apos;s on your mind?
-        </label>
-        <p style={{ fontSize: "13px", color: COLOR.textSecondary, marginTop: "4px", marginBottom: "12px" }}>
-          Reviewed evidence. Clear limits.
-        </p>
-        <textarea
-          id="question"
-          className="se-textarea"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-          }}
-          placeholder="What do you want to understand?"
-          rows={3}
-          disabled={loading}
-        />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px" }}>
-          <p style={{ fontSize: "12px", color: COLOR.textSecondary }}>⌘ + Enter to submit</p>
-          <button type="submit" disabled={!question.trim() || loading} className="se-btn-primary">
-            {loading ? "Asking…" : "Ask"}
+        {!hasThread && (
+          <>
+            <label htmlFor="question" style={{ fontSize: "15px", fontWeight: 600, color: COLOR.text, display: "block" }}>
+              What&apos;s on your mind?
+            </label>
+            <p style={{ fontSize: "13px", color: COLOR.textSecondary, marginTop: "4px", marginBottom: "12px" }}>
+              Reviewed evidence. Clear limits.
+            </p>
+          </>
+        )}
+        <div style={{ position: "relative" }}>
+          <textarea
+            id="question"
+            className="se-textarea"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send(draft);
+              }
+            }}
+            placeholder={hasThread ? "Ask a follow-up…" : "What does this mean for you?"}
+            rows={hasThread ? 1 : 3}
+            disabled={composerDisabled}
+          />
+          <button type="submit" disabled={!draft.trim() || composerDisabled} className="se-send" aria-label="Send">
+            <ArrowUp size={16} />
           </button>
         </div>
+        <p style={{ fontSize: "12px", color: COLOR.textSecondary, marginTop: "8px" }}>
+          Enter to send · Shift + Enter for a new line
+        </p>
       </form>
 
-      {/* Starter questions */}
-      {!result && !loading && (
-        <div style={{ marginTop: "36px" }}>
+      {/* Starter questions — first visit only */}
+      {!hasThread && (
+        <div style={{ marginTop: "32px" }}>
           <p style={smallLabelStyle()}>Questions our evidence library can answer</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
             {visibleStarterQuestions.map((s) => (
-              <button key={s} onClick={() => handleSuggested(s)} className="se-btn-starter">
+              <button key={s} onClick={() => send(s)} className="se-btn-starter">
                 {s}
               </button>
             ))}
           </div>
           {STARTER_QUESTIONS.length > 3 && (
-            <button onClick={() => setShowAllQuestions((v) => !v)} className="se-btn-link" style={{ marginTop: "14px", display: "block" }}>
+            <button onClick={() => setShowAllQuestions((v) => !v)} className="se-btn-link" style={{ marginTop: "14px" }}>
               {showAllQuestions ? "Show fewer questions" : `See more questions (${STARTER_QUESTIONS.length - 3} more)`}
             </button>
           )}
@@ -288,110 +432,180 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
           </p>
         </div>
       )}
-
-      {/* Connection/technical fetch error (distinct from an "error" classification) */}
-      {fetchError && (
-        <div style={noticeBoxStyle("#FDECEC", "#F3C6C6")}>
-          <p style={{ fontSize: "14px", color: "#A33A3A" }}>{fetchError}</p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div style={{ marginTop: "36px" }}>
-          <p style={{ fontSize: "14px", color: COLOR.textSecondary }}>Checking the evidence library…</p>
-        </div>
-      )}
-
-      {/* Result */}
-      {result && !loading && (
-        <div style={{ marginTop: "40px" }}>
-          {(result.classification === "covered" || result.classification === "partial") && (
-            <CoveredAnswer result={result} sourcesOpen={sourcesOpen} setSourcesOpen={setSourcesOpen} />
-          )}
-
-          {(result.classification === "not_covered" || result.classification === "unsupported") && (
-            <RefusalAnswer result={result} onSuggested={handleSuggested} />
-          )}
-
-          {result.classification === "error" && <ErrorAnswer result={result} onRetry={() => handleSubmit(lastQuestion)} />}
-
-          <button onClick={reset} className="se-btn-link" style={{ marginTop: "24px", display: "block" }}>
-            Ask another question →
-          </button>
-        </div>
-      )}
     </div>
   );
 }
 
-function CoveredAnswer({
-  result,
-  sourcesOpen,
-  setSourcesOpen,
-}: {
-  result: AnswerResult;
-  sourcesOpen: boolean;
-  setSourcesOpen: (v: (prev: boolean) => boolean) => void;
-}) {
-  const isPartial = result.classification === "partial";
+function UserBubble({ text }: { text: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div
+        style={{
+          maxWidth: "80%",
+          background: COLOR.userBubble,
+          color: COLOR.text,
+          borderRadius: "14px 14px 3px 14px",
+          padding: "11px 16px",
+          fontSize: "15px",
+          lineHeight: 1.5,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function IdentityMark() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+      <div
+        style={{
+          width: "24px",
+          height: "24px",
+          borderRadius: "7px",
+          background: COLOR.accentSoft,
+          color: COLOR.accent,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <MessagesSquare size={14} />
+      </div>
+      <span style={{ fontSize: "13px", fontWeight: 700, color: COLOR.textSecondary }}>My Economist</span>
+    </div>
+  );
+}
+
+function TypingIndicator() {
   return (
     <div>
-      <p style={smallLabelStyle()}>{isPartial ? "Partially answered by our evidence library" : "Answer"}</p>
-
-      {/* 1. Short answer */}
-      <div style={{ fontSize: "19px", lineHeight: 1.5, fontWeight: 600, marginTop: "10px", color: COLOR.text }}>
-        {renderWithLinks(result.answer)}
+      <IdentityMark />
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "5px",
+          background: COLOR.surface,
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: "4px 14px 14px 14px",
+          padding: "13px 16px",
+        }}
+      >
+        <span className="se-dot" />
+        <span className="se-dot" />
+        <span className="se-dot" />
       </div>
+    </div>
+  );
+}
 
-      {/* 2. Why */}
-      {result.why && (
-        <div style={{ marginTop: "24px" }}>
-          <p style={sectionHeadingStyle()}>Why</p>
-          <div style={bodyTextStyle()}>{renderWithLinks(result.why)}</div>
-        </div>
-      )}
+function TechnicalErrorReply({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div>
+      <IdentityMark />
+      <div style={{ fontSize: "15px", lineHeight: 1.6, color: COLOR.text }}>{message}</div>
+      <button onClick={onRetry} className="se-btn-primary" style={{ marginTop: "12px" }}>
+        Try again
+      </button>
+    </div>
+  );
+}
 
-      {/* 3. Decision relevance — only when the engine actually produced one */}
+function EconomistReply({
+  result,
+  expanded,
+  onToggle,
+  onQuickReply,
+  onRetry,
+  disabled,
+}: {
+  result: AnswerResult;
+  expanded: { evidence?: boolean; explain?: boolean };
+  onToggle: (key: "evidence" | "explain") => void;
+  onQuickReply: (label: string) => void;
+  onRetry: () => void;
+  disabled: boolean;
+}) {
+  const isRefusal = result.classification === "not_covered" || result.classification === "unsupported";
+  const isError = result.classification === "error";
+
+  if (isError) {
+    return <TechnicalErrorReply message={result.answer} onRetry={onRetry} />;
+  }
+
+  if (isRefusal) {
+    return (
+      <div>
+        <IdentityMark />
+        <div style={{ fontSize: "16px", lineHeight: 1.6, color: COLOR.text }}>{renderWithLinks(result.answer)}</div>
+        {result.suggestions.length > 0 && (
+          <div style={{ marginTop: "16px" }}>
+            <p style={smallLabelStyle()}>Questions our library can answer</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+              {result.suggestions.map((s) => (
+                <button key={s} onClick={() => onQuickReply(s)} className="se-btn-starter" disabled={disabled}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const sourceCount = result.citations.reduce((n, c) => n + c.sources.length, 0);
+  const reviewer = result.citations[0]?.reviewedBy;
+
+  return (
+    <div>
+      <IdentityMark />
+
+      {/* Short answer — one to two plain sentences, no oversized bold treatment */}
+      <div style={{ fontSize: "17px", lineHeight: 1.55, color: COLOR.text }}>{renderWithLinks(result.answer)}</div>
+
+      {/* Decision relevance, when present — plain prose, no separate heading */}
       {result.decisionRelevance && (
-        <div style={{ marginTop: "24px" }}>
-          <p style={sectionHeadingStyle()}>What this means for a decision</p>
-          <div style={bodyTextStyle()}>{renderWithLinks(result.decisionRelevance)}</div>
+        <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text, marginTop: "8px" }}>
+          {renderWithLinks(result.decisionRelevance)}
         </div>
       )}
 
-      {/* 4. What this can't tell you */}
-      {result.limits && (
-        <div
+      {/* Essential limitation — one short, always-visible line */}
+      {result.essentialLimitation && (
+        <p
           style={{
-            marginTop: "24px",
-            background: COLOR.limitsBg,
-            border: `1px solid ${COLOR.border}`,
-            borderRadius: "8px",
-            padding: "16px 18px",
+            marginTop: "14px",
+            borderLeft: `2px solid ${COLOR.accent}`,
+            paddingLeft: "12px",
+            fontSize: "14.5px",
+            lineHeight: 1.5,
+            color: COLOR.textSecondary,
           }}
         >
-          <p style={sectionHeadingStyle()}>What this can&apos;t tell you</p>
-          <div style={bodyTextStyle()}>{renderWithLinks(result.limits)}</div>
-        </div>
+          {result.essentialLimitation}
+        </p>
       )}
 
-      {/* 5. Sources & limits — expandable, per-citation metadata from the actual cited cards */}
+      {/* Evidence disclosure — real per-card metadata, collapsed by default */}
       {result.citations.length > 0 && (
-        <div style={{ marginTop: "24px" }}>
-          <button onClick={() => setSourcesOpen((v) => !v)} aria-expanded={sourcesOpen} className="se-btn-disclosure">
-            <span>Sources &amp; limits</span>
-            <ChevronDown size={16} style={{ transform: sourcesOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
+        <div style={{ marginTop: "14px" }}>
+          <button onClick={() => onToggle("evidence")} aria-expanded={!!expanded.evidence} className="se-disclosure">
+            <ChevronRight size={13} style={{ transform: expanded.evidence ? "rotate(90deg)" : "none", transition: "transform 150ms" }} />
+            Evidence reviewed by {reviewer ?? "our economist"} · {sourceCount} source{sourceCount === 1 ? "" : "s"}
           </button>
-          {sourcesOpen && (
-            <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {expanded.evidence && (
+            <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "14px" }}>
               {result.citations.map((c) => (
                 <div
                   key={c.id}
                   style={{
                     border: `1px solid ${COLOR.border}`,
                     borderRadius: "8px",
-                    padding: "14px 16px",
+                    padding: "13px 15px",
                     background: COLOR.surface,
                   }}
                 >
@@ -443,46 +657,55 @@ function CoveredAnswer({
           )}
         </div>
       )}
-    </div>
-  );
-}
 
-function RefusalAnswer({ result, onSuggested }: { result: AnswerResult; onSuggested: (q: string) => void }) {
-  const isUnsupported = result.classification === "unsupported";
-  return (
-    <div>
-      <p style={sectionHeadingStyle()}>{isUnsupported ? "We couldn't confirm that answer" : "Not in our evidence library yet"}</p>
-      <div style={{ ...bodyTextStyle(), marginTop: "8px" }}>{renderWithLinks(result.answer)}</div>
-
-      {result.suggestions.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <p style={smallLabelStyle()}>Questions our library can answer</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-            {result.suggestions.map((s) => (
-              <button key={s} onClick={() => onSuggested(s)} className="se-btn-starter">
-                {s}
+      {/* Clarifying follow-up — one question, 2-3 quick replies, never forced */}
+      {result.clarify && (
+        <div
+          style={{
+            marginTop: "16px",
+            background: COLOR.surface,
+            border: `1px solid ${COLOR.border}`,
+            borderRadius: "10px",
+            padding: "16px 18px",
+          }}
+        >
+          <p style={{ fontSize: "15px", fontWeight: 600, color: COLOR.text, marginBottom: "12px" }}>{result.clarify.question}</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {result.clarify.options.map((opt) => (
+              <button key={opt} onClick={() => onQuickReply(opt)} className="se-chip" disabled={disabled}>
+                {opt}
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Explain how it works — the fuller mechanism, collapsed by default */}
+      {result.why && (
+        <div style={{ marginTop: "14px" }}>
+          <button onClick={() => onToggle("explain")} aria-expanded={!!expanded.explain} className="se-disclosure">
+            <ChevronRight size={13} style={{ transform: expanded.explain ? "rotate(90deg)" : "none", transition: "transform 150ms" }} />
+            Explain how it works
+          </button>
+          {expanded.explain && (
+            <div style={{ fontSize: "15px", lineHeight: 1.6, color: COLOR.text, marginTop: "8px" }}>
+              {renderWithLinks(result.why)}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function ErrorAnswer({ result, onRetry }: { result: AnswerResult; onRetry: () => void }) {
-  return (
-    <div>
-      <p style={sectionHeadingStyle()}>Something went wrong</p>
-      <div style={{ ...bodyTextStyle(), marginTop: "8px" }}>{renderWithLinks(result.answer)}</div>
-      <button onClick={onRetry} className="se-btn-primary" style={{ marginTop: "16px" }}>
-        Try again
-      </button>
-    </div>
-  );
-}
-
-function PageHeader() {
+function PageHeader({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div style={{ marginBottom: "28px" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, color: COLOR.text, margin: 0 }}>My Economist</h1>
+      </div>
+    );
+  }
   return (
     <div style={{ marginBottom: "28px" }}>
       <p
@@ -515,8 +738,7 @@ function PageHeader() {
   );
 }
 
-// --- Shared inline style helpers (non-interactive properties only —
-// hover/focus/disabled states live in INTERACTIVE_STYLES above) ------------
+// --- Shared inline style helpers --------------------------------------------
 
 function smallLabelStyle(): React.CSSProperties {
   return {
@@ -526,14 +748,6 @@ function smallLabelStyle(): React.CSSProperties {
     textTransform: "uppercase",
     color: COLOR.textSecondary,
   };
-}
-
-function sectionHeadingStyle(): React.CSSProperties {
-  return { fontSize: "14px", fontWeight: 600, color: COLOR.text };
-}
-
-function bodyTextStyle(): React.CSSProperties {
-  return { fontSize: "15px", lineHeight: 1.6, color: COLOR.text, marginTop: "6px" };
 }
 
 function noticeBoxStyle(bg: string, border: string): React.CSSProperties {

@@ -60,12 +60,37 @@ export interface EvidenceCard {
 // coverage judgment.
 export type Classification = "covered" | "partial" | "not_covered" | "unsupported" | "error";
 
+// A single prior turn, as actually shown to the user — never internal
+// reasoning or hidden state. Passed back to the engine so it can resolve
+// references ("my existing loan", a clicked quick-reply label) against
+// what was just discussed. See answerEngine.ts's system prompt for the hard
+// rule this supports: history may only be used to understand what's being
+// asked, never to justify a looser or more permissive answer than a fresh,
+// standalone question would get.
+export interface ConversationTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+// One optional, focused clarifying question offered after a covered/partial
+// answer — never forced, never present for a refusal/error outcome. Options
+// are short reply labels (e.g. "A mortgage decision"), not full sentences;
+// clicking one sends its label back as the next user turn. The drafting
+// model proposes this only among angles the Published library can actually
+// support as a next step (see the system prompt) — it goes through the same
+// independent verification pass as the rest of the answer.
+export interface ClarifyPrompt {
+  question: string;
+  options: string[];
+}
+
 export interface AnswerEnvelope {
   classification: Classification;
   cardIds: string[]; // Published card IDs actually cited — empty for not_covered/unsupported/error
-  answer: string; // the short, direct answer / headline — for not_covered/unsupported, the plain refusal message (suggestions are separate, see `suggestions`); for error, the technical-failure message
-  why: string; // plain-language explanation of the mechanism/reasoning behind the answer — empty outside covered/partial
+  answer: string; // the short, direct answer — one to two plain-language sentences — for not_covered/unsupported, the plain refusal message (suggestions are separate, see `suggestions`); for error, the technical-failure message
+  why: string; // plain-language mechanism, shown only inside the "Explain how it works" disclosure — empty outside covered/partial
   decisionRelevance: string; // how this bears on a decision the user might face, only when genuinely supported — empty when not applicable
-  limits: string; // "What this can't tell you" — drawn from the cited cards' answer boundaries/caveats — empty outside covered/partial
+  essentialLimitation: string; // ONE short, always-visible sentence — the single most important thing this answer does NOT establish. Fuller caveats live in the per-card evidence disclosure, not here. Empty outside covered/partial.
+  clarify: ClarifyPrompt | null; // an optional single follow-up question + 2-3 quick replies — null when not useful or not applicable to this classification
   suggestions: string[]; // alternative questions the library CAN answer, for not_covered/unsupported only — always excludes the question just asked; empty for covered/partial/error
 }
