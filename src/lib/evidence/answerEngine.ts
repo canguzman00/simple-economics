@@ -282,7 +282,7 @@ function errorEnvelope(): AnswerEnvelope {
 // brief outages). Not used to paper over real problems — it retries a
 // fixed, small number of times with a short backoff, then gives up and
 // lets the caller treat it as a genuine technical failure.
-async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {

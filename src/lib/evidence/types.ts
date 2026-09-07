@@ -94,3 +94,34 @@ export interface AnswerEnvelope {
   clarify: ClarifyPrompt | null; // an optional single follow-up question + 2-3 quick replies — null when not useful or not applicable to this classification
   suggestions: string[]; // alternative questions the library CAN answer, for not_covered/unsupported only — always excludes the question just asked; empty for covered/partial/error
 }
+
+// --- Optional Research mode (2026-09-06) ------------------------------------
+// A user-selected escape hatch offered ONLY after a "not_covered" reviewed-
+// path result: instead of staying within the Published Evidence Card
+// library, the user can explicitly ask to explore general web/scientific
+// research instead. This is a deliberately separate, clearly-labeled path —
+// see claude/answer-contract.md §8 for the full design rationale and the
+// safety rules this is not allowed to relax (it never touches the reviewed
+// path's evidence gate, never becomes a Published card, and is never shown
+// without the user explicitly choosing it).
+
+export interface ResearchSource {
+  title: string;
+  url: string;
+}
+
+// "research": a normal, policy-compliant research answer, safe to show.
+// "declined": the model drafted something but the independent policy check
+// (see researchEngine.ts) rejected it — distinct from "research" so the UI
+// never shows a policy-violating draft, and distinct from "error" because
+// this IS a real judgment (not a technical failure).
+// "error": a genuine technical failure — never a judgment on the topic.
+export type ResearchClassification = "research" | "declined" | "error";
+
+export interface ResearchEnvelope {
+  classification: ResearchClassification;
+  answer: string; // for "declined"/"error", the distinct notice copy instead of a real answer
+  limitations: string; // genuine epistemic limitations of the research itself (mixed findings, dated data, correlational not causal, etc.) — never "this source is unreviewed"; empty for declined/error
+  sources: ResearchSource[]; // real web_search_tool_result entries actually returned during this call — never model-typed, so never fabricated; empty for declined/error
+  clarify: ClarifyPrompt | null; // same shape/rules as the reviewed path's clarify — null unless genuinely useful
+}
