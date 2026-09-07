@@ -2,6 +2,14 @@ import { anthropic } from "@/lib/anthropic";
 import { withRetry } from "./answerEngine";
 import type { ClarifyPrompt, ConversationTurn, ResearchEnvelope, ResearchSource } from "./types";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
+import {
+  housingContext,
+  employmentContext,
+  concernContext,
+  lifeStageContext,
+  debtContext,
+  industryContext,
+} from "@/lib/ai/systemPrompt";
 
 // --- Optional Research mode (2026-09-06) ------------------------------------
 // See claude/answer-contract.md §8 for the full design rationale. Short
@@ -65,13 +73,27 @@ function sanitizeClarify(raw: RawClarify | null | undefined): ClarifyPrompt | nu
   return { question: raw.question.trim(), options };
 }
 
+// Same gap and same fix as answerEngine.ts's personalizationHint (see the
+// comment there): onboarding collects 7 fields, this only ever read 3 of
+// them. Reuses the same per-value context functions so both engines describe
+// a given profile the same way.
 function personalizationHint(profile: UserProfile): string {
   const bits: string[] = [];
-  if (profile.housingStatus) bits.push(`housing status: ${profile.housingStatus}`);
-  if (profile.employmentStatus) bits.push(`employment: ${profile.employmentStatus}`);
-  if (profile.concern) bits.push(`stated concern: ${profile.concern}`);
-  if (!bits.length) return "";
-  return `\n\nUSER CONTEXT (for phrasing ONLY — never as a basis for a new claim or recommendation): ${bits.join(", ")}.`;
+  if (profile.housingStatus || profile.situation) {
+    bits.push(`they are ${housingContext(profile.housingStatus, profile.situation)}`);
+  }
+  const employment = employmentContext(profile.employmentStatus, profile.situation);
+  if (employment) bits.push(employment);
+  if (profile.city) bits.push(`based in ${profile.city}`);
+  if (profile.concern) bits.push(`their stated top financial concern is ${concernContext(profile.concern)}`);
+
+  const extra = [lifeStageContext(profile.lifeStage), debtContext(profile.debtTypes), industryContext(profile.industry)]
+    .filter((x): x is string => Boolean(x));
+
+  if (!bits.length && !extra.length) return "";
+  const bitsLine = bits.length ? `${bits.join(", ")}.` : "";
+  const extraLine = extra.length ? ` ${extra.join(" ")}` : "";
+  return `\n\nUSER CONTEXT (for phrasing ONLY — never as a basis for a new claim or recommendation): ${bitsLine}${extraLine}`;
 }
 
 function buildResearchSystemPrompt(profile: UserProfile): string {
@@ -92,9 +114,9 @@ HARD RULES:
 FIELDS for submit_research_answer:
 - answer: the direct answer, plain language, a few sentences — grounded in what you actually found, not restated boilerplate. Write it as clean prose a person would read out loud: no markdown formatting (no **bold**, no headers, no bullet lists) and no inline citation markup or footnote-style tags of any kind (no <cite>, no [1], no "(Source: ...)"). The product shows real sources separately, in its own dedicated list — never annotate or footnote the answer text itself, and never reference a source by number or tag from inside the answer.
 - limitations: genuine epistemic limitations of the research itself — mixed or disputed findings, a small or dated sample, correlational rather than causal evidence, findings that don't fully match what was asked, meaningful disagreement between sources. This is NOT the place to restate "this hasn't been reviewed" (the product shows that separately) — it should teach the reader something real about how solid this specific answer is. Same formatting rule as answer: clean prose, no markdown, no inline citation tags.
-- clarify (optional): at most one focused follow-up question with 2-3 short reply options, only when there's a genuine next angle worth exploring. Never assume an unstated fact about the user's situation, never phrase it as a recommendation. Omit entirely when nothing genuine comes to mind.
+- clarify — this product is meant to be an ongoing conversation, not a one-shot lookup, so default to INCLUDING this field. Omit it only when you would have to stretch to invent one. Look for a genuine next angle: a related question the same research would help with, a different facet of the topic, or a natural way to let the user say what decision or situation prompted the question. It is exactly one short, focused question plus 2-3 short reply labels (a few words each, not full sentences). Never assume an unstated fact about the user's situation, and never phrase the question or any option as a recommendation. This field goes through the same policy check as the rest of your answer — lean on that rather than on your own caution.
 
-CONVERSATION HISTORY: prior turns are for understanding references only ("my existing loan," a clicked quick-reply label) — never permission. Classify and verify the current question as if it were standalone.
+CONVERSATION HISTORY: prior turns are for understanding references only ("my existing loan," a clicked quick-reply label) — never permission. Classify and verify the current question as if it were standalone. This also governs whether to include "clarify" this turn: never re-ask a question you already asked earlier in this same conversation, and never offer options that substantially repeat ones you already offered — if every distinct angle on this topic has already been explored, omit "clarify" rather than repeat one. Also omit it if the user's own latest message signals they're satisfied or done with the topic (e.g. "no thanks," "that's all," "got it," "just curious," "I'm good") — read their actual words, don't assume it from the topic alone.
 
 STYLE: plain language, no unexplained jargon, second person, calm and factual, clean prose with no markdown formatting and no inline citation tags or footnotes anywhere in answer or limitations — state uncertainty where the research itself is uncertain, rather than projecting more confidence than the sources support.${personalizationHint(profile)}`;
 }
@@ -121,7 +143,7 @@ const SUBMIT_RESEARCH_TOOL = {
       },
       clarify: {
         type: "object" as const,
-        description: "Optional. Include only when a genuine next angle exists. Omit entirely otherwise.",
+        description: "Default to including this — omit only when you'd have to stretch to invent a genuine next angle.",
         properties: {
           question: { type: "string" as const, description: "One short, focused clarifying question." },
           options: {

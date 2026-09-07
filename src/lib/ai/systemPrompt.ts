@@ -9,7 +9,11 @@ export interface UserProfile {
   industry?: string | null;
 }
 
-function housingContext(h?: string | null, s?: string | null): string {
+// housingContext through concernContext are also reused by answerEngine.ts's
+// and researchEngine.ts's own personalizationHint() functions (see comments
+// there) — that's the point of exporting them: one set of per-value context
+// descriptions, instead of duplicating the mapping in three places.
+export function housingContext(h?: string | null, s?: string | null): string {
   const map: Record<string, string> = {
     RENTER:             "a renter",
     HOMEOWNER:          "a homeowner with a mortgage",
@@ -21,7 +25,7 @@ function housingContext(h?: string | null, s?: string | null): string {
   return (h && map[h]) ?? (s && map[s]) ?? "someone";
 }
 
-function employmentContext(e?: string | null, s?: string | null): string {
+export function employmentContext(e?: string | null, s?: string | null): string {
   const map: Record<string, string> = {
     EMPLOYED:              "employed full-time",
     SELF_EMPLOYED:         "self-employed",
@@ -39,7 +43,7 @@ function employmentContext(e?: string | null, s?: string | null): string {
   return (e && map[e]) ?? (s && legacyMap[s ?? ""] ? legacyMap[s!] : null) ?? "";
 }
 
-function lifeStageContext(l?: string | null): string | null {
+export function lifeStageContext(l?: string | null): string | null {
   const map: Record<string, string> = {
     EARLY_CAREER:   "They are early in their career, focused on building savings, paying down debt, and establishing financial stability. Entry-level wages, student loans, and housing affordability are top concerns.",
     MID_CAREER:     "They are in peak earning years, balancing mortgage, family expenses, retirement contributions, and career advancement. Wealth-building and job security are central concerns.",
@@ -49,7 +53,7 @@ function lifeStageContext(l?: string | null): string | null {
   return (l && map[l]) ?? null;
 }
 
-function debtContext(debts?: string[] | null): string | null {
+export function debtContext(debts?: string[] | null): string | null {
   if (!debts?.length) return null;
   const lines: string[] = [];
   if (debts.includes("STUDENT_LOANS"))      lines.push("They carry student loan debt — federal student loan interest rates, forgiveness policy, and income-driven repayment changes directly affect their monthly budget.");
@@ -61,7 +65,7 @@ function debtContext(debts?: string[] | null): string | null {
   return lines.length ? lines.join(" ") : null;
 }
 
-function industryContext(i?: string | null): string | null {
+export function industryContext(i?: string | null): string | null {
   const map: Record<string, string> = {
     HEALTHCARE:              "They work in healthcare — sensitive to Medicaid/Medicare policy, hospital system consolidation, pharmaceutical pricing, and healthcare labor shortages.",
     TECHNOLOGY:              "They work in tech — exposed to AI-driven layoffs, startup funding cycles, antitrust regulation, and rapid automation of software roles.",
@@ -79,13 +83,20 @@ function industryContext(i?: string | null): string | null {
   return (i && map[i]) ?? null;
 }
 
-function concernContext(c?: string | null): string {
+export function concernContext(c?: string | null): string {
+  // The onboarding concern step (src/components/onboarding/data.ts,
+  // CONCERNS) currently offers 8 options; this map only had 5, so a third of
+  // real selections (EVERYDAY_COSTS, HEALTHCARE, ENERGY_BILLS) silently fell
+  // back to generic "personal finance" instead of their actual answer.
   const map: Record<string, string> = {
-    HOUSING:      "housing costs and the real estate market",
-    JOB_SECURITY: "job security and labor market conditions",
-    SAVINGS:      "building savings and growing wealth",
-    DEBT:         "managing debt and interest rates",
-    RETIREMENT:   "retirement planning and long-term financial security",
+    EVERYDAY_COSTS: "everyday costs — groceries, gas, and inflation eating into their budget",
+    HOUSING:        "housing costs and the real estate market",
+    HEALTHCARE:     "healthcare costs, medical bills, and insurance",
+    JOB_SECURITY:   "job security and labor market conditions",
+    SAVINGS:        "building savings and growing wealth",
+    DEBT:           "managing debt and interest rates",
+    ENERGY_BILLS:   "energy bills and utility costs",
+    RETIREMENT:     "retirement planning and long-term financial security",
   };
   return (c && map[c]) ?? "personal finance";
 }
