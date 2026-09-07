@@ -278,17 +278,57 @@ export async function researchAnswer(
     if (sources.length >= 5) break;
   }
 
-  const toolUse = message.content.find(
+  let toolUse = message.content.find(
     (block): block is Extract<typeof message.content[number], { type: "tool_use" }> =>
       block.type === "tool_use" && (block as { name?: string }).name === "submit_research_answer"
   );
 
   if (!toolUse) {
     // The model ended the turn (e.g. plain text, or stopped after searching)
-    // without ever calling our tool — malformed for our purposes, not a
-    // genuine research outcome.
-    console.error("[research] drafting call ended without submit_research_answer");
-    return errorEnvelope();
+    // without ever calling our tool. Seen in production on questions phrased
+    // like a personal decision ("can I buy a house or rent?") — the model
+    // seems to sometimes second-guess itself into writing a plain-text
+    // hedge/refusal instead of routing through the tool with a properly
+    // descriptive (not advice) answer, since tool_choice is "auto" here to
+    // allow it to search first. Rather than fail outright, give it one
+    // forced follow-up turn: replay its own turn verbatim (including any
+    // searches it already ran, so the sources already extracted above
+    // aren't wasted) and require the tool call this time, with an explicit
+    // reminder of the description-vs-advice line from HARD RULES — that
+    // line is almost certainly why it balked in the first place.
+    console.warn("[research] drafting call ended without submit_research_answer — forcing a follow-up call");
+    try {
+      const followUp = await withRetry(() =>
+        anthropic.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1500,
+          system,
+          tools: [SUBMIT_RESEARCH_TOOL],
+          tool_choice: { type: "tool", name: "submit_research_answer" },
+          messages: [
+            ...messages,
+            { role: "assistant" as const, content: message.content },
+            {
+              role: "user" as const,
+              content:
+                "You must respond by calling submit_research_answer now — plain text isn't a valid response here. If you hesitated because the question sounded like it wanted a recommendation, remember: describing how this affects someone in the user's stated situation is allowed and is the whole point of this product; only telling them what to DO is not. Answer within that boundary and call the tool.",
+            },
+          ],
+        })
+      );
+      toolUse = followUp.content.find(
+        (block): block is Extract<typeof followUp.content[number], { type: "tool_use" }> =>
+          block.type === "tool_use" && (block as { name?: string }).name === "submit_research_answer"
+      );
+    } catch (err) {
+      console.error("[research] forced follow-up call failed:", err);
+      return errorEnvelope();
+    }
+
+    if (!toolUse) {
+      console.error("[research] forced follow-up call still ended without submit_research_answer");
+      return errorEnvelope();
+    }
   }
 
   const input = toolUse.input as DraftInput;
