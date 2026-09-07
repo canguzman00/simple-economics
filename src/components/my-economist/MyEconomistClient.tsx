@@ -233,7 +233,29 @@ interface Exchange {
   fetchError: string | null; // set only on a technical fetch/network failure, distinct from classification "error"
   research?: ResearchState; // present once the user has clicked "Explore the research" for this exchange
   showReviewedSuggestions?: boolean; // true once the user has clicked "Stay with reviewed topics"
+  // True for an exchange created by clicking a research answer's own
+  // clarify chip (see sendResearchFollowup / §11 of the answer contract).
+  // `result` is a stub not_covered shape purely so the existing rendering
+  // branch applies; the real content is entirely in `research`. Used to
+  // suppress the "hasn't yet reviewed" framing text and Explore/Stay
+  // buttons for these, since the user already opted into research mode.
+  isResearchFollowup?: boolean;
 }
+
+// Placeholder result for a research-mode follow-up exchange (see
+// isResearchFollowup above). Never sent anywhere, never shown — it exists
+// only so EconomistReply's existing not_covered branch renders, driven
+// entirely by the exchange's `research` state instead.
+const RESEARCH_FOLLOWUP_STUB: AnswerResult = {
+  classification: "not_covered",
+  answer: "",
+  why: "",
+  decisionRelevance: "",
+  essentialLimitation: "",
+  clarify: null,
+  suggestions: [],
+  citations: [],
+};
 
 interface Props {
   profile: UserProfile;
@@ -415,6 +437,82 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, showReviewedSuggestions: true } : e)));
   }
 
+  // Continuing a research-mode conversation, directly — skips the reviewed
+  // path entirely instead of routing a research answer's clarify chip
+  // through /api/ask like an ordinary question. Before this, that follow-up
+  // almost always landed on "not_covered" again (the follow-up topic isn't
+  // in the reviewed library either, or the conversation wouldn't have
+  // reached Research mode in the first place) and dead-ended back at the
+  // same Explore/Stay prompt instead of answering — reported live by Carlos
+  // as the conversation "not engaging." See claude/answer-contract.md §11.
+  // `sourceExIndex` is whichever exchange's completed research the user
+  // just read (the original not_covered exchange, or an earlier
+  // continuation of it) — passing sourceExIndex + 1 to buildHistory
+  // includes that exchange's own research summary, so the model has
+  // context for what it already explained; chaining works the same way for
+  // a second or third follow-up since each continuation is just another
+  // exchange with its own index.
+  async function sendResearchFollowup(text: string, sourceExIndex: number) {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
+    setLimitReached(false);
+
+    const exId = nextId();
+    const history = buildHistory(sourceExIndex + 1);
+
+    setExchanges((prev) => [
+      ...prev,
+      {
+        id: exId,
+        question: trimmed,
+        result: RESEARCH_FOLLOWUP_STUB,
+        fetchError: null,
+        research: { status: "loading", data: null, fetchError: null },
+        isResearchFollowup: true,
+      },
+    ]);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed, userProfile: profile, history }),
+      });
+
+      if (res.status === 429) {
+        setLimitReached(true);
+        setExchanges((prev) =>
+          prev.map((e) =>
+            e.id === exId
+              ? { ...e, research: { status: "done", data: null, fetchError: "You've reached your daily limit of 5 questions. Check back tomorrow." } }
+              : e
+          )
+        );
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setExchanges((prev) =>
+          prev.map((e) =>
+            e.id === exId
+              ? { ...e, research: { status: "done", data: null, fetchError: data.error ?? "Something went wrong. Please try again." } }
+              : e
+          )
+        );
+        return;
+      }
+      const data = (await res.json()) as ResearchResult;
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, research: { status: "done", data, fetchError: null } } : e)));
+    } catch {
+      setExchanges((prev) =>
+        prev.map((e) => (e.id === exId ? { ...e, research: { status: "done", data: null, fetchError: "Connection lost. Please try again." } } : e))
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function startOver() {
     setExchanges([]);
     setDraft("");
@@ -479,10 +577,13 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
                   expanded={expanded[ex.id] ?? {}}
                   onToggle={(key) => toggle(ex.id, key)}
                   onQuickReply={(label) => send(label)}
+                  onResearchQuickReply={(label) => sendResearchFollowup(label, exIndex)}
                   onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
+                  onRetryResearchFollowup={() => exploreResearch(ex.id, exIndex)}
                   disabled={loading}
                   research={ex.research}
                   showReviewedSuggestions={ex.showReviewedSuggestions}
+                  isResearchFollowup={ex.isResearchFollowup}
                   onExploreResearch={() => exploreResearch(ex.id, exIndex)}
                   onStayReviewed={() => stayWithReviewed(ex.id)}
                 />
@@ -651,10 +752,13 @@ function EconomistReply({
   expanded,
   onToggle,
   onQuickReply,
+  onResearchQuickReply,
   onRetry,
+  onRetryResearchFollowup,
   disabled,
   research,
   showReviewedSuggestions,
+  isResearchFollowup,
   onExploreResearch,
   onStayReviewed,
 }: {
@@ -662,10 +766,13 @@ function EconomistReply({
   expanded: { evidence?: boolean; explain?: boolean };
   onToggle: (key: "evidence" | "explain") => void;
   onQuickReply: (label: string) => void;
+  onResearchQuickReply: (label: string) => void;
   onRetry: () => void;
+  onRetryResearchFollowup: () => void;
   disabled: boolean;
   research?: ResearchState;
   showReviewedSuggestions?: boolean;
+  isResearchFollowup?: boolean;
   onExploreResearch: () => void;
   onStayReviewed: () => void;
 }) {
@@ -709,15 +816,24 @@ function EconomistReply({
     return (
       <div>
         <IdentityMark />
-        <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>
-          Simple Economics hasn&apos;t yet reviewed the evidence on this topic.
-        </div>
-        <div style={{ fontSize: "15px", lineHeight: 1.55, color: COLOR.textSecondary, marginTop: "8px" }}>
-          In the meantime, we can explore scientific research and official sources, with findings and limitations
-          clearly explained. This answer has not been reviewed or approved by Simple Economics.
-        </div>
+        {/* A research-follow-up exchange skips the "hasn't yet reviewed"
+            framing and the Explore/Stay choice — the user already opted
+            into research mode on the exchange this one continues, so
+            re-showing that wall on every follow-up read as the
+            conversation stalling instead of answering (see §11). */}
+        {!isResearchFollowup && (
+          <>
+            <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>
+              Simple Economics hasn&apos;t yet reviewed the evidence on this topic.
+            </div>
+            <div style={{ fontSize: "15px", lineHeight: 1.55, color: COLOR.textSecondary, marginTop: "8px" }}>
+              In the meantime, we can explore scientific research and official sources, with findings and limitations
+              clearly explained. This answer has not been reviewed or approved by Simple Economics.
+            </div>
+          </>
+        )}
 
-        {!hasChosen && (
+        {!isResearchFollowup && !hasChosen && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" }}>
             <button onClick={onExploreResearch} className="se-btn-primary" disabled={disabled}>
               Explore the research
@@ -728,7 +844,7 @@ function EconomistReply({
           </div>
         )}
 
-        {showReviewedSuggestions && result.suggestions.length > 0 && (
+        {!isResearchFollowup && showReviewedSuggestions && result.suggestions.length > 0 && (
           <div style={{ marginTop: "16px" }}>
             <p style={smallLabelStyle()}>Questions our library can answer</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
@@ -742,20 +858,26 @@ function EconomistReply({
         )}
 
         {research?.status === "loading" && (
-          <div style={{ marginTop: "14px" }}>
+          <div style={{ marginTop: isResearchFollowup ? "0" : "14px" }}>
             <TypingIndicator hideIdentity />
           </div>
         )}
         {research?.fetchError && (
-          <div style={{ marginTop: "14px" }}>
+          <div style={{ marginTop: isResearchFollowup ? "0" : "14px" }}>
             <div style={{ fontSize: "14px", color: COLOR.text }}>{research.fetchError}</div>
-            <button onClick={onExploreResearch} className="se-btn-primary" style={{ marginTop: "10px" }}>
+            <button
+              onClick={isResearchFollowup ? onRetryResearchFollowup : onExploreResearch}
+              className="se-btn-primary"
+              style={{ marginTop: "10px" }}
+            >
               Try again
             </button>
           </div>
         )}
         {research?.status === "done" && research.data && (
-          <ResearchAnswerBlock data={research.data} onQuickReply={onQuickReply} disabled={disabled} />
+          <div style={{ marginTop: isResearchFollowup ? "0" : undefined }}>
+            <ResearchAnswerBlock data={research.data} onQuickReply={onResearchQuickReply} disabled={disabled} />
+          </div>
         )}
       </div>
     );
