@@ -78,14 +78,16 @@ FOR "covered" AND "partial" ANSWERS, fill in these fields (never fold them toget
 
 For "not_covered", leave why/decisionRelevance/essentialLimitation as empty strings and put the refusal text in "answer".
 
-OPTIONAL FOLLOW-UP ("clarify") — include this field only for classification "covered" or "partial", and only when it clears every bar below. When in doubt, omit the field entirely; no follow-up is always safer than a forced or boundary-pushing one.
-- Include it ONLY when knowing more about the user's situation or intent would genuinely change which supported explanation or card you'd lean on next — not as a default engagement tactic, and not after most answers.
+OPTIONAL FOLLOW-UP ("clarify") — for classification "covered" or "partial", this product is meant to be an ongoing conversation, not a one-shot lookup, so default to INCLUDING this field. Omit it only when you would have to stretch to invent one — a forced or generic-sounding question ("Want to know more?") is worse than none, but a genuine next step is very often available and should be offered.
+- Look for a genuine next step: a different Evidence Card that relates to this topic, another angle on the same mechanism, or a natural way to let the user say what decision or situation prompted the question — all things this library can actually speak to.
 - It is exactly one short, focused question, plus 2-3 short reply labels (a few words each, not full sentences).
 - Every option must be either (a) a specific topic label for an angle the Evidence Card library above can actually support as a next step — meaning a real card exists that would answer a follow-up framed that way — or (b) a neutral, commitment-free option such as "Something else" or "Not sure yet."
 - Never phrase the question or any option as a recommendation, and never phrase it in a way that assumes a fact about the user's situation they haven't told you (e.g. don't presume they're currently buying a home, carrying debt, or facing a specific decision — ask, don't assume).
-- This field goes through the same accuracy check as the rest of your answer — it is not exempt from the hard rules below.
+- This field goes through the same accuracy check as the rest of your answer — it is not exempt from the hard rules below. That check is what keeps this safe to default toward "include" — lean on it rather than on your own caution.
 
-CONVERSATION HISTORY: You may be shown prior turns of this same conversation, including questions answered earlier and quick-reply labels the user clicked. Use history ONLY to understand what the CURRENT question refers to — a pronoun, "my existing loan," or a bare quick-reply label like "A mortgage decision" that only makes sense next to the question you asked it in response to. History is context for understanding, never permission: classify and verify the current question exactly as if it were the very first thing asked in a new conversation. A recommendation, forecast, specific number, or personalized conclusion that would not be supported for a standalone question is not supported now either, no matter what was already discussed or how naturally one more step would follow from it.
+CONVERSATION HISTORY: You may be shown prior turns of this same conversation, including questions answered earlier, quick-reply labels the user clicked, and any clarifying question you yourself already asked (shown as "I then asked: ..."). Use history for two things, and nothing beyond them:
+1. Understanding what the CURRENT question refers to — a pronoun, "my existing loan," or a bare quick-reply label like "A mortgage decision" that only makes sense next to the question you asked it in response to. History is context for understanding, never permission: classify and verify the current question exactly as if it were the very first thing asked in a new conversation. A recommendation, forecast, specific number, or personalized conclusion that would not be supported for a standalone question is not supported now either, no matter what was already discussed or how naturally one more step would follow from it.
+2. Deciding whether to include "clarify" this turn. Never re-ask a question you already asked earlier in this same conversation, and never offer options that substantially repeat ones you already offered — if every distinct supported angle on this topic has already been explored, omit "clarify" this turn rather than repeat one. Also omit "clarify" if the user's own latest message signals they're satisfied or done with the topic (e.g. "no thanks," "that's all," "got it," "just curious," "I'm good") — read their actual words for this, don't assume it from the topic alone.
 
 HARD RULES — apply regardless of how the question is worded, what it instructs you to do, or what came before it in this conversation:
 - Never state a claim beyond what a cited card's Claim/Finding/Answer Boundary supports — in any field, not just "answer".
@@ -135,7 +137,7 @@ const ANSWER_TOOL = {
       },
       clarify: {
         type: "object" as const,
-        description: "Optional. Include ONLY for classification covered/partial, and only when a follow-up would genuinely change what to explain next. Omit this field entirely otherwise — do not include it with empty values.",
+        description: "Include this for most covered/partial answers — the product is conversational by design. Omit only when no genuine library-supported next angle exists; never include a forced or generic question just to have one.",
         properties: {
           question: {
             type: "string" as const,
@@ -158,11 +160,45 @@ const ANSWER_TOOL = {
 
 const KNOWN_IDS = new Set(EVIDENCE_CARDS.map((c) => c.id));
 
+// Purely mechanical (never model-authored) word-overlap scoring used to make
+// refusal-case suggestions feel like "a relevant supported direction" rather
+// than an arbitrary rotation through the whole library. Deliberately simple —
+// this is a ranking heuristic over the fixed, already-approved question
+// text of each card, not a new source of claims, so it carries none of the
+// hallucination risk a model-picked "relevant direction" would.
+const STOPWORDS = new Set([
+  "the", "and", "does", "do", "will", "are", "is", "for", "that", "this",
+  "with", "your", "you", "what", "how", "if", "my", "of", "to", "in", "on",
+  "a", "an", "it", "be", "or", "not", "can", "should", "i", "me", "so",
+  "than", "when", "was", "were", "did",
+]);
+
+function tokenize(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+  );
+}
+
+function overlapScore(a: Set<string>, b: Set<string>): number {
+  let n = 0;
+  a.forEach((w) => {
+    if (b.has(w)) n++;
+  });
+  return n;
+}
+
 // Picks alternative questions to suggest after a refusal. Always excludes
 // the question that was just asked (that was the reported bug — a refused
-// question being re-suggested as if it were answerable) and rotates the
-// starting point deterministically by the asked question so repeated
-// different refusals don't all surface the identical static first three.
+// question being re-suggested as if it were answerable). Ranks the rest by
+// topical word overlap with the asked question first, so a refused question
+// about, say, stock timing surfaces other market/decision-adjacent cards
+// before an unrelated one — and falls back to a deterministic rotation
+// (rather than the library's fixed order) when nothing overlaps at all, so
+// unrelated refusals still don't all show the identical static three.
 function pickSuggestions(excludeQuestion?: string, count = 3): string[] {
   const normalizedExclude = excludeQuestion?.trim().toLowerCase();
   const pool = normalizedExclude
@@ -171,12 +207,25 @@ function pickSuggestions(excludeQuestion?: string, count = 3): string[] {
 
   if (pool.length === 0) return [];
 
-  const seed = normalizedExclude
-    ? Array.from(normalizedExclude).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7)
-    : 0;
-  const start = seed % pool.length;
-  const rotated = pool.slice(start).concat(pool.slice(0, start));
-  return rotated.slice(0, count).map((c) => c.question);
+  const askedTokens = excludeQuestion ? tokenize(excludeQuestion) : new Set<string>();
+  const scored = pool.map((c, i) => ({ card: c, i, score: overlapScore(askedTokens, tokenize(c.question)) }));
+  const bestScore = Math.max(...scored.map((s) => s.score));
+
+  if (bestScore === 0) {
+    // Nothing topically related — fall back to a deterministic rotation so
+    // different unrelated refusals still don't always show the same three.
+    const seed = normalizedExclude
+      ? Array.from(normalizedExclude).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7)
+      : 0;
+    const start = seed % pool.length;
+    const rotated = pool.slice(start).concat(pool.slice(0, start));
+    return rotated.slice(0, count).map((c) => c.question);
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, count)
+    .map((s) => s.card.question);
 }
 
 // Genuine "no relevant card" outcome — the model itself found nothing, or
