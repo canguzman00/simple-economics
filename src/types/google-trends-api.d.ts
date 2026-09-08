@@ -10,11 +10,11 @@ declare module "google-trends-api" {
     endTime?: Date;
   }
 
-  function relatedQueries(options: RelatedQueriesOptions): Promise<string>;
+  interface GoogleTrendsApi {
+    relatedQueries(options: RelatedQueriesOptions): Promise<string>;
+  }
 
-  const googleTrends: {
-    relatedQueries: typeof relatedQueries;
-  };
+  const googleTrends: GoogleTrendsApi;
 
   export default googleTrends;
 }
