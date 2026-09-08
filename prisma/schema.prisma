@@ -5,6 +5,14 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  // DATABASE_URL is Supabase's pooled (PgBouncer) connection, used at
+  // runtime by the app. Migrations need a real session for advisory locks,
+  // which the pooler doesn't support — without directUrl, `prisma migrate
+  // deploy`/`migrate dev` silently hang after connecting instead of
+  // erroring. DIRECT_URL (already a required env var per the project
+  // README) is the unpooled connection Prisma uses for migrations only;
+  // the app's runtime queries are unaffected.
+  directUrl = env("DIRECT_URL")
 }
 
 enum Situation {
