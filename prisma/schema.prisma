@@ -255,3 +255,17 @@ model InvestmentSignal {
   approvedAt     DateTime?
 }
 
+// Daily-refreshed cache of trending economics search terms, sourced from
+// Google Trends (unofficial API — no key, no cost, but not an officially
+// supported service; see src/lib/trends-fetcher.ts for the tradeoff note).
+// Powers the "Popular questions right now" starter-question section on the
+// My Economist page. Replaced wholesale on each refresh rather than
+// incrementally updated, same pattern as EconomicIndicator's daily pull.
+model TrendingTopic {
+  id        String   @id @default(cuid())
+  term      String   @unique
+  seedTopic String
+  rank      Int
+  fetchedAt DateTime @default(now())
+}
+
