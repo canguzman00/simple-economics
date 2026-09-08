@@ -125,3 +125,76 @@ export interface ResearchEnvelope {
   sources: ResearchSource[]; // real web_search_tool_result entries actually returned during this call — never model-typed, so never fabricated; empty for declined/error
   clarify: ClarifyPrompt | null; // same shape/rules as the reviewed path's clarify — null unless genuinely useful
 }
+
+// --- Optional learning activities (2026-09-08) ------------------------------
+// A short, optional activity offered after a covered/partial reviewed
+// answer, matched to a Published Evidence Card. See
+// claude/answer-contract.md §13 and claude/learning-activities-brief.md for
+// the full design rationale. MVP format is Quick Reveal only.
+//
+// Deliberate architecture choice: activity CONTENT is entirely
+// template-authored and Carlos-reviewed, exactly like an Evidence Card, so
+// producing one is a pure, deterministic lookup — no model call drafts it,
+// so no new verification pass is needed to keep it inside the supporting
+// card's boundaries. An activity can only exist for a topic a Published card
+// already covers, and it never becomes a new source of claims the card
+// doesn't itself make. This is why activityEngine.ts has no dependency on
+// answerEngine.ts/researchEngine.ts's model-calling machinery at all.
+
+export type ActivityFormat = "quick_reveal";
+
+export interface QuickRevealChoice {
+  id: string; // a real choice's own id, or the sentinel "__not_sure__"
+  label: string;
+}
+
+export interface ActivityTemplate {
+  id: string; // e.g. "ACT-001"
+  version: string;
+  format: ActivityFormat;
+  status: "Published"; // only Published templates live in activityTemplates.ts, mirroring EvidenceCard
+  title: string; // shown in the offer ("Explore it with me" / "Just explain")
+  learningObjective: string; // documentation only — never shown to the user
+  supportingCardIds: string[]; // Published card(s) this activity's content is grounded in
+  prompt: string; // the question posed to the user
+  choices: QuickRevealChoice[]; // real choices only — the "not sure" option is added by the UI, not stored here
+  correctChoiceId: string; // the objectively defensible answer, per the supporting card
+  revealHeadline: string; // one-sentence truth statement, grounded in the card's claim
+  revealExplanation: string; // grounded in the card's finding/mechanism — never goes beyond it
+  revealLimitation: string; // grounded in the card's caveats/answerBoundary — never invented
+  insightCardText: string; // the short "what you learned" line, shown after the reveal and collected in the session's progress trail
+  nextStepText: string; // the recap's "a useful next step" line — authored, reviewed, never a generated recommendation
+  reviewedBy: string;
+  reviewDate: string; // ISO date
+}
+
+// What the UI shows before a choice is made — a plain projection of the
+// template's public-facing fields. (There's no real secrecy benefit to
+// withholding correctChoiceId given this app already ships full Evidence
+// Card content, including answerBoundary and caveats, straight to the
+// client bundle — this type exists for clarity of intent, not security.)
+export interface ActivityOfferView {
+  id: string;
+  version: string;
+  format: ActivityFormat;
+  title: string;
+  prompt: string;
+  choices: QuickRevealChoice[];
+}
+
+// What the UI shows once a choice (including "__not_sure__") is submitted.
+export interface ActivityRevealView {
+  id: string;
+  version: string;
+  selectedChoiceId: string;
+  isCorrect: boolean; // always false for "__not_sure__" — recognizing uncertainty is a valid outcome, not a wrong answer, and the UI must never present it as one
+  wasUnsure: boolean;
+  headline: string;
+  explanation: string;
+  limitation: string;
+  personalization: string | null; // one deterministic, profile-derived sentence — phrasing only, never a new claim; see personalizeReveal()
+  insightCardText: string;
+  nextStepText: string;
+  sourceCardId: string;
+  sourceCardVersion: string;
+}
