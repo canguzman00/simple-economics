@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search } from "lucide-react";
+import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search, Sparkles, Lightbulb, HelpCircle } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
+import { housingContext } from "@/lib/ai/systemPrompt";
 import { STARTER_QUESTIONS } from "@/lib/evidence/cards";
+import { getActivityForCard } from "@/lib/evidence/activityTemplates";
+import { reveal as revealActivity, NOT_SURE_CHOICE_ID } from "@/lib/evidence/activityEngine";
+import type { ActivityTemplate, ActivityRevealView } from "@/lib/evidence/types";
 
 // --- Design tokens (My Economist page only) --------------------------------
 // Conversational redesign, 2026-09-06: same navy/coral/porcelain identity as
@@ -30,6 +34,19 @@ const RESEARCH_COLOR = {
   bg: "#FBF6EC",       // pale amber — research answer background
   border: "#E7DBB8",
   label: "#8A6D2E",    // amber-brown — badge text/icon
+};
+
+// Learning activities (2026-09-08) get their own soft, distinct panel color
+// too — violet, never coral (reviewed) or amber (research), never red/green.
+// Deliberately no correctness color-coding: a Quick Reveal's copy carries
+// the "right instinct" / "good guess" / "fair to be unsure" distinction
+// instead of a color, so the activity never reads as a graded pass/fail —
+// see claude/learning-activities-brief.md's "reward understanding, not
+// speed" note and the brief's explicit ban on financial-choice scoring.
+const ACTIVITY_COLOR = {
+  bg: "#F4F2FB",       // pale violet — activity panel background
+  border: "#DDD5F2",
+  label: "#5B4B9E",    // deep violet — badge text/icon, insight-card accent
 };
 
 const FONT_VAR = "var(--font-source-sans), 'Source Sans 3', sans-serif";
@@ -127,6 +144,33 @@ const INTERACTIVE_STYLES = `
   .se-dot:nth-child(2) { animation-delay: .15s; }
   .se-dot:nth-child(3) { animation-delay: .3s; }
   @media (prefers-reduced-motion: reduce) { .se-dot { animation: none; opacity: .8; } }
+
+  .se-btn-activity {
+    display: inline-flex; align-items: center; gap: 7px; background: ${ACTIVITY_COLOR.label}; color: #FFFFFF;
+    border: none; border-radius: 8px; font-size: 14px; font-weight: 600; padding: 10px 20px;
+    cursor: pointer; transition: background-color 120ms;
+  }
+  .se-btn-activity:hover:not(:disabled) { background: #47397D; }
+  .se-btn-activity:focus-visible { outline: 2px solid ${ACTIVITY_COLOR.label}; outline-offset: 2px; }
+  .se-btn-activity:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .se-activity-choice {
+    text-align: left; font-size: 14.5px; line-height: 1.4; border-radius: 8px; padding: 12px 14px;
+    background: ${COLOR.surface}; border: 1.5px solid ${ACTIVITY_COLOR.border}; color: ${COLOR.text};
+    cursor: pointer; transition: border-color 120ms, background-color 120ms, transform 80ms;
+  }
+  .se-activity-choice:hover:not(:disabled) { border-color: ${ACTIVITY_COLOR.label}; background: #FBFAFE; }
+  .se-activity-choice:focus-visible { outline: 2px solid ${ACTIVITY_COLOR.label}; outline-offset: 2px; }
+  .se-activity-choice:active:not(:disabled) { transform: scale(0.98); }
+  .se-activity-choice:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  @keyframes se-reveal-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .se-reveal { animation: se-reveal-in 280ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .se-reveal { animation: none; } }
+
+  @keyframes se-trail-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+  .se-trail-dot { animation: se-trail-pop 260ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .se-trail-dot { animation: none; } }
 `;
 
 const URL_REGEX = /https?:\/\/[^\s]+/g;
@@ -226,6 +270,21 @@ interface ResearchState {
   fetchError: string | null; // technical fetch/network failure, distinct from classification "error"
 }
 
+// One optional learning activity's state for an exchange (see
+// claude/answer-contract.md §13). "dismissed" covers both "Just explain" at
+// the offer stage and "Back to my question" after in_progress/revealed —
+// either way the activity block goes away for this exchange for good; the
+// answer above it is untouched and always was the real answer, activity or
+// not (never gated).
+type ActivityStatus = "in_progress" | "revealed" | "dismissed";
+
+interface ActivityState {
+  templateId: string;
+  status: ActivityStatus;
+  selectedChoiceId?: string; // a real choice id, or NOT_SURE_CHOICE_ID
+  revealData?: ActivityRevealView;
+}
+
 interface Exchange {
   id: string;
   question: string;
@@ -240,6 +299,7 @@ interface Exchange {
   // suppress the "hasn't yet reviewed" framing text and Explore/Stay
   // buttons for these, since the user already opted into research mode.
   isResearchFollowup?: boolean;
+  activity?: ActivityState; // present once the user has clicked "Explore it with me" (or dismissed the offer) for this exchange's linked learning activity
 }
 
 // Placeholder result for a research-mode follow-up exchange (see
@@ -287,6 +347,18 @@ function summarizeResearchForHistory(data: ResearchResult): string {
   return `(I also explored general research on this, not reviewed or approved by Simple Economics: ${data.answer})`;
 }
 
+// Checks a covered/partial answer's cited cards, in order, for the first one
+// with a Published learning-activity template linked to it (see
+// activityTemplates.ts). Returns undefined when none of the cited cards has
+// one — most answers won't, since only ACT-001/SE-002 exists so far.
+function findActivityTemplate(citedCardIds: string[]): ActivityTemplate | undefined {
+  for (const id of citedCardIds) {
+    const template = getActivityForCard(id);
+    if (template) return template;
+  }
+  return undefined;
+}
+
 let idCounter = 0;
 function nextId(): string {
   idCounter += 1;
@@ -313,6 +385,13 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   const [limitReached, setLimitReached] = useState(false);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, { evidence?: boolean; explain?: boolean }>>({});
+  // Session-level "progress trail" — one entry per distinct learning
+  // activity completed (reveal seen, "I'm not sure" included) anywhere in
+  // this conversation. Deliberately NOT a score or streak: it only ever
+  // grows, carries no right/wrong count, and resets on "Start over" along
+  // with the rest of the thread. See claude/learning-activities-brief.md.
+  const [explored, setExplored] = useState<{ templateId: string; title: string; insight: string }[]>([]);
+  const [trailOpen, setTrailOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -456,6 +535,45 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // --- Optional learning activities (2026-09-08) ----------------------------
+  // See claude/answer-contract.md §13. Entirely client-side and
+  // deterministic — activityEngine.reveal() just looks up the
+  // Carlos-reviewed template, it never calls a model, so there's no loading
+  // state, no fetch, and no new failure mode to handle here.
+
+  function startActivity(exId: string, templateId: string) {
+    setExchanges((prev) =>
+      prev.map((e) => (e.id === exId ? { ...e, activity: { templateId, status: "in_progress" } } : e))
+    );
+  }
+
+  // Covers both "Just explain" at the offer stage and "Back to my question"
+  // after in_progress/revealed — either way the activity block goes away
+  // for this exchange for good. The answer above it was never gated behind
+  // this, so there's nothing to "unlock" by dismissing.
+  function dismissActivity(exId: string, templateId: string) {
+    setExchanges((prev) =>
+      prev.map((e) => (e.id === exId ? { ...e, activity: { templateId, status: "dismissed" } } : e))
+    );
+  }
+
+  function answerActivity(exId: string, template: ActivityTemplate, choiceId: string) {
+    const result = revealActivity(template.id, choiceId, profile);
+    if (!result) return;
+    setExchanges((prev) =>
+      prev.map((e) =>
+        e.id === exId
+          ? { ...e, activity: { templateId: template.id, status: "revealed", selectedChoiceId: choiceId, revealData: result } }
+          : e
+      )
+    );
+    setExplored((prev) =>
+      prev.some((x) => x.templateId === template.id)
+        ? prev
+        : [...prev, { templateId: template.id, title: template.title, insight: result.insightCardText }]
+    );
+  }
+
   // Wraps a clarify/suggestion chip click: a neutral option (see
   // NEUTRAL_QUICKREPLY_RE above) focuses the composer instead of being sent
   // as a literal question. Everything else is resent as a real follow-up,
@@ -556,6 +674,8 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     setExchanges([]);
     setDraft("");
     setExpanded({});
+    setExplored([]);
+    setTrailOpen(false);
   }
 
   if (!isAuthenticated) {
@@ -611,21 +731,42 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
               {ex.fetchError ? (
                 <TechnicalErrorReply message={ex.fetchError} onRetry={() => send(ex.question, { retryExchangeId: ex.id })} />
               ) : ex.result ? (
-                <EconomistReply
-                  result={ex.result}
-                  expanded={expanded[ex.id] ?? {}}
-                  onToggle={(key) => toggle(ex.id, key)}
-                  onQuickReply={(label) => handleQuickReply(label)}
-                  onResearchQuickReply={(label) => handleResearchQuickReply(label, exIndex)}
-                  onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
-                  onRetryResearchFollowup={() => exploreResearch(ex.id, exIndex)}
-                  disabled={loading}
-                  research={ex.research}
-                  showReviewedSuggestions={ex.showReviewedSuggestions}
-                  isResearchFollowup={ex.isResearchFollowup}
-                  onExploreResearch={() => exploreResearch(ex.id, exIndex)}
-                  onStayReviewed={() => stayWithReviewed(ex.id)}
-                />
+                <>
+                  <EconomistReply
+                    result={ex.result}
+                    expanded={expanded[ex.id] ?? {}}
+                    onToggle={(key) => toggle(ex.id, key)}
+                    onQuickReply={(label) => handleQuickReply(label)}
+                    onResearchQuickReply={(label) => handleResearchQuickReply(label, exIndex)}
+                    onRetry={() => send(ex.question, { retryExchangeId: ex.id })}
+                    onRetryResearchFollowup={() => exploreResearch(ex.id, exIndex)}
+                    disabled={loading}
+                    research={ex.research}
+                    showReviewedSuggestions={ex.showReviewedSuggestions}
+                    isResearchFollowup={ex.isResearchFollowup}
+                    onExploreResearch={() => exploreResearch(ex.id, exIndex)}
+                    onStayReviewed={() => stayWithReviewed(ex.id)}
+                  />
+                  {(ex.result.classification === "covered" || ex.result.classification === "partial") &&
+                    (() => {
+                      const template = findActivityTemplate(ex.result!.citations.map((c) => c.id));
+                      if (!template) return null;
+                      const boundary = ex.result!.citations.find((c) => c.id === template.supportingCardIds[0])?.answerBoundary;
+                      return (
+                        <ActivityPanel
+                          template={template}
+                          activity={ex.activity}
+                          disabled={loading}
+                          profile={profile}
+                          answerBoundary={boundary}
+                          onStart={() => startActivity(ex.id, template.id)}
+                          onDismiss={() => dismissActivity(ex.id, template.id)}
+                          onAnswer={(choiceId) => answerActivity(ex.id, template, choiceId)}
+                          onFocusComposer={focusComposer}
+                        />
+                      );
+                    })()}
+                </>
               ) : (
                 <TypingIndicator />
               )}
@@ -633,6 +774,12 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
           ))}
           <div ref={bottomRef} />
         </div>
+      )}
+
+      {/* Progress trail — only appears once at least one activity has been
+          completed this session; see claude/answer-contract.md §13. */}
+      {explored.length > 0 && (
+        <ProgressTrail explored={explored} open={trailOpen} onToggle={() => setTrailOpen((v) => !v)} />
       )}
 
       {/* Composer */}
@@ -1157,6 +1304,309 @@ function ResearchAnswerBlock({
               </button>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Optional learning activities (2026-09-08) ------------------------------
+// See claude/answer-contract.md §13. Three stages, one panel: offer (no
+// `activity` state yet) → in_progress (the Quick Reveal question) →
+// revealed (explanation + insight card + recap). "dismissed" ends it at any
+// stage and shows nothing further — the answer above was never gated on any
+// of this.
+
+function ActivityPanel({
+  template,
+  activity,
+  disabled,
+  profile,
+  answerBoundary,
+  onStart,
+  onDismiss,
+  onAnswer,
+  onFocusComposer,
+}: {
+  template: ActivityTemplate;
+  activity?: ActivityState;
+  disabled: boolean;
+  profile: UserProfile;
+  answerBoundary?: string;
+  onStart: () => void;
+  onDismiss: () => void;
+  onAnswer: (choiceId: string) => void;
+  onFocusComposer: () => void;
+}) {
+  if (activity?.status === "dismissed") return null;
+
+  const panelStyle: React.CSSProperties = {
+    marginTop: "4px",
+    background: ACTIVITY_COLOR.bg,
+    border: `1px solid ${ACTIVITY_COLOR.border}`,
+    borderRadius: "10px",
+    padding: "16px 18px",
+  };
+
+  // Offer stage — nothing chosen yet.
+  if (!activity) {
+    return (
+      <div style={panelStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Sparkles size={15} color={ACTIVITY_COLOR.label} />
+          <p style={{ fontSize: "14px", fontWeight: 700, color: ACTIVITY_COLOR.label, margin: 0 }}>
+            Want to test that before we move on?
+          </p>
+        </div>
+        <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.text, marginTop: "8px" }}>{template.title}</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "14px" }}>
+          <button onClick={onStart} className="se-btn-activity" disabled={disabled}>
+            <Sparkles size={14} /> Explore it with me
+          </button>
+          <button onClick={onDismiss} className="se-btn-secondary" disabled={disabled}>
+            Just explain
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // In progress — the Quick Reveal question, plus a genuine "not sure" option.
+  if (activity.status === "in_progress") {
+    return (
+      <div style={panelStyle}>
+        <p style={{ fontSize: "15px", fontWeight: 600, color: COLOR.text, margin: 0 }}>{template.prompt}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "14px" }}>
+          {template.choices.map((c) => (
+            <button key={c.id} onClick={() => onAnswer(c.id)} className="se-activity-choice" disabled={disabled}>
+              {c.label}
+            </button>
+          ))}
+          <button
+            onClick={() => onAnswer(NOT_SURE_CHOICE_ID)}
+            className="se-activity-choice"
+            disabled={disabled}
+            style={{ display: "flex", alignItems: "center", gap: "7px", color: COLOR.textSecondary, fontStyle: "italic" }}
+          >
+            <HelpCircle size={14} /> I&apos;m not sure
+          </button>
+        </div>
+        <button onClick={onDismiss} className="se-btn-link" style={{ marginTop: "14px" }} disabled={disabled}>
+          Back to my question
+        </button>
+      </div>
+    );
+  }
+
+  // Revealed — explanation, insight card, and a compact recap. No
+  // right/wrong color-coding anywhere here on purpose — the encouragement
+  // line carries that distinction in words, never in red/green.
+  const data = activity.revealData;
+  if (!data) return null;
+
+  const encouragement = data.wasUnsure
+    ? "Totally fair to be unsure — here's what the evidence actually shows."
+    : data.isCorrect
+      ? "Good instinct — that matches the evidence."
+      : "Good guess — here's what actually happens.";
+
+  return (
+    <div className="se-reveal" style={panelStyle}>
+      <p style={{ fontSize: "13px", fontWeight: 700, color: ACTIVITY_COLOR.label, margin: 0 }}>{encouragement}</p>
+      <p style={{ fontSize: "16px", fontWeight: 600, lineHeight: 1.45, color: COLOR.text, marginTop: "8px" }}>{data.headline}</p>
+      <p style={{ fontSize: "14.5px", lineHeight: 1.55, color: COLOR.text, marginTop: "8px" }}>{data.explanation}</p>
+      {data.personalization && (
+        <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.text, marginTop: "8px" }}>{data.personalization}</p>
+      )}
+      <p style={{ fontSize: "13px", lineHeight: 1.5, color: COLOR.textSecondary, marginTop: "10px", fontStyle: "italic" }}>
+        {data.limitation}
+      </p>
+      <p style={{ fontSize: "12px", color: COLOR.textSecondary, marginTop: "10px" }}>
+        Grounded in {data.sourceCardId} v{data.sourceCardVersion}
+      </p>
+
+      <InsightCardStrip text={data.insightCardText} />
+
+      <ActivityRecap
+        template={template}
+        profile={profile}
+        answerBoundary={answerBoundary}
+        nextStepText={data.nextStepText}
+        onFocusComposer={onFocusComposer}
+      />
+
+      <button onClick={onDismiss} className="se-btn-link" style={{ marginTop: "14px" }}>
+        Back to my question
+      </button>
+    </div>
+  );
+}
+
+function InsightCardStrip({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        marginTop: "14px",
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "8px",
+        background: COLOR.surface,
+        border: `1px solid ${ACTIVITY_COLOR.border}`,
+        borderRadius: "8px",
+        padding: "12px 14px",
+      }}
+    >
+      <Lightbulb size={15} color={ACTIVITY_COLOR.label} style={{ flexShrink: 0, marginTop: "1px" }} />
+      <div>
+        <p
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            color: ACTIVITY_COLOR.label,
+            margin: 0,
+          }}
+        >
+          Insight collected
+        </p>
+        <p style={{ fontSize: "13.5px", lineHeight: 1.45, color: COLOR.text, marginTop: "3px" }}>{text}</p>
+      </div>
+    </div>
+  );
+}
+
+// One deterministic, always-truthful "what you told me" line — returns null
+// (and the recap simply omits that row) whenever the profile doesn't give us
+// a real stated fact to show. Never invents one. Reuses housingContext so
+// this stays in sync with the same per-value mapping answerEngine.ts and
+// researchEngine.ts already use for personalization.
+function profileFactLine(profile: UserProfile): string | null {
+  const housing = housingContext(profile.housingStatus, profile.situation);
+  if (housing === "someone") return null;
+  return `You're ${housing}.`;
+}
+
+function ActivityRecap({
+  template,
+  profile,
+  answerBoundary,
+  nextStepText,
+  onFocusComposer,
+}: {
+  template: ActivityTemplate;
+  profile: UserProfile;
+  answerBoundary?: string;
+  nextStepText: string;
+  onFocusComposer: () => void;
+}) {
+  const toldMe = profileFactLine(profile);
+
+  return (
+    <div style={{ marginTop: "16px", borderTop: `1px solid ${ACTIVITY_COLOR.border}`, paddingTop: "14px" }}>
+      <p style={{ ...smallLabelStyle(), color: ACTIVITY_COLOR.label }}>Quick recap</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+        {toldMe && <RecapRow label="What you told me" text={toldMe} />}
+        <RecapRow label="What we explored" text={template.title} />
+        {answerBoundary && <RecapRow label="What's still missing" text={answerBoundary} />}
+        <RecapRow label="A useful next step" text={nextStepText} />
+      </div>
+      <button onClick={onFocusComposer} className="se-btn-link" style={{ marginTop: "10px" }}>
+        Ask a follow-up question
+      </button>
+    </div>
+  );
+}
+
+function RecapRow({ label, text }: { label: string; text: string }) {
+  return (
+    <div>
+      <p
+        style={{
+          fontSize: "11px",
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          color: COLOR.textSecondary,
+          margin: 0,
+        }}
+      >
+        {label}
+      </p>
+      <p style={{ fontSize: "13.5px", lineHeight: 1.45, color: COLOR.text, marginTop: "3px" }}>{text}</p>
+    </div>
+  );
+}
+
+// Session-wide "progress trail" — see the `explored` state comment in
+// MyEconomistClient for what this deliberately is not (a score or streak).
+function ProgressTrail({
+  explored,
+  open,
+  onToggle,
+}: {
+  explored: { templateId: string; title: string; insight: string }[];
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      style={{
+        marginBottom: "16px",
+        background: COLOR.surface,
+        border: `1px solid ${ACTIVITY_COLOR.border}`,
+        borderRadius: "10px",
+        padding: "12px 16px",
+      }}
+    >
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ display: "flex", gap: "4px" }}>
+            {explored.map((e) => (
+              <span
+                key={e.templateId}
+                className="se-trail-dot"
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: ACTIVITY_COLOR.label,
+                  display: "inline-block",
+                }}
+              />
+            ))}
+          </span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: COLOR.text }}>
+            {explored.length} idea{explored.length === 1 ? "" : "s"} explored this session
+          </span>
+        </span>
+        <ChevronRight
+          size={14}
+          color={COLOR.textSecondary}
+          style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 150ms" }}
+        />
+      </button>
+      {open && (
+        <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {explored.map((e) => (
+            <div key={e.templateId} style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+              <Lightbulb size={13} color={ACTIVITY_COLOR.label} style={{ flexShrink: 0, marginTop: "2px" }} />
+              <p style={{ fontSize: "13px", lineHeight: 1.45, color: COLOR.text, margin: 0 }}>{e.insight}</p>
+            </div>
+          ))}
         </div>
       )}
     </div>
