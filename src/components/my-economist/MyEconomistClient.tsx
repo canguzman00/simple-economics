@@ -383,7 +383,14 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [loading, setLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
-  const [showAllQuestions, setShowAllQuestions] = useState(false);
+  // Split starter-question sections (2026-09-08, Carlos's request):
+  // "Happening right now" (from the daily Today's Issue pipeline) and
+  // "Popular questions right now" (from the Trending Topics cache, Google
+  // Trends-sourced). Fetched from the server since both sources are
+  // DB-backed; falls back to the original reviewed-library list via
+  // getStarterQuestionGroups()'s own fallback if neither cache has data
+  // yet. See src/lib/starter-questions.ts.
+  const [starterGroups, setStarterGroups] = useState<{ label: string; questions: string[] }[]>([]);
   const [expanded, setExpanded] = useState<Record<string, { evidence?: boolean; explain?: boolean }>>({});
   // Session-level "progress trail" — one entry per distinct learning
   // activity completed (reveal seen, "I'm not sure" included) anywhere in
@@ -398,6 +405,24 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [exchanges.length, loading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/starter-questions")
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: { groups?: { label: string; questions: string[] }[] }) => {
+        if (!cancelled && data.groups) setStarterGroups(data.groups);
+      })
+      .catch(() => {
+        // Fall back to the always-available reviewed-library list if the
+        // endpoint fails for any reason (e.g. a DB hiccup) — never leave
+        // the starter section blank for a first-time visitor.
+        if (!cancelled) setStarterGroups([{ label: "Questions our evidence library can answer", questions: STARTER_QUESTIONS.slice(0, 6) }]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggle(exId: string, key: "evidence" | "explain") {
     setExpanded((prev) => ({ ...prev, [exId]: { ...prev[exId], [key]: !prev[exId]?.[key] } }));
@@ -705,7 +730,6 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   }
 
   const hasThread = exchanges.length > 0;
-  const visibleStarterQuestions = showAllQuestions ? STARTER_QUESTIONS : STARTER_QUESTIONS.slice(0, 3);
   const composerDisabled = loading || limitReached;
 
   return (
@@ -825,22 +849,27 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
         </p>
       </form>
 
-      {/* Starter questions — first visit only */}
-      {!hasThread && (
-        <div style={{ marginTop: "32px" }}>
-          <p style={smallLabelStyle()}>Questions our evidence library can answer</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-            {visibleStarterQuestions.map((s) => (
-              <button key={s} onClick={() => send(s)} className="se-btn-starter">
-                {s}
-              </button>
-            ))}
-          </div>
-          {STARTER_QUESTIONS.length > 3 && (
-            <button onClick={() => setShowAllQuestions((v) => !v)} className="se-btn-link" style={{ marginTop: "14px" }}>
-              {showAllQuestions ? "Show fewer questions" : `See more questions (${STARTER_QUESTIONS.length - 3} more)`}
-            </button>
-          )}
+      {/* Starter questions — first visit only. Split into "Happening right
+          now" (Today's Issue) and "Popular questions right now" (Trending
+          Topics) once the server responds; see the useEffect above. A
+          question in either section isn't guaranteed reviewed-library
+          coverage the way the old flat list was — landing on "not covered"
+          and offering Research mode is the correct, honest outcome for a
+          current-events or trending prompt outside the cards. */}
+      {!hasThread && starterGroups.length > 0 && (
+        <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "28px" }}>
+          {starterGroups.map((group) => (
+            <div key={group.label}>
+              <p style={smallLabelStyle()}>{group.label}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
+                {group.questions.map((s) => (
+                  <button key={s} onClick={() => send(s)} className="se-btn-starter">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
