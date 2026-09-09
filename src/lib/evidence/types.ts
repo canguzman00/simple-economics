@@ -84,6 +84,30 @@ export interface ClarifyPrompt {
   options: string[];
 }
 
+// "What this means for you" — required, always-visible personalization for
+// every covered/partial (and research) answer, added 2026-09-09 in response
+// to Carlos's feedback that the product felt "flat": generic answers with no
+// visible tie to the person's actual situation. Distinct from
+// `decisionRelevance` (which stays deliberately narrow — how a card's
+// "relevant decisions" field applies, if at all) — `relevance` is the
+// product's required, substantive "so what does this mean for ME" section,
+// built from the person's full profile, not just optional phrasing. It is
+// held to the exact same hard rules as the rest of the answer (no
+// recommendations, no claims beyond what's cited) — the one thing it's
+// explicitly allowed to do that other fields aren't is illustrative
+// arithmetic on numbers already stated in the answer (e.g. "on $5,000,
+// that's the difference between $19 and $225 a year") — that's derived math
+// on already-supported figures, not a new empirical claim, so it doesn't
+// carry the same fabrication risk and is exempted from the "no new claims"
+// rule for that reason alone. See answerEngine.ts / researchEngine.ts system
+// prompts and their verification passes for how this is drafted and
+// checked. Null only when the model failed to produce anything usable — the
+// UI simply omits the card rather than blocking the real answer over it.
+export interface RelevanceCard {
+  headline: string; // one short, specific sentence — the "so what" in plain terms
+  body: string; // 2-4 sentences, grounded in the person's real profile fields (housing, employment, concern, city, life stage, debt, industry) — never invented, never a recommendation
+}
+
 export interface AnswerEnvelope {
   classification: Classification;
   cardIds: string[]; // Published card IDs actually cited — empty for not_covered/unsupported/error
@@ -91,6 +115,7 @@ export interface AnswerEnvelope {
   why: string; // plain-language mechanism, shown only inside the "Explain how it works" disclosure — empty outside covered/partial
   decisionRelevance: string; // how this bears on a decision the user might face, only when genuinely supported — empty when not applicable
   essentialLimitation: string; // ONE short, always-visible sentence — the single most important thing this answer does NOT establish. Fuller caveats live in the per-card evidence disclosure, not here. Empty outside covered/partial.
+  relevance: RelevanceCard | null; // required "what this means for you" section for covered/partial — see RelevanceCard above. Null outside covered/partial, or on a rare drafting failure.
   clarify: ClarifyPrompt | null; // an optional single follow-up question + 2-3 quick replies — null when not useful or not applicable to this classification
   suggestions: string[]; // alternative questions the library CAN answer, for not_covered/unsupported only — always excludes the question just asked; empty for covered/partial/error
 }
@@ -122,8 +147,39 @@ export interface ResearchEnvelope {
   classification: ResearchClassification;
   answer: string; // for "declined"/"error", the distinct notice copy instead of a real answer
   limitations: string; // genuine epistemic limitations of the research itself (mixed findings, dated data, correlational not causal, etc.) — never "this source is unreviewed"; empty for declined/error
+  relevance: RelevanceCard | null; // required "what this means for you" section — see RelevanceCard above. Null for declined/error, or a rare drafting failure.
   sources: ResearchSource[]; // real web_search_tool_result entries actually returned during this call — never model-typed, so never fabricated; empty for declined/error
   clarify: ClarifyPrompt | null; // same shape/rules as the reviewed path's clarify — null unless genuinely useful
+}
+
+// --- Dynamic, any-topic comprehension check (2026-09-09) --------------------
+// Extends the learning-activity idea (see below) to ANY answer, not just the
+// handful of Published cards that have a hand-authored ActivityTemplate.
+// Unlike ActivityTemplate, this content is model-GENERATED — but strictly
+// grounded: the generator is given nothing but the exact answer text already
+// shown to the user (already drafted and already verified by that path's own
+// verification pass) and is instructed to introduce no fact beyond it. A
+// second, independent verification pass (see dynamicCheckEngine.ts) checks
+// the drafted check the same way answerEngine/researchEngine verify their own
+// answers, before it's ever sent to the client. Ephemeral by design — never
+// stored, never becomes a candidate for the reviewed library, regenerated
+// fresh per exchange. Ships `correctChoiceId` to the client up front, same
+// reasoning as ActivityTemplate: reveal happens instantly, client-side, with
+// no secrecy benefit to withholding it given the rest of this app's content
+// is already fully client-visible.
+export interface GeneratedCheckChoice {
+  id: string;
+  label: string;
+}
+
+export interface GeneratedCheck {
+  prompt: string;
+  choices: GeneratedCheckChoice[];
+  correctChoiceId: string;
+  revealHeadline: string;
+  revealExplanation: string;
+  revealLimitation: string;
+  insightCardText: string;
 }
 
 // --- Optional learning activities (2026-09-08) ------------------------------
