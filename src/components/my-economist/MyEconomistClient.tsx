@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search, Sparkles, Lightbulb, HelpCircle, Compass, X } from "lucide-react";
+import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search, Sparkles, Lightbulb, HelpCircle, Compass, X, Newspaper, TrendingUp } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 import { housingContext } from "@/lib/ai/systemPrompt";
 import { STARTER_QUESTIONS } from "@/lib/evidence/cards";
@@ -102,12 +102,22 @@ const INTERACTIVE_STYLES = `
   .se-chip-neutral:disabled { opacity: 0.55; cursor: not-allowed; }
 
   .se-btn-starter {
-    text-align: left; font-size: 14px; line-height: 1.4; border-radius: 8px; padding: 12px 14px;
+    display: flex; align-items: flex-start; gap: 11px; text-align: left;
+    font-size: 14px; line-height: 1.45; border-radius: 12px; padding: 13px 15px 13px 13px;
     background: ${COLOR.surface}; border: 1px solid ${COLOR.border}; color: ${COLOR.text};
-    cursor: pointer; transition: border-color 120ms, background-color 120ms;
+    cursor: pointer; transition: border-color 120ms, background-color 120ms, transform 120ms, box-shadow 120ms;
   }
-  .se-btn-starter:hover { border-color: ${COLOR.accent}; background: ${COLOR.accentSoft}; }
+  .se-btn-starter:hover {
+    border-color: ${COLOR.accent}; background: ${COLOR.accentSoft};
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(185, 64, 79, 0.14);
+  }
   .se-btn-starter:focus-visible { outline: 2px solid ${COLOR.accent}; outline-offset: 2px; }
+  .se-btn-starter-icon {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    background: ${COLOR.accentSoft}; color: ${COLOR.accent};
+  }
+  .se-btn-starter:hover .se-btn-starter-icon { background: ${COLOR.accent}; color: #fff; }
 
   .se-chip {
     font-size: 13.5px; font-weight: 600; color: ${COLOR.accent}; background: ${COLOR.surface};
@@ -993,18 +1003,27 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
           current-events or trending prompt outside the cards. */}
       {!hasThread && starterGroups.length > 0 && (
         <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "28px" }}>
-          {starterGroups.map((group) => (
-            <div key={group.label}>
-              <p style={smallLabelStyle()}>{group.label}</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-                {group.questions.map((s) => (
-                  <button key={s} onClick={() => send(s)} className="se-btn-starter">
-                    {s}
-                  </button>
-                ))}
+          {starterGroups.map((group) => {
+            const GroupIcon = starterGroupIcon(group.label);
+            return (
+              <div key={group.label}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <GroupIcon size={13} color={COLOR.textSecondary} />
+                  <p style={smallLabelStyle()}>{group.label}</p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
+                  {group.questions.map((s) => (
+                    <button key={s} onClick={() => send(s)} className="se-btn-starter">
+                      <span className="se-btn-starter-icon">
+                        <GroupIcon size={14} />
+                      </span>
+                      <span>{s}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -2110,6 +2129,16 @@ function PageHeader({ compact = false }: { compact?: boolean }) {
 }
 
 // --- Shared inline style helpers --------------------------------------------
+
+// Icon per starter-question group, matched on label. Falls back to
+// HelpCircle for the reviewed-library fallback list (and anything future
+// groups don't recognize) rather than requiring every caller to thread an
+// icon through the group data.
+function starterGroupIcon(label: string): typeof Newspaper {
+  if (label === "Happening right now") return Newspaper;
+  if (label === "Popular questions right now") return TrendingUp;
+  return HelpCircle;
+}
 
 function smallLabelStyle(): React.CSSProperties {
   return {
