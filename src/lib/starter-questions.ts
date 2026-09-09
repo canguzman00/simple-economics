@@ -40,7 +40,12 @@ async function getCurrentIssueQuestions(): Promise<string[]> {
 
 async function getTrendingQuestions(): Promise<string[]> {
   const trending = await getCachedTrendingTopics(MAX_TRENDING);
-  return trending.map((t) => t.term);
+  // Trends terms are raw search fragments ("mortgage rates today", "fed
+  // rate cut") — clickable but not phrased as something you'd ask. Wrap
+  // each the same way getCurrentIssueQuestions() wraps a headline, so both
+  // starter-question groups read as actual questions rather than a mix of
+  // sentences and bare keywords.
+  return trending.map((t) => `What's going on with ${t.term.toLowerCase()}?`);
 }
 
 export async function getStarterQuestionGroups(): Promise<StarterQuestionGroup[]> {
