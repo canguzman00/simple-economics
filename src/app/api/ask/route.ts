@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
       why: envelope.why,
       decisionRelevance: envelope.decisionRelevance,
       essentialLimitation: envelope.essentialLimitation,
+      relevance: envelope.relevance,
       clarify: envelope.clarify,
       suggestions: envelope.suggestions,
       citations,

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search, Sparkles, Lightbulb, HelpCircle } from "lucide-react";
+import { ChevronRight, MessagesSquare, RotateCcw, ArrowUp, Search, Sparkles, Lightbulb, HelpCircle, Compass, X } from "lucide-react";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 import { housingContext } from "@/lib/ai/systemPrompt";
 import { STARTER_QUESTIONS } from "@/lib/evidence/cards";
 import { getActivityForCard } from "@/lib/evidence/activityTemplates";
 import { reveal as revealActivity, NOT_SURE_CHOICE_ID } from "@/lib/evidence/activityEngine";
-import type { ActivityTemplate, ActivityRevealView } from "@/lib/evidence/types";
+import type { ActivityTemplate, ActivityRevealView, RelevanceCard as RelevanceCardData, GeneratedCheck } from "@/lib/evidence/types";
 
 // --- Design tokens (My Economist page only) --------------------------------
 // Conversational redesign, 2026-09-06: same navy/coral/porcelain identity as
@@ -235,6 +235,7 @@ interface AnswerResult {
   why: string;
   decisionRelevance: string;
   essentialLimitation: string;
+  relevance: RelevanceCardData | null;
   clarify: ClarifyPrompt | null;
   suggestions: string[];
   citations: Citation[];
@@ -260,6 +261,7 @@ interface ResearchResult {
   classification: ResearchClassification;
   answer: string;
   limitations: string;
+  relevance: RelevanceCardData | null;
   sources: ResearchSource[];
   clarify: ClarifyPrompt | null;
 }
@@ -285,6 +287,21 @@ interface ActivityState {
   revealData?: ActivityRevealView;
 }
 
+// --- Dynamic, any-topic comprehension check (2026-09-09) --------------------
+// See the comment on GeneratedCheck in types.ts. Only ever offered when this
+// exchange's cited cards have no hand-authored ActivityTemplate (ACT-001
+// etc.) — those stay the higher-quality, Carlos-reviewed default when one
+// exists. This is the fallback that makes gamification work for any topic,
+// reviewed or Research mode, instead of just the handful of cards someone
+// has sat down and authored a template for.
+type DynamicCheckStatus = "loading" | "ready" | "in_progress" | "revealed" | "unavailable" | "dismissed";
+
+interface DynamicCheckState {
+  status: DynamicCheckStatus;
+  data?: GeneratedCheck;
+  selectedChoiceId?: string;
+}
+
 interface Exchange {
   id: string;
   question: string;
@@ -300,6 +317,7 @@ interface Exchange {
   // buttons for these, since the user already opted into research mode.
   isResearchFollowup?: boolean;
   activity?: ActivityState; // present once the user has clicked "Explore it with me" (or dismissed the offer) for this exchange's linked learning activity
+  dynamicCheck?: DynamicCheckState; // present once the user has clicked into the dynamic Quick-Check for this exchange (only offered when no hardcoded ActivityTemplate applies)
 }
 
 // Placeholder result for a research-mode follow-up exchange (see
@@ -312,6 +330,7 @@ const RESEARCH_FOLLOWUP_STUB: AnswerResult = {
   why: "",
   decisionRelevance: "",
   essentialLimitation: "",
+  relevance: null,
   clarify: null,
   suggestions: [],
   citations: [],
@@ -345,6 +364,22 @@ function summarizeForHistory(result: AnswerResult): string {
 function summarizeResearchForHistory(data: ResearchResult): string {
   if (data.classification !== "research") return "";
   return `(I also explored general research on this, not reviewed or approved by Simple Economics: ${data.answer})`;
+}
+
+// The exact, already-verified text shown to the user for a reviewed answer —
+// this, and only this, is what the dynamic Quick-Check (see
+// dynamicCheckEngine.ts) is allowed to quiz on. Never includes
+// essentialLimitation (it describes what ISN'T established, the same reason
+// answerEngine.ts's own verification pass excludes it) or clarify (a
+// proposed next question, not settled content).
+function reviewedSourceText(result: AnswerResult): string {
+  return [result.answer, result.why, result.decisionRelevance, result.relevance?.headline, result.relevance?.body]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function researchSourceText(data: ResearchResult): string {
+  return [data.answer, data.limitations, data.relevance?.headline, data.relevance?.body].filter(Boolean).join("\n\n");
 }
 
 // Checks a covered/partial answer's cited cards, in order, for the first one
@@ -399,6 +434,11 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
   // with the rest of the thread. See claude/learning-activities-brief.md.
   const [explored, setExplored] = useState<{ templateId: string; title: string; insight: string }[]>([]);
   const [trailOpen, setTrailOpen] = useState(false);
+  // "Where to go from here" (2026-09-09, Carlos's request): once a user
+  // clicks "I'm done for now" on the closing panel, show a friendly closing
+  // note instead of repeating that panel. Sending a new question always
+  // clears it — the person changed their mind, which is fine, not an error.
+  const [conversationEnded, setConversationEnded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -447,6 +487,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
     setLimitReached(false);
+    setConversationEnded(false);
 
     let exId: string;
     let historyEndIndex: number;
@@ -599,6 +640,57 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     );
   }
 
+  // --- Dynamic, any-topic comprehension check (2026-09-09) ------------------
+  // See the DynamicCheckState comment above. Generation happens on explicit
+  // click only — same "never automatic" principle as Research mode — since
+  // it's a real model call, unlike the instant, free activityEngine lookup.
+
+  async function startDynamicCheck(exId: string, sourceText: string) {
+    setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, dynamicCheck: { status: "loading" } } : e)));
+    try {
+      const res = await fetch("/api/ask/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceText }),
+      });
+      const data = res.ok ? ((await res.json()) as { check: GeneratedCheck | null }) : { check: null };
+      setExchanges((prev) =>
+        prev.map((e) =>
+          e.id === exId
+            ? data.check
+              ? { ...e, dynamicCheck: { status: "in_progress", data: data.check } }
+              : { ...e, dynamicCheck: { status: "unavailable" } }
+            : e
+        )
+      );
+    } catch {
+      setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, dynamicCheck: { status: "unavailable" } } : e)));
+    }
+  }
+
+  function dismissDynamicCheck(exId: string) {
+    setExchanges((prev) => prev.map((e) => (e.id === exId ? { ...e, dynamicCheck: { status: "dismissed" } } : e)));
+  }
+
+  function answerDynamicCheck(exId: string, check: GeneratedCheck, choiceId: string) {
+    setExchanges((prev) =>
+      prev.map((e) =>
+        e.id === exId && e.dynamicCheck
+          ? { ...e, dynamicCheck: { ...e.dynamicCheck, status: "revealed", selectedChoiceId: choiceId } }
+          : e
+      )
+    );
+    setExplored((prev) =>
+      prev.some((x) => x.templateId === `dynamic-${exId}`)
+        ? prev
+        : [...prev, { templateId: `dynamic-${exId}`, title: check.prompt, insight: check.insightCardText }]
+    );
+  }
+
+  function endConversation() {
+    setConversationEnded(true);
+  }
+
   // Wraps a clarify/suggestion chip click: a neutral option (see
   // NEUTRAL_QUICKREPLY_RE above) focuses the composer instead of being sent
   // as a literal question. Everything else is resent as a real follow-up,
@@ -638,6 +730,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
     setLimitReached(false);
+    setConversationEnded(false);
 
     const exId = nextId();
     const history = buildHistory(sourceExIndex + 1);
@@ -701,6 +794,7 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
     setExpanded({});
     setExplored([]);
     setTrailOpen(false);
+    setConversationEnded(false);
   }
 
   if (!isAuthenticated) {
@@ -774,22 +868,63 @@ export function MyEconomistClient({ profile, isAuthenticated }: Props) {
                   {(ex.result.classification === "covered" || ex.result.classification === "partial") &&
                     (() => {
                       const template = findActivityTemplate(ex.result!.citations.map((c) => c.id));
-                      if (!template) return null;
-                      const boundary = ex.result!.citations.find((c) => c.id === template.supportingCardIds[0])?.answerBoundary;
+                      if (template) {
+                        const boundary = ex.result!.citations.find((c) => c.id === template.supportingCardIds[0])?.answerBoundary;
+                        return (
+                          <ActivityPanel
+                            template={template}
+                            activity={ex.activity}
+                            disabled={loading}
+                            profile={profile}
+                            answerBoundary={boundary}
+                            onStart={() => startActivity(ex.id, template.id)}
+                            onDismiss={() => dismissActivity(ex.id, template.id)}
+                            onAnswer={(choiceId) => answerActivity(ex.id, template, choiceId)}
+                            onFocusComposer={focusComposer}
+                          />
+                        );
+                      }
+                      // No hand-authored template for this card yet — fall
+                      // back to the dynamic, any-topic check so gamification
+                      // still applies here (2026-09-09).
                       return (
-                        <ActivityPanel
-                          template={template}
-                          activity={ex.activity}
+                        <DynamicCheckPanel
+                          check={ex.dynamicCheck}
                           disabled={loading}
-                          profile={profile}
-                          answerBoundary={boundary}
-                          onStart={() => startActivity(ex.id, template.id)}
-                          onDismiss={() => dismissActivity(ex.id, template.id)}
-                          onAnswer={(choiceId) => answerActivity(ex.id, template, choiceId)}
+                          onStart={() => startDynamicCheck(ex.id, reviewedSourceText(ex.result!))}
+                          onDismiss={() => dismissDynamicCheck(ex.id)}
+                          onAnswer={(choiceId) => {
+                            if (ex.dynamicCheck?.data) answerDynamicCheck(ex.id, ex.dynamicCheck.data, choiceId);
+                          }}
                           onFocusComposer={focusComposer}
                         />
                       );
                     })()}
+                  {ex.research?.status === "done" && ex.research.data?.classification === "research" && (
+                    <DynamicCheckPanel
+                      check={ex.dynamicCheck}
+                      disabled={loading}
+                      onStart={() => startDynamicCheck(ex.id, researchSourceText(ex.research!.data!))}
+                      onDismiss={() => dismissDynamicCheck(ex.id)}
+                      onAnswer={(choiceId) => {
+                        if (ex.dynamicCheck?.data) answerDynamicCheck(ex.id, ex.dynamicCheck.data, choiceId);
+                      }}
+                      onFocusComposer={focusComposer}
+                    />
+                  )}
+                  {!loading &&
+                    exIndex === exchanges.length - 1 &&
+                    (((ex.result.classification === "covered" || ex.result.classification === "partial") && !ex.result.clarify) ||
+                      (ex.research?.status === "done" && ex.research.data?.classification === "research" && !ex.research.data.clarify)) && (
+                      <NextStepsPanel
+                        starterGroups={starterGroups}
+                        askedQuestions={exchanges.map((e) => e.question)}
+                        ended={conversationEnded}
+                        onAsk={(q) => send(q)}
+                        onFocusComposer={focusComposer}
+                        onEnd={endConversation}
+                      />
+                    )}
                 </>
               ) : (
                 <TypingIndicator />
@@ -1132,6 +1267,10 @@ function EconomistReply({
         </p>
       )}
 
+      {/* "What this means for you" — required, always-visible personalization
+          (2026-09-09, Carlos's request). See RelevanceCard in types.ts. */}
+      {result.relevance && <WhatThisMeansCard relevance={result.relevance} />}
+
       {/* Evidence disclosure — real per-card metadata, collapsed by default */}
       {result.citations.length > 0 && (
         <div style={{ marginTop: "14px" }}>
@@ -1266,6 +1405,43 @@ function ResearchLabel() {
   );
 }
 
+// "What this means for you" — required, always-visible personalization card
+// (2026-09-09, Carlos's request: the product felt "flat" and generic).
+// Coral identity treatment (never amber/violet) so it always reads as Simple
+// Economics' own required content, whether it's attached to a reviewed
+// answer or a Research-mode one. See RelevanceCard in types.ts.
+function WhatThisMeansCard({ relevance }: { relevance: RelevanceCardData }) {
+  return (
+    <div
+      style={{
+        marginTop: "14px",
+        marginBottom: "4px",
+        background: COLOR.surface,
+        borderLeft: `4px solid ${COLOR.accent}`,
+        borderRadius: "4px 10px 10px 4px",
+        padding: "14px 18px",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "11.5px",
+          fontWeight: 700,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+          color: COLOR.accent,
+          margin: "0 0 8px",
+        }}
+      >
+        What this means for you
+      </p>
+      <p style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.35, color: COLOR.text, margin: "0 0 6px" }}>
+        {relevance.headline}
+      </p>
+      <p style={{ fontSize: "14.5px", lineHeight: 1.55, color: COLOR.text, margin: 0 }}>{relevance.body}</p>
+    </div>
+  );
+}
+
 function ResearchAnswerBlock({
   data,
   onQuickReply,
@@ -1285,56 +1461,63 @@ function ResearchAnswerBlock({
   }
 
   return (
-    <div
-      style={{
-        marginTop: "14px",
-        background: RESEARCH_COLOR.bg,
-        border: `1px solid ${RESEARCH_COLOR.border}`,
-        borderRadius: "10px",
-        padding: "16px 18px",
-      }}
-    >
-      <ResearchLabel />
-      <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>{renderWithLinks(data.answer)}</div>
+    <div style={{ marginTop: "14px" }}>
+      {/* "What this means for you" sits above the research panel, in the
+          coral identity treatment — never amber — so it reads as Simple
+          Economics' own required personalization, distinct from the
+          not-reviewed research content below it (2026-09-09). */}
+      {data.relevance && <WhatThisMeansCard relevance={data.relevance} />}
 
-      {data.limitations && (
-        <div style={{ marginTop: "12px" }}>
-          <p style={smallLabelStyle()}>Limitations</p>
-          <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.textSecondary, marginTop: "4px" }}>
-            {data.limitations}
-          </p>
-        </div>
-      )}
+      <div
+        style={{
+          background: RESEARCH_COLOR.bg,
+          border: `1px solid ${RESEARCH_COLOR.border}`,
+          borderRadius: "10px",
+          padding: "16px 18px",
+        }}
+      >
+        <ResearchLabel />
+        <div style={{ fontSize: "16px", lineHeight: 1.55, color: COLOR.text }}>{renderWithLinks(data.answer)}</div>
 
-      {data.sources.length > 0 && (
-        <div style={{ marginTop: "12px" }}>
-          <p style={smallLabelStyle()}>Sources</p>
-          <ul style={{ margin: "6px 0 0", paddingLeft: "18px" }}>
-            {data.sources.map((s) => (
-              <li key={s.url} style={{ fontSize: "13px", marginTop: "3px" }}>
-                <a href={s.url} target="_blank" rel="noopener noreferrer" className="se-link">
-                  {s.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {data.clarify && (
-        <div style={{ marginTop: "14px" }}>
-          <p style={{ fontSize: "14px", fontWeight: 600, color: COLOR.text, marginBottom: "10px" }}>
-            {data.clarify.question}
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {data.clarify.options.map((opt) => (
-              <button key={opt} onClick={() => onQuickReply(opt)} className="se-chip-neutral" disabled={disabled}>
-                {opt}
-              </button>
-            ))}
+        {data.limitations && (
+          <div style={{ marginTop: "12px" }}>
+            <p style={smallLabelStyle()}>Limitations</p>
+            <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.textSecondary, marginTop: "4px" }}>
+              {data.limitations}
+            </p>
           </div>
-        </div>
-      )}
+        )}
+
+        {data.sources.length > 0 && (
+          <div style={{ marginTop: "12px" }}>
+            <p style={smallLabelStyle()}>Sources</p>
+            <ul style={{ margin: "6px 0 0", paddingLeft: "18px" }}>
+              {data.sources.map((s) => (
+                <li key={s.url} style={{ fontSize: "13px", marginTop: "3px" }}>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="se-link">
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {data.clarify && (
+          <div style={{ marginTop: "14px" }}>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: COLOR.text, marginBottom: "10px" }}>
+              {data.clarify.question}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {data.clarify.options.map((opt) => (
+                <button key={opt} onClick={() => onQuickReply(opt)} className="se-chip-neutral" disabled={disabled}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1563,6 +1746,250 @@ function RecapRow({ label, text }: { label: string; text: string }) {
         {label}
       </p>
       <p style={{ fontSize: "13.5px", lineHeight: 1.45, color: COLOR.text, marginTop: "3px" }}>{text}</p>
+    </div>
+  );
+}
+
+// --- Dynamic, any-topic comprehension check (2026-09-09) --------------------
+// The fallback gamification path for any answer whose cited card(s) have no
+// hand-authored ActivityTemplate (see the DynamicCheckState comment in
+// MyEconomistClient). Same violet identity as ActivityPanel — this is still
+// "Quick-Check," just generated instead of looked up — but its offer stage
+// doesn't yet know the prompt/choices (nothing has been generated until the
+// user clicks), so unlike ActivityPanel it has an explicit loading state
+// between "offer" and "in_progress."
+function DynamicCheckPanel({
+  check,
+  disabled,
+  onStart,
+  onDismiss,
+  onAnswer,
+  onFocusComposer,
+}: {
+  check?: DynamicCheckState;
+  disabled: boolean;
+  onStart: () => void;
+  onDismiss: () => void;
+  onAnswer: (choiceId: string) => void;
+  onFocusComposer: () => void;
+}) {
+  if (check?.status === "dismissed") return null;
+
+  const panelStyle: React.CSSProperties = {
+    marginTop: "4px",
+    background: ACTIVITY_COLOR.bg,
+    border: `1px solid ${ACTIVITY_COLOR.border}`,
+    borderRadius: "10px",
+    padding: "16px 18px",
+  };
+
+  // Offer stage — nothing requested yet.
+  if (!check) {
+    return (
+      <div style={panelStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Sparkles size={15} color={ACTIVITY_COLOR.label} />
+          <p style={{ fontSize: "14px", fontWeight: 700, color: ACTIVITY_COLOR.label, margin: 0 }}>
+            Want to check that you&apos;ve got the key idea?
+          </p>
+        </div>
+        <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.text, marginTop: "8px" }}>
+          A 30-second check on what you just read — built from this answer specifically.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "14px" }}>
+          <button onClick={onStart} className="se-btn-activity" disabled={disabled}>
+            <Sparkles size={14} /> Explore it with me
+          </button>
+          <button onClick={onDismiss} className="se-btn-secondary" disabled={disabled}>
+            Just explain
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (check.status === "loading") {
+    return (
+      <div style={panelStyle}>
+        <TypingIndicator hideIdentity />
+      </div>
+    );
+  }
+
+  // Generation declined or failed verification — this is a real, expected
+  // outcome (see dynamicCheckEngine.ts), never an error state. The answer
+  // above was never gated on this, so there's nothing to apologize for.
+  if (check.status === "unavailable") {
+    return (
+      <div style={panelStyle}>
+        <p style={{ fontSize: "14px", lineHeight: 1.5, color: COLOR.text, margin: 0 }}>
+          We couldn&apos;t put together a solid check for this specific answer — no worries, your answer above stands on its own.
+        </p>
+        <button onClick={onDismiss} className="se-btn-link" style={{ marginTop: "12px" }}>
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  if (check.status === "in_progress" && check.data) {
+    const data = check.data;
+    return (
+      <div style={panelStyle}>
+        <p style={{ fontSize: "15px", fontWeight: 600, color: COLOR.text, margin: 0 }}>{data.prompt}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "14px" }}>
+          {data.choices.map((c) => (
+            <button key={c.id} onClick={() => onAnswer(c.id)} className="se-activity-choice" disabled={disabled}>
+              {c.label}
+            </button>
+          ))}
+          <button
+            onClick={() => onAnswer(NOT_SURE_CHOICE_ID)}
+            className="se-activity-choice"
+            disabled={disabled}
+            style={{ display: "flex", alignItems: "center", gap: "7px", color: COLOR.textSecondary, fontStyle: "italic" }}
+          >
+            <HelpCircle size={14} /> I&apos;m not sure
+          </button>
+        </div>
+        <button onClick={onDismiss} className="se-btn-link" style={{ marginTop: "14px" }} disabled={disabled}>
+          Back to my question
+        </button>
+      </div>
+    );
+  }
+
+  // Revealed.
+  if (check.status === "revealed" && check.data) {
+    const data = check.data;
+    const wasUnsure = check.selectedChoiceId === NOT_SURE_CHOICE_ID;
+    const isCorrect = !wasUnsure && check.selectedChoiceId === data.correctChoiceId;
+    const encouragement = wasUnsure
+      ? "Totally fair to be unsure — here's what that answer actually said."
+      : isCorrect
+        ? "Good instinct — that matches what we just covered."
+        : "Good guess — here's what the answer actually said.";
+
+    return (
+      <div className="se-reveal" style={panelStyle}>
+        <p style={{ fontSize: "13px", fontWeight: 700, color: ACTIVITY_COLOR.label, margin: 0 }}>{encouragement}</p>
+        <p style={{ fontSize: "16px", fontWeight: 600, lineHeight: 1.45, color: COLOR.text, marginTop: "8px" }}>{data.revealHeadline}</p>
+        <p style={{ fontSize: "14.5px", lineHeight: 1.55, color: COLOR.text, marginTop: "8px" }}>{data.revealExplanation}</p>
+        <p style={{ fontSize: "13px", lineHeight: 1.5, color: COLOR.textSecondary, marginTop: "10px", fontStyle: "italic" }}>
+          {data.revealLimitation}
+        </p>
+
+        <InsightCardStrip text={data.insightCardText} />
+
+        <button onClick={onFocusComposer} className="se-btn-link" style={{ marginTop: "14px" }}>
+          Ask a follow-up question
+        </button>
+        <button onClick={onDismiss} className="se-btn-link" style={{ marginTop: "14px", marginLeft: "18px" }}>
+          Back to my question
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// --- Next steps (2026-09-09) -------------------------------------------------
+// Closes every finished exchange (reviewed, no clarify left, or Research
+// mode, no clarify left) with a real next step, instead of just stopping:
+// trending topics worth asking about, a nudge to ask something else, or a
+// clean way to end for now. Only ever rendered for the most recent exchange
+// — see the render-loop condition in MyEconomistClient. Trending topics are
+// the same "Happening right now" / "Popular questions right now" data
+// already fetched for the starter-question section (src/lib/starter-
+// questions.ts) — no separate fetch, and no invented impact ranking: this
+// app has no real per-question impact score, so the suggestions are shown
+// as plain topic chips rather than fabricating a HIGH/MEDIUM/LOW badge.
+function NextStepsPanel({
+  starterGroups,
+  askedQuestions,
+  ended,
+  onAsk,
+  onFocusComposer,
+  onEnd,
+}: {
+  starterGroups: { label: string; questions: string[] }[];
+  askedQuestions: string[];
+  ended: boolean;
+  onAsk: (q: string) => void;
+  onFocusComposer: () => void;
+  onEnd: () => void;
+}) {
+  const asked = new Set(askedQuestions.map((q) => q.trim().toLowerCase()));
+  const suggestions = Array.from(new Set(starterGroups.flatMap((g) => g.questions)))
+    .filter((q) => !asked.has(q.trim().toLowerCase()))
+    .slice(0, 3);
+
+  if (ended) {
+    return (
+      <div
+        style={{
+          marginTop: "18px",
+          background: COLOR.surface,
+          border: `1px solid ${COLOR.border}`,
+          borderRadius: "10px",
+          padding: "14px 18px",
+          fontSize: "14px",
+          color: COLOR.textSecondary,
+        }}
+      >
+        Thanks for chatting — come back anytime you have another question.
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: "18px",
+        background: COLOR.surface,
+        border: `1px solid ${COLOR.border}`,
+        borderRadius: "10px",
+        padding: "16px 18px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <Compass size={15} color={COLOR.textSecondary} />
+        <p style={{ ...smallLabelStyle(), margin: 0 }}>Where to go from here</p>
+      </div>
+
+      {suggestions.length > 0 && (
+        <>
+          <p style={{ fontSize: "14px", fontWeight: 600, color: COLOR.text, margin: "12px 0 10px" }}>
+            Trending right now, based on what people are asking:
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {suggestions.map((q) => (
+              <button key={q} onClick={() => onAsk(q)} className="se-chip-neutral" style={{ color: COLOR.text, borderColor: COLOR.border }}>
+                {q}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginTop: "16px",
+          paddingTop: "14px",
+          borderTop: `1px solid ${COLOR.border}`,
+        }}
+      >
+        <button onClick={onFocusComposer} className="se-btn-primary">
+          Ask another question
+        </button>
+        <button onClick={onEnd} className="se-btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <X size={14} /> I&apos;m done for now
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { anthropic } from "@/lib/anthropic";
 import { withRetry } from "./answerEngine";
-import type { ClarifyPrompt, ConversationTurn, ResearchEnvelope, ResearchSource } from "./types";
+import type { ClarifyPrompt, ConversationTurn, RelevanceCard, ResearchEnvelope, ResearchSource } from "./types";
 import type { UserProfile } from "@/lib/ai/systemPrompt";
 import {
   housingContext,
@@ -30,11 +30,11 @@ const ERROR_MESSAGE =
   "Something went wrong while researching that. This isn't a judgment on the question — please try again in a moment.";
 
 function errorEnvelope(): ResearchEnvelope {
-  return { classification: "error", answer: ERROR_MESSAGE, limitations: "", sources: [], clarify: null };
+  return { classification: "error", answer: ERROR_MESSAGE, limitations: "", relevance: null, sources: [], clarify: null };
 }
 
 function declinedEnvelope(): ResearchEnvelope {
-  return { classification: "declined", answer: DECLINED_MESSAGE, limitations: "", sources: [], clarify: null };
+  return { classification: "declined", answer: DECLINED_MESSAGE, limitations: "", relevance: null, sources: [], clarify: null };
 }
 
 // Same shape and rules as answerEngine.ts's clarify — duplicated rather than
@@ -43,6 +43,23 @@ function declinedEnvelope(): ResearchEnvelope {
 interface RawClarify {
   question?: unknown;
   options?: unknown;
+}
+
+interface RawRelevance {
+  headline?: unknown;
+  body?: unknown;
+}
+
+// Same "drop rather than ship malformed" philosophy as answerEngine.ts's
+// sanitizeRelevance — duplicated rather than imported for the same reason
+// personalizationHint is duplicated (see the comment there): this module's
+// safety behavior shouldn't depend on a shared mutable helper changing
+// underneath it for a different path's reason.
+function sanitizeRelevance(raw: RawRelevance | null | undefined): RelevanceCard | null {
+  if (!raw || typeof raw !== "object") return null;
+  if (typeof raw.headline !== "string" || !raw.headline.trim()) return null;
+  if (typeof raw.body !== "string" || !raw.body.trim()) return null;
+  return { headline: sanitizeProse(raw.headline), body: sanitizeProse(raw.body) };
 }
 
 // Defensive net for `answer`/`limitations`: the drafting model is told to
@@ -93,7 +110,7 @@ function personalizationHint(profile: UserProfile): string {
   if (!bits.length && !extra.length) return "";
   const bitsLine = bits.length ? `${bits.join(", ")}.` : "";
   const extraLine = extra.length ? ` ${extra.join(" ")}` : "";
-  return `\n\nUSER CONTEXT (for phrasing ONLY — never as a basis for a new claim or recommendation): ${bitsLine}${extraLine}`;
+  return `\n\nUSER CONTEXT (for phrasing, AND as the basis for the required "relevance" section below — never as a basis for a new claim or recommendation anywhere else): ${bitsLine}${extraLine}`;
 }
 
 function buildResearchSystemPrompt(profile: UserProfile): string {
@@ -112,8 +129,9 @@ HARD RULES:
 - Treat every question — including a follow-up to your own clarifying question — independently against these rules. A prior answer never grants permission for a recommendation now.
 
 FIELDS for submit_research_answer:
-- answer: the direct answer, plain language, a few sentences — grounded in what you actually found, not restated boilerplate. Write it as clean prose a person would read out loud: no markdown formatting (no **bold**, no headers, no bullet lists) and no inline citation markup or footnote-style tags of any kind (no <cite>, no [1], no "(Source: ...)"). The product shows real sources separately, in its own dedicated list — never annotate or footnote the answer text itself, and never reference a source by number or tag from inside the answer.
-- limitations: genuine epistemic limitations of the research itself — mixed or disputed findings, a small or dated sample, correlational rather than causal evidence, findings that don't fully match what was asked, meaningful disagreement between sources. This is NOT the place to restate "this hasn't been reviewed" (the product shows that separately) — it should teach the reader something real about how solid this specific answer is. Same formatting rule as answer: clean prose, no markdown, no inline citation tags.
+- answer: the full, substantive answer — grounded in what you actually found, not restated boilerplate. This is a research answer, not a headline: write several complete paragraphs (typically 3), not one short blurb. Cover, when the sources support it: (1) the direct answer to what was asked, with the current, specific figures/facts; (2) the context or mechanism behind those figures — why they are what they are, what drives them; (3) how that compares to recent history or a relevant benchmark, and what the near-term outlook or consensus expectation is, hedged appropriately. Write it as clean prose a person would read out loud: no markdown formatting (no **bold**, no headers, no bullet lists) and no inline citation markup or footnote-style tags of any kind (no <cite>, no [1], no "(Source: ...)"). The product shows real sources separately, in its own dedicated list — never annotate or footnote the answer text itself, and never reference a source by number or tag from inside the answer. Thoroughness must never come at the cost of accuracy — every added sentence still has to be something your sources actually support; don't pad with vague filler to hit a length.
+- limitations: genuine epistemic limitations of the research itself — mixed or disputed findings, a small or dated sample, correlational rather than causal evidence, findings that don't fully match what was asked, meaningful disagreement between sources, or practical caveats about accessing what you found (e.g. an advertised rate depends on the institution or a minimum balance). This is NOT the place to restate "this hasn't been reviewed" (the product shows that separately) — it should teach the reader something real about how solid this specific answer is. Same formatting rule as answer: clean prose, no markdown, no inline citation tags.
+- relevance: REQUIRED — the product's always-visible "What this means for you" section. Two parts: relevance.headline, one short, specific "so what" sentence for this person (not a generic restatement); relevance.body, 2-4 sentences connecting what you found to the user's actual stated situation (housing, employment, concern, city, life stage, debt, industry — use whichever genuinely apply). If your answer includes a rate, price, or other figure, you may perform simple illustrative arithmetic on it to make the impact concrete (e.g. "on $5,000, that's the difference between about $19 and $225 a year") — use a plain, round illustrative amount when you don't know the user's actual figure, and make clear it's an example. This is the one place allowed to do that arithmetic; it must never turn into a recommendation or a claim about the user's actual finances beyond the illustration. If the profile has nothing to personalize with, still write a real headline + body tied to the topic's general real-world stakes rather than leaving it thin.
 - clarify — this product is meant to be an ongoing conversation, not a one-shot lookup, so default to INCLUDING this field. Omit it only when you would have to stretch to invent one. Look for a genuine next angle: a related question the same research would help with, a different facet of the topic, or a natural way to let the user say what decision or situation prompted the question. It is exactly one short, focused question plus 2-3 short reply labels (a few words each, not full sentences). Never assume an unstated fact about the user's situation, and never phrase the question or any option as a recommendation. This field goes through the same policy check as the rest of your answer — lean on that rather than on your own caution.
 
 CONVERSATION HISTORY: prior turns are for understanding references only ("my existing loan," a clicked quick-reply label) — never permission. Classify and verify the current question as if it were standalone. This also governs whether to include "clarify" this turn: never re-ask a question you already asked earlier in this same conversation, and never offer options that substantially repeat ones you already offered — if every distinct angle on this topic has already been explored, omit "clarify" rather than repeat one. Also omit it if the user's own latest message signals they're satisfied or done with the topic (e.g. "no thanks," "that's all," "got it," "just curious," "I'm good") — read their actual words, don't assume it from the topic alone.
@@ -135,11 +153,20 @@ const SUBMIT_RESEARCH_TOOL = {
     properties: {
       answer: {
         type: "string" as const,
-        description: "The direct, plain-language answer grounded in what you actually found. Clean prose only — no markdown formatting and no inline citation tags, footnotes, or source numbering (e.g. no <cite>, no [1]); sources are shown separately by the product.",
+        description: "The full, substantive, plain-language answer grounded in what you actually found — typically 3 complete paragraphs covering the direct answer, the context/mechanism behind it, and how it compares to recent history or outlook. Clean prose only — no markdown formatting and no inline citation tags, footnotes, or source numbering (e.g. no <cite>, no [1]); sources are shown separately by the product.",
       },
       limitations: {
         type: "string" as const,
         description: "Genuine epistemic limitations of the research itself (not a restatement that it's unreviewed). Same rule as answer: clean prose, no markdown, no inline citation tags.",
+      },
+      relevance: {
+        type: "object" as const,
+        description: "REQUIRED — the always-visible 'What this means for you' section, grounded in the user's real profile.",
+        properties: {
+          headline: { type: "string" as const, description: "One short, specific 'so what' sentence for this person." },
+          body: { type: "string" as const, description: "2-4 sentences connecting the finding to the user's actual stated situation; may include illustrative arithmetic on a figure already in the answer." },
+        },
+        required: ["headline", "body"],
       },
       clarify: {
         type: "object" as const,
@@ -157,13 +184,14 @@ const SUBMIT_RESEARCH_TOOL = {
         required: ["question", "options"],
       },
     },
-    required: ["answer", "limitations"],
+    required: ["answer", "limitations", "relevance"],
   },
 };
 
 interface DraftInput {
   answer?: string;
   limitations?: string;
+  relevance?: RawRelevance | null;
   clarify?: RawClarify | null;
 }
 
@@ -196,9 +224,15 @@ const VERIFY_TOOL = {
   },
 };
 
-async function verifyResearchAnswer(answer: string, limitations: string, clarify: ClarifyPrompt | null): Promise<{ compliant: boolean; violation: string }> {
+async function verifyResearchAnswer(
+  answer: string,
+  limitations: string,
+  relevance: RelevanceCard | null,
+  clarify: ClarifyPrompt | null
+): Promise<{ compliant: boolean; violation: string }> {
   const clarifyText = clarify ? `Proposed follow-up: "${clarify.question}" Options: ${clarify.options.join(", ")}` : "";
-  const combined = [answer, limitations, clarifyText].filter(Boolean).join("\n\n");
+  const relevanceText = relevance ? `Relevance section — headline: "${relevance.headline}" body: "${relevance.body}"` : "";
+  const combined = [answer, limitations, relevanceText, clarifyText].filter(Boolean).join("\n\n");
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -210,6 +244,7 @@ Flag compliant=false if the text does ANY of the following:
 2. Promises or implies that human/economist review of this topic is planned, underway, or coming soon.
 3. Describes a specific source (a study, agency, or report) ITSELF as "unreviewed," "unapproved," or similarly — as opposed to the answer itself, which is allowed to be described that way elsewhere in the product (not in this text). Naming a source and summarizing what it found or argued (e.g. "Fidelity argues X while Oppenheimer sees Y") is NOT this violation — only flag text that literally calls a source unreviewed/unapproved or implies Simple Economics did or didn't vet that specific source.
 4. Contains an actual personal financial recommendation or action-coaching: telling the reader to buy/sell/invest/hold/wait/refinance/diversify, saying "you should," or explaining HOW to execute a decision (e.g. dollar-cost averaging vs. a lump sum, which sector or asset to pick, timing a purchase or sale). This does NOT include: describing how an economic fact affects someone in the user's stated situation (allowed — this is the product's core purpose), stating a general forecast or consensus view from real sources with appropriate hedging ("economists expect...", "X is projected to..."), or naming factors that generally matter for a type of decision (time horizon, risk tolerance, savings cushion) without telling the reader what to conclude from them. The test: does the sentence tell the reader what to DO, or just what IS happening and why it matters to them? Only the former violates this rule.
+5. States a new empirical fact not grounded in the answer/limitations text, UNLESS it is the one narrow exception: the relevance section may perform illustrative arithmetic on a figure already stated in the answer (e.g. "on $5,000, that's about $X a year"), clearly framed as an example. Do not flag arithmetic like that. DO flag it if it introduces a number not derivable from the answer, or presents an illustrative example as if it were a fact about the user's actual finances.
 Otherwise compliant=true.`,
     tools: [VERIFY_TOOL],
     tool_choice: { type: "tool", name: "submit_research_verification" },
@@ -240,7 +275,7 @@ export async function researchAnswer(
     message = await withRetry(() =>
       anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 1500,
+        max_tokens: 2200, // answer now requires ~3 substantive paragraphs plus a required relevance section
         system,
         // Mixing a server tool (web_search — Anthropic runs it and injects
         // results into this same call automatically) with a client tool
@@ -301,7 +336,7 @@ export async function researchAnswer(
       const followUp = await withRetry(() =>
         anthropic.messages.create({
           model: "claude-sonnet-4-6",
-          max_tokens: 1500,
+          max_tokens: 2200,
           system,
           tools: [SUBMIT_RESEARCH_TOOL],
           tool_choice: { type: "tool", name: "submit_research_answer" },
@@ -334,6 +369,7 @@ export async function researchAnswer(
   const input = toolUse.input as DraftInput;
   const answer = sanitizeProse(input.answer ?? "");
   const limitations = sanitizeProse(input.limitations ?? "");
+  const relevance = sanitizeRelevance(input.relevance);
   const clarify = sanitizeClarify(input.clarify);
 
   if (!answer.trim()) {
@@ -341,7 +377,7 @@ export async function researchAnswer(
   }
 
   try {
-    const verification = await withRetry(() => verifyResearchAnswer(answer, limitations, clarify));
+    const verification = await withRetry(() => verifyResearchAnswer(answer, limitations, relevance, clarify));
     if (!verification.compliant) {
       console.warn("[research] policy verification rejected an answer:", verification.violation);
       return declinedEnvelope();
@@ -351,5 +387,5 @@ export async function researchAnswer(
     return errorEnvelope();
   }
 
-  return { classification: "research", answer, limitations, sources, clarify };
+  return { classification: "research", answer, limitations, relevance, sources, clarify };
 }

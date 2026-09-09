@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       classification: envelope.classification,
       answer: envelope.answer,
       limitations: envelope.limitations,
+      relevance: envelope.relevance,
       sources: envelope.sources,
       clarify: envelope.clarify,
     });
